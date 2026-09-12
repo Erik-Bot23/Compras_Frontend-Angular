@@ -46,57 +46,55 @@ export class Sidebar {
     return this.auth.getUsername();
   }
 
+  // ============================================================
+  // MENU DE NAVEGACION (data-driven)
+  // Cada seccion tiene:
+  //  - label:      texto visible de la seccion.
+  //  - route:      ruta a la que navega.
+  //  - permission: permiso requerido (la directiva *hasPermission lo filtra).
+  //  - icon:       ruta de la imagen en assets/icons/. Si esta vacio (''),
+  //                la seccion se muestra solo con texto (el HTML usa
+  //                *ngIf="item.icon" para no pintar un <img> vacio).
+  // Los PNG de assets/icons miden 512x512; el tamano de render lo controla
+  // la clase .menu-icon en sidebar.css.
+  // ============================================================
   menuItems = [
     {
       label: 'Productos',
       route: '/productos',
-      permission: 'VER_PRODUCTOS'
+      permission: 'VER_PRODUCTOS',
+      icon: 'assets/icons/comida-y-bebida.png'
     },
     {
       label: 'Categorías',
       route: '/categorias',
-      permission: 'VER_CATEGORIAS'
-    },
-    {
-      label: 'Caja',
-      route: '/caja',
-      permission: 'VER_CAJA'
+      permission: 'VER_CATEGORIAS',
+      icon: 'assets/icons/categorias.png'
     },
     {
       label: 'Usuarios',
       route: '/usuarios',
-      permission: 'VER_USUARIOS'
+      permission: 'VER_USUARIOS',
+      icon: 'assets/icons/usuarios.png'
     },
     {
       label: 'Roles',
       route: '/roles',
-      permission: 'VER_ROLES'
-    },
-    {
-      label: 'Clientes',
-      route: '/clientes',
-      permission: 'VER_CLIENTES'
-    },
-    {
-      label: 'Ventas',
-      route: '/ventas',
-      permission: 'VER_VENTAS'
+      permission: 'VER_ROLES',
+      icon: 'assets/icons/roles.png'
     },
     {
       label: 'Compras',
       route: '/compras',
-      permission: 'VER_COMPRAS'
+      permission: 'VER_COMPRAS',
+      icon: 'assets/icons/compras.png'
     },
     {
       label: 'Reportes',
       route: '/reportes',
-      permission: 'VER_REPORTES'
+      permission: 'VER_REPORTES',
+      icon: 'assets/icons/reportes.png'
     },
-    {
-      label: 'Facturas',
-      route: '/facturas',
-      permission: 'VER_FACTURAS'
-    }
   ]
 
   go(route: string){

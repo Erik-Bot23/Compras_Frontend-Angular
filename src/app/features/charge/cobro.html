@@ -27,7 +27,6 @@
                     (input)="sale.onSearch()"
                     placeholder="Buscar por nombre, SKU o código de barras"
                 >
-                />
 
                 <div *ngIf="sale.searchResults.length" class="search-dropdown">
                     <div *ngFor="let p of sale.searchResults" class="search-item" (click)="sale.selectProduct(p)">
@@ -53,8 +52,8 @@
 
                 <ng-container *ngIf="cash.cashStatus">
                         <div class="cash-status open">
-                            Estado:
-                            🟢 Abierta
+                            <img src="assets/icons/greencircle.png" alt="Caja abierta"> 
+                            Abierta
                         </div>
 
                         <div class="cash-data">
@@ -69,7 +68,8 @@
 
                 <ng-container *ngIf="!cash.cashStatus">
                         <div class="cash-status closed">
-                            🔴 Caja cerrada
+                            <img src="assets/icons/redCircle.png" alt="Caja cerrada"> 
+                            Caja cerrada
                         </div>
 
                         <button *hasPermission="'ABRIR_CAJA'" class="btn-cash open" (click)="cash.openCashModal()">
@@ -100,9 +100,19 @@
                         <td>{{ item.quantity }}</td>
                         <td>{{ item.subtotal }}</td>
                         <td>
-                            <button (click)="sale.increase(item.product)">+</button>
-                            <button (click)="sale.decrease(item.product.id)">-</button>
-                            <button (click)="sale.removeItem(item.product.id)">X</button>
+                            <!-- Botones de accion del carrito:
+                                 El icono va DENTRO del <button> (patron de boton con icono).
+                                 class btn-inc/btn-dec/btn-del identifica cada accion en CSS
+                                 (en vez de :nth-child, que depende del orden en el DOM). -->
+                            <button type="button" class="btn-inc" (click)="sale.increase(item.product)">
+                                <img src="assets/icons/anadir.png" alt="Aumentar cantidad">
+                            </button>
+                            <button type="button" class="btn-dec" (click)="sale.decrease(item.product.id)">
+                                <img src="assets/icons/menos.png" alt="Disminuir cantidad">
+                            </button>
+                            <button type="button" class="btn-del" (click)="sale.removeItem(item.product.id)">
+                                <img src="assets/icons/eliminar.png" alt="Eliminar producto">
+                            </button>
                         </td>
                     </tr>
                 </tbody>

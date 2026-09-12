@@ -96,37 +96,50 @@
       </div>
 
       <!--*ngIf: -->
+      <!-- Estructura de tabla responsive (clases compartidas en styles.css):
+           .table-container   → wrapper de layout del componente (flex column).
+           .table-card        → tarjeta visual oscura con bordes redondeados.
+           .table-scroll      → area con scroll horiz/vertical en pantallas pequenas.
+           Si el usuario solo ve (sin crear/editar), esta div es el unico hijo del
+           grid y el CSS (:only-child) la expande a todo el ancho de la pagina. -->
       <div *ngIf="!loading" class="table-container fade-in">
-        <table class="product-table">
-          <thead>
-            <tr>
-              <th>Imagen</th>
-              <th>Nombre</th>
-              <th>Precio</th>
-              <th>Stock</th>
-              <th>Categoría</th>
-              <th>SKU</th>
-              <th>Barcode</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
+        <div class="table-card">
+          <div class="table-scroll">
+            <table class="product-table">
+              <thead>
+                <tr>
+                  <th>Imagen</th>
+                  <th>Nombre</th>
+                  <th>Precio</th>
+                  <th>Stock</th>
+                  <th>Categoría</th>
+                  <th>SKU</th>
+                  <th>Barcode</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
 
-          <tbody>
-            <tr *ngFor="let p of products">
-              <td><img [src]="p.img" class="img"></td>
-              <td>{{ p.name }}</td>
-              <td>${{ p.price }}</td>
-              <td>{{ p.stock }}</td>
-              <td>{{ p.categoryName }}</td>
-              <td>{{ p.sku }}</td>
-              <td>{{ p.barcode }}</td>
-              <td>
-                <button *hasPermission="'EDITAR_PRODUCTOS'" type="button" (click)="editProduct(p)" class="edit">Editar</button>
-                <button *hasPermission="'ELIMINAR_PRODUCTOS'" type="button" (click)="deleteProduct(p.id)" class="delete">Eliminar</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <tbody>
+                <tr *ngFor="let p of products">
+                  <td><img [src]="p.img" alt="{{ p.name }}" class="img"></td>
+                  <td>{{ p.name }}</td>
+                  <td>${{ p.price }}</td>
+                  <td>{{ p.stock }}</td>
+                  <td>{{ p.categoryName }}</td>
+                  <td>{{ p.sku }}</td>
+                  <td>{{ p.barcode }}</td>
+                  <td>
+                    <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
+                    <div class="table-actions">
+                      <button *hasPermission="'EDITAR_PRODUCTOS'" type="button" (click)="editProduct(p)" class="edit">Editar</button>
+                      <button *hasPermission="'ELIMINAR_PRODUCTOS'" type="button" (click)="deleteProduct(p.id)" class="delete">Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </main>

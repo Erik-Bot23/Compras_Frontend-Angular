@@ -69,6 +69,18 @@
   color: #ef4444;
 }
 
+/* Icono de estado (greencircle.png / redCircle.png):
+   - Los PNG fuente miden 512x512; sin dimensiones explícitas reventarian
+     la tarjeta .cash-info y no se alinearian con el texto "Abierta/Cerrada".
+   - 16px + align-items: center (heredado de .cash-status) → el circulo
+     queda al mismo nivel del texto, como un punto indicador de semaforo. */
+.cash-status img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .cash-data{
   display:flex;
   justify-content:space-between;
@@ -309,43 +321,66 @@ tbody tr:hover {
   background: #020617;
 }
 
-td button {
+/* Botones de icono del carrito (botones +, -, eliminar):
+   - Boton cuadrado 30x30 con display:inline-flex para centrar el icono.
+   - El CSS anterior usaba :nth-child(1/2/3); ahora cada boton tiene su clase
+     (btn-inc/btn-dec/btn-del) → el color no depende del orden en el DOM. */
+.btn-inc,
+.btn-dec,
+.btn-del {
   margin: 2px;
-  padding: 5px 8px;
+  padding: 0;
+  width: 30px;
+  height: 30px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: 0.2s;
+  flex-shrink: 0;
 }
 
-/* + */
-td button:nth-child(1) {
+/* Imagen dentro del boton:
+   - Los PNG de assets/icons miden 512x512 → dimensiones fijas de 16px.
+   - object-fit: contain respeta la proporcion de la imagen.
+   - pointer-events:none hace que el clic llegue siempre al <button>.
+   - filter: brightness(0) invert(1) pinta el icono de blanco (mismo truco del
+     sidebar). Si tus PNG ya traen su propio color, BORRA esta linea. */
+.btn-inc img,
+.btn-dec img,
+.btn-del img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* + Verde */
+.btn-inc {
   background: #22c55e;
-  color: white;
 }
 
-td button:nth-child(1):hover {
+.btn-inc:hover {
   background: #16a34a;
 }
 
-/* - */
-td button:nth-child(2) {
+/* - Amarillo */
+.btn-dec {
   background: #eab308;
-  color: black;
 }
 
-td button:nth-child(2):hover {
+.btn-dec:hover {
   background: #ca8a04;
 }
 
-/* eliminar */
-td button:nth-child(3) {
+/* Eliminar rojo */
+.btn-del {
   background: #ef4444;
-  color: white;
 }
 
-td button:nth-child(3):hover {
+.btn-del:hover {
   background: #dc2626;
 }
 

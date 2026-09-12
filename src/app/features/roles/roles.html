@@ -41,28 +41,44 @@
                 </div>
             </div>
 
+            <!-- Panel de la tabla:
+           .table-panel → area flexible que toma todo el ancho restante del flex
+                (cuando el formulario de permisos no existe, ocupa el 100%).
+           .table-container/.table-card/.table-scroll → estructura de tabla
+                responsive compartida (styles.css). -->
             <div class="table-panel">
                 <div class="table-container fade-in">
-                    <table>
-                        <tr>
-                            <th>Rol</th>
-                            <th>Permisos</th>
-                            <th>Acciones</th>
-                        </tr>
+                    <div class="table-card">
+                        <div class="table-scroll">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Rol</th>
+                                        <th>Permisos</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
 
-                        <tr *ngFor="let c of roles">
-                            <td>{{ c.name }}</td>
-                            <td>{{ c.permissions.length }} permisos</td>
-                            <td>
-                                <button *hasPermission="'EDITAR_ROLES'" class="editRole" (click)="editRole(c)">
-                                    Editar
-                                </button>
-                                <button *hasPermission="'ELIMINAR_ROLES'" class="delete" (click)="deleteRole(c.id)">
-                                    Eliminar
-                                </button>
-                            </td>
-                        </tr>
-                    </table>
+                                <tbody>
+                                    <tr *ngFor="let c of roles">
+                                        <td>{{ c.name }}</td>
+                                        <td>{{ c.permissions.length }} permisos</td>
+                                        <td>
+                                            <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
+                                            <div class="table-actions">
+                                                <button *hasPermission="'EDITAR_ROLES'" class="editRole" (click)="editRole(c)">
+                                                    Editar
+                                                </button>
+                                                <button *hasPermission="'ELIMINAR_ROLES'" class="delete" (click)="deleteRole(c.id)">
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

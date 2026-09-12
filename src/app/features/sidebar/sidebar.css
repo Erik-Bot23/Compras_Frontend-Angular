@@ -1,0 +1,49 @@
+/* ==========================
+   ICONOS DEL SIDEBAR
+   ========================== */
+
+/* Icono de cada seccion del menu (viene de item.icon en el array menuItems):
+   - PNG fuente de 512x512 → dimensiones fijas de 20px + object-fit: contain.
+   - flex-shrink: 0: al colapsar el sidebar los iconos no se aplastan.
+   - filter: brightness(0) invert(1): convierte CUALQUIER icono a blanco sin
+     tocar el archivo PNG. Es el truco estandar para temas oscuros: primero
+     apaga los colores (negro) y luego los invierte (blanco). El tema es
+     oscuro, asi los iconos originales negros no se pierden. */
+.menu-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
+}
+
+/* Espacio entre icono y texto de cada seccion.
+   Se usa gap (no margin) a proposito: cuando el sidebar colapsa, el texto se
+   oculta con display:none y el icono queda perfectamente centrado sin huecos. */
+.nav a {
+  gap: 10px;
+}
+
+/* Icono del boton "Menú" (assets/icons/menu.png):
+   - El PNG fuente mide 512x512. Sin dimensiones explícitas se renderizaria
+     a 512px y romperia el layout del boton .menu-title.
+   - width/height fijos (20px) + object-fit: contain → se escala
+     proporcionalmente dentro del cuadro conservando su forma original.
+   - flex-shrink: 0 evita que el icono se aplaste cuando el sidebar se colapsa.
+   - Mismo filter que .menu-icon: icono blanco sobre el fondo oscuro del boton. */
+.menu-title img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
+}
+
+/* Foto/firma del usuario (assets/icons/perfil.png):
+   - El PNG fuente mide 128x128. Los estilos base (.user-box img: 40px,
+     circulo, borde azul) ya viven en styles.css.
+   - Aqui solo se refina el recorte: object-fit: cover llena los 40x40px
+     recortando los bordes si la imagen no es cuadrada, sin deformarla. */
+.user-box img {
+  object-fit: cover;
+}

@@ -50,43 +50,56 @@
         Cargando usuarios...
       </div>
 
+      <!-- Estructura de tabla responsive (clases compartidas en styles.css):
+           .table-container → wrapper de layout (flex column).
+           .table-card      → tarjeta visual oscura con bordes redondeados.
+           .table-scroll    → scroll horiz/vertical en pantallas pequenas.
+           Si el usuario solo ve, esta div es el unico hijo del grid y el CSS
+           (:only-child) la expande a todo el ancho de la pagina. -->
       <div *ngIf="!loading" class="table-container fade-in">
-        <table class="product-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Correo</th>
-              <th>Rol</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
+        <div class="table-card">
+          <div class="table-scroll">
+            <table class="product-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
 
-          <tbody>
-            <tr *ngFor="let p of users">
-              <td>{{ p.name }}</td>
-              <td>{{ p.email }}</td>
-              <td>{{ p.roleName }}</td>
-              <td>{{ p.active ? 'Activo' : 'Inactivo' }}</td> <!--Se muestra si esta activo o inactivo-->
-              <td>
-                <!--Se verifica si esta activo el usuario-->
-                <button *hasPermission="'EDITAR_USUARIOS'" type="button" (click)="editUser(p)" class="edit">Editar</button>
+              <tbody>
+                <tr *ngFor="let p of users">
+                  <td>{{ p.name }}</td>
+                  <td>{{ p.email }}</td>
+                  <td>{{ p.roleName }}</td>
+                  <td>{{ p.active ? 'Activo' : 'Inactivo' }}</td> <!--Se muestra si esta activo o inactivo-->
+                  <td>
+                    <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
+                    <div class="table-actions">
+                      <!--Se verifica si esta activo el usuario-->
+                      <button *hasPermission="'EDITAR_USUARIOS'" type="button" (click)="editUser(p)" class="edit">Editar</button>
 
-                <ng-container *hasPermission="'DESACTIVAR_USUARIOS'">
-                  <button *ngIf="p.active" type="button" (click)="deactivateUser(p.id)" class="delete">
-                    Dar de baja
-                  </button>
-                </ng-container>
-                
-                <ng-container *hasPermission="'ACTIVAR_USUARIOS'">
-                  <button *ngIf="!p.active" type="button" (click)="activateUser(p.id)" class="activate">
-                    Dar de alta
-                  </button>
-                </ng-container>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                      <ng-container *hasPermission="'DESACTIVAR_USUARIOS'">
+                        <button *ngIf="p.active" type="button" (click)="deactivateUser(p.id)" class="delete">
+                          Dar de baja
+                        </button>
+                      </ng-container>
+
+                      <ng-container *hasPermission="'ACTIVAR_USUARIOS'">
+                        <button *ngIf="!p.active" type="button" (click)="activateUser(p.id)" class="activate">
+                          Dar de alta
+                        </button>
+                      </ng-container>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </main>

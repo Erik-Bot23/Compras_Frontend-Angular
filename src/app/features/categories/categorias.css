@@ -99,58 +99,25 @@
   color: #cbd5e1;
 }
 
-/*Contenedor de la tabla*/
+/*Contenedor de la tabla:
+   Antes tenia display:flex + justify-content:center → la tabla se veia centrada
+   y con su ancho natural (no ocupaba la pagina). Ahora flex column + ancho 100%
+   para que .table-card/.table-scroll (styles.css) la estiren a todo el ancho.
+   No usa main-grid (a diferencia de productos/usuarios), por eso no necesita
+   la regla :only-child: es un hijo directo de .content (flex column) y al
+   desaparecer el formulario ocupa el 100% automaticamente. */
 .table-container {
   width: 100%;
+  min-width: 0;
   height: auto;
-  overflow-y: auto;
+  overflow: hidden;
   align-self: stretch;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
 }
 
-.table-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.table-container::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-
-.table-container::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 10px;
-}
-
-.table-container::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
-
-.img {
-  height: 40px;
-}
-
-/*La tabla de productos*/
-.product-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #020617;
-}
-
-.product-table th, td {
-  padding: 10px;
-  border-bottom: 1px solid #334155;
-  text-align: center;
-}
-
-.product-table th {
-  background: #1e293b;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-/*Botones*/
+/*Botones de accion:
+   El espaciado lo maneja .table-actions (flex con gap, styles.css). */
 .edit, .delete {
   border: none;
   padding: 6px 12px;
@@ -158,12 +125,12 @@
   color: white;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.25s eas
+  white-space: nowrap;
+  transition: all 0.25s ease;
 }
 
 .edit {
   background: linear-gradient(135deg, #facc15, #eab308);
-  margin-right: 8px;
 }
 
 .edit:hover {

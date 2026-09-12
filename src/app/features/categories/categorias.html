@@ -21,22 +21,37 @@
             <button (click)="saveCategory()">Guardar</button>
         </div>
 
+        <!-- Estructura de tabla responsive (clases compartidas en styles.css):
+           .table-card  → tarjeta visual oscura con bordes redondeados.
+           .table-scroll → scroll horizontal si la ventana es muy pequena.
+           thead/tbody separados permiten el header sticky de styles.css. -->
         <div class="table-container fade-in">
-            <table>
-                <tr>
-                    <th>Categoria</th>
-                    <th>Acciones</th>
-                </tr>
+            <div class="table-card">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Categoria</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
 
-                <tr *ngFor="let c of categories">
-                    <td>{{ c.name }}</td>
-                    <td>
-                        <button *hasPermission="'ELIMINAR_CATEGORIAS'" (click)="deleteCategory(c.id)" class="delete">
-                            Eliminar
-                        </button>
-                    </td>
-                </tr>
-            </table>
+                        <tbody>
+                            <tr *ngFor="let c of categories">
+                                <td>{{ c.name }}</td>
+                                <td>
+                                    <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
+                                    <div class="table-actions">
+                                        <button *hasPermission="'ELIMINAR_CATEGORIAS'" (click)="deleteCategory(c.id)" class="delete">
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div> 
   </main>
 </div>

@@ -7,18 +7,23 @@
 -->
 <aside class="sidebar" [class.collapsed]="!sidebar.menuOpen">
   <div class="user-box" (click)="perfil()">
-    <img src="assets/images/avatar.png">
+    <img src="assets/icons/perfil.png">
     <span class="text">{{ userName }}</span>
   </div>
 
+  <!-- Boton "Menú": el icono (menu.png) reemplazo al caracter "☰".
+     El tamano lo controla .menu-title img en sidebar.css (los PNG de
+     assets/icons vienen en 512x512 y sin CSS se verian gigantes). -->
   <div class="menu-title" (click)="toggleMenu()">
-    ☰ <span class="text">Menú</span>
+    <img src="assets/icons/menu.png" alt="Abrir menú">
+    <span class="text">Menú</span>
   </div>
 
   <!--Navegación-->
   <nav class="nav">
     <!--Esta es la página de cobro (inicio)-->
     <a (click)="inicio()">
+      <img src="assets/icons/hogar.png" alt="Inicio" class="menu-icon">
       <span class="text">Inicio</span>
     </a>
 
@@ -26,8 +31,11 @@
       <!-- 
         auth.hasPermission(item.permission) usa la directiva *hasPermission
         que muestra/oculta el enlace segun los permisos del usuario logueado.
+        El icono sale del array (item.icon) con [src]; *ngIf evita pintar un
+        <img> roto cuando la seccion no tiene icono en assets/icons.
       -->
       <a *ngIf="auth.hasPermission(item.permission)" (click)="go(item.route)">
+        <img *ngIf="item.icon" [src]="item.icon" [alt]="item.label" class="menu-icon">
         <span class="text">
           {{ item.label }}
         </span>

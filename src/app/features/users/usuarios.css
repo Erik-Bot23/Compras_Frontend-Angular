@@ -92,52 +92,38 @@
   color: white;
 }
 
-/*Contenedor de la tabla*/
+/*Contenedor de la tabla:
+   flex column + min-width:0 (importante en CSS Grid) para que .table-card/
+   .table-scroll (styles.css) controlen altura y scroll horizontal sin
+   desbordar la columna 1fr. */
 .table-container {
   width: 100%;
+  min-width: 0;
   height: auto;
-  overflow-y: auto;
+  overflow: hidden;
   align-self: stretch;
+  display: flex;
+  flex-direction: column;
 }
 
-.table-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.table-container::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-
-.table-container::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 10px;
-}
-
-.table-container::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+/* FIX del bug de ancho:
+   Cuando el usuario SOLO tiene permiso de VER (sin formulario), la tabla es el
+   unico hijo del grid "350px 1fr" y sin esto quedaba atrapada en los 350px.
+   :only-child + grid-column: 1 / -1 → ocupa todo el ancho del grid. */
+.main-grid > .table-container:only-child {
+  grid-column: 1 / -1;
 }
 
 /*La tabla de usuarios*/
 .product-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #020617;
+  /* min-width fuerza scroll horizontal de .table-scroll en lugar de aplastar
+     las 5 columnas en pantallas estrechas */
+  min-width: 680px;
 }
 
-.product-table th, td {
-  padding: 10px;
-  border-bottom: 1px solid #334155;
-  text-align: center;
-}
-
-.product-table th {
-  background: #1e293b;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-/*Botones*/
+/*Botones de accion:
+   El espaciado lo maneja .table-actions (flex con gap, styles.css).
+   white-space:nowrap evita que las etiquetas se partan en dos lineas. */
 .edit, .delete, .activate {
   border: none;
   padding: 6px 12px;
@@ -145,12 +131,12 @@
   color: white;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.25s eas
+  white-space: nowrap;
+  transition: all 0.25s ease;
 }
 
 .edit {
   background: linear-gradient(135deg, #facc15, #eab308);
-  margin-right: 8px;
 }
 
 .edit:hover {

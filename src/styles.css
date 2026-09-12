@@ -180,6 +180,144 @@ body {
   animation: fade-in-up 200ms ease-out forwards;
 }
 
+/* ==========================
+   TABLAS RESPONSIVE MODERNAS
+   Clases compartidas por los CRUD (productos, categorias, usuarios, roles)
+   Estructura requerida en el HTML:
+     .table-container > .table-card > .table-scroll > table
+
+   - .table-container: solo define el layout del wrapper (flex column) y
+     los estilos especificos de cada componente (ancho/permisos). Su unica
+     funcion aqui es darle altura al flujo vertical.
+   - .table-card: es la "tarjeta" visual (panel oscuro, bordes redondeados,
+     sombra). Encierra la tabla como si fuera un componente de Material.
+   - .table-scroll: area desplazable. Con overflow:auto la tabla hace scroll
+     horizontal/vertical en pantallas pequenas en vez de aplastar columnas.
+   ========================== */
+
+/* Contenedor visual tipo tarjeta: fondo mas claro que la pagina, borde sutil,
+   esquinas redondeadas y sombra. overflow:hidden recorta la tabla al borde
+   redondeado (los headers sticky no se salen de la esquina). */
+.table-card {
+  width: 100%;
+  min-width: 0;
+  background: #1e293b;
+  border: 1px solid #263449;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Area desplazable:
+   - flex:1 + min-height:0 → ocupa el alto restante de la tarjeta y permite
+     scroll interno (en vez de desbordar la pagina).
+   - overflow:auto → si la tabla es mas ancha o alta que el area, aparece
+     scroll horizontal/vertical segun corresponda.
+   - -webkit-overflow-scrolling:touch → scroll con inercia en moviles. */
+.table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ancho base minimo para evitar que las columnas se compriman;
+   cada componente puede sobrescribir .product-table o su tabla con min-width mayor
+   (ej: productos usa 880px por tener 8 columnas). */
+.table-card table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+/* Cabecera: fondo mas oscuro, texto en mayusculas y pequeno para contraste.
+   position:sticky + top:0 → la cabecera permanece visible al hacer scroll
+   vertical dentro de .table-scroll. z-index:2 la mantiene por encima de filas. */
+.table-card th {
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 13px 14px;
+  text-align: center;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-bottom: 2px solid #334155;
+}
+
+/* Celdas: white-space:nowrap mantiene cada valor en una linea; si el conjunto
+   no cabe, .table-scroll muestra el scroll horizontal en vez de recortar. */
+.table-card td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #1e293b;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Fila base: transicion para que el hover/cebra se vea suave. */
+.table-card tbody tr {
+  transition: background 0.15s ease;
+}
+
+/* Hover sobre fila: resalta la fila bajo el cursor. */
+.table-card tbody tr:hover {
+  background: #1b2a44;
+}
+
+/* Cebra: filas pares con fondo ligeramente distinto para leer facilmente. */
+.table-card tbody tr:nth-child(even) {
+  background: #121f36;
+}
+
+.table-card tbody tr:nth-child(even):hover {
+  background: #1b2a44;
+}
+
+/* Ultima columna (Acciones) siempre centrada, aunque las anteriores cambien */
+.table-card table th:last-child,
+.table-card table td:last-child {
+  text-align: center;
+}
+
+/* Contenedor de botones de accion por fila:
+   flex con gap reemplaza los margin-right sueltos de los botones, y
+   flex-wrap permite que los botones bajen a otra linea en filas angostas. */
+.table-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Scrollbars del area de tabla (estilo oscuro consistente con la UI) */
+.table-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
 /* Skeleton loader opcional para percibir carga */
 .skeleton {
   background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);

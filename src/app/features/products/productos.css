@@ -115,56 +115,53 @@
   color: white;
 }
 
-/*Contenedor de la tabla*/
+/*Contenedor de la tabla:
+   Se convirtio en flex column para que .table-card/.table-scroll (estilos
+   compartidos en styles.css) controlen altura y scroll interno.
+   min-width:0 es clave en CSS Grid: permite que este hijo se encoja por debajo
+   del ancho de su contenido y así el scroll horizontal funcione en vez de
+   desbordar la columna 1fr. */
 .table-container {
   width: 100%;
+  min-width: 0;
   height: auto;
-  overflow-y: auto;
+  overflow: hidden;
   align-self: stretch;
+  display: flex;
+  flex-direction: column;
 }
 
-.table-container::-webkit-scrollbar {
-  width: 8px;
+/* FIX del bug de ancho:
+   Cuando el usuario SOLO tiene permiso de VER (sin formulario de crear/editar),
+   el grid "350px 1fr" colocaba la tabla como unico hijo en la primera columna
+   (350px) → se contraia. Con :only-child se detecta que es el unico hijo y
+   grid-column: 1 / -1 la expande a todo el ancho del grid.
+   Nota: si el formulario existe, la tabla queda en la columna 1fr y ocupa el
+   resto del ancho automaticamente. */
+.main-grid > .table-container:only-child {
+  grid-column: 1 / -1;
 }
 
-.table-container::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-
-.table-container::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 10px;
-}
-
-.table-container::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
-
+/* Imagen del producto: dimension fija + cover para que no deforme, y
+   esquinas redondeadas acordes a la tarjeta. */
 .img {
   height: 40px;
+  width: 40px;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
 /*La tabla de productos*/
 .product-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #020617;
+  /* min-width > al ancho del area disponible fuerza el scroll horizontal
+     de .table-scroll en pantallas pequenas; asi las 8 columnas no se aplastan */
+  min-width: 880px;
 }
 
-.product-table th, td {
-  padding: 10px;
-  border-bottom: 1px solid #334155;
-  text-align: center;
-}
-
-.product-table th {
-  background: #1e293b;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-/*Botones*/
+/*Botones de accion:
+   El espaciado entre ellos ya no usa margin-right: lo maneja .table-actions
+   (flex con gap, styles.css). white-space:nowrap evita que "Editar"/"Eliminar"
+   se partan en dos lineas dentro de la celda de acciones. */
 .edit, .delete {
   border: none;
   padding: 6px 12px;
@@ -172,12 +169,12 @@
   color: white;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.25s eas
+  white-space: nowrap;
+  transition: all 0.25s ease;
 }
 
 .edit {
   background: linear-gradient(135deg, #facc15, #eab308);
-  margin-right: 8px;
 }
 
 .edit:hover {
