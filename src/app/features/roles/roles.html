@@ -60,7 +60,8 @@
                                 </thead>
 
                                 <tbody>
-                                    <tr *ngFor="let c of roles">
+                                    <!-- pipe 'paginate: page : pageSize' recorta la lista a una pagina -->
+                                    <tr *ngFor="let c of roles | paginate: page : pageSize">
                                         <td>{{ c.name }}</td>
                                         <td>{{ c.permissions.length }} permisos</td>
                                         <td>
@@ -78,6 +79,14 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Pie de tabla con paginacion -->
+                        <app-pagination
+                            [total]="roles.length"
+                            [pageSize]="pageSize"
+                            [page]="page"
+                            (pageChange)="page = $event">
+                        </app-pagination>
                     </div>
                 </div>
             </div>

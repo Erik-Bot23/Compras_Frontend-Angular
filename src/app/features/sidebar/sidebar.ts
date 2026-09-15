@@ -95,6 +95,12 @@ export class Sidebar {
       permission: 'VER_REPORTES',
       icon: 'assets/icons/reportes.png'
     },
+    {
+      label: 'Historial de ventas',
+      route: '/salehistory',
+      permission: 'VER_VENTAS',
+      icon: ''
+    },
   ]
 
   go(route: string){

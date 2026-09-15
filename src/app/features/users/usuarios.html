@@ -58,6 +58,28 @@
            (:only-child) la expande a todo el ancho de la pagina. -->
       <div *ngIf="!loading" class="table-container fade-in">
         <div class="table-card">
+          <!-- Barra de filtros: rol + estado (activo/inactivo). [ngValue]
+               preserva number/boolean para las comparaciones estrictas del
+               getter filteredUsers. (ngModelChange) resetea la pagina. -->
+          <div class="table-filter-bar">
+            <div class="table-filter-field">
+              <label for="filterRole">Filtrar por rol</label>
+              <select class="filter-select" id="filterRole" [(ngModel)]="selectedRole" (ngModelChange)="onFilterChange()">
+                <option [ngValue]="null">Todos</option>
+                <option *ngFor="let r of roles" [ngValue]="r.id">{{ r.name }}</option>
+              </select>
+            </div>
+
+            <div class="table-filter-field">
+              <label for="filterState">Filtrar por estado</label>
+              <select class="filter-select" id="filterState" [(ngModel)]="selectedState" (ngModelChange)="onFilterChange()">
+                <option [ngValue]="null">Todos</option>
+                <option [ngValue]="true">Activo</option>
+                <option [ngValue]="false">Inactivo</option>
+              </select>
+            </div>
+          </div>
+
           <div class="table-scroll">
             <table class="product-table">
               <thead>
@@ -71,7 +93,9 @@
               </thead>
 
               <tbody>
-                <tr *ngFor="let p of users">
+                <!-- El getter 'filteredUsers' aplica rol+estado y el pipe
+                     'paginate' recorta el resultado a una pagina. -->
+                <tr *ngFor="let p of filteredUsers | paginate: page : pageSize">
                   <td>{{ p.name }}</td>
                   <td>{{ p.email }}</td>
                   <td>{{ p.roleName }}</td>
@@ -99,6 +123,14 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Pie de tabla con paginacion: total = lista FILTRADA -->
+          <app-pagination
+            [total]="filteredUsers.length"
+            [pageSize]="pageSize"
+            [page]="page"
+            (pageChange)="page = $event">
+          </app-pagination>
         </div>
       </div>
     </div>

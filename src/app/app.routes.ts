@@ -13,6 +13,7 @@ export const routes: Routes = [
     { path: 'reportes', loadComponent: () => import('./features/reports/reportes').then(m=>m.Reportes), canActivate:[PermissionGuard], data:{permission: 'VER_REPORTES'} },
     { path: 'usuarios', loadComponent: () => import('./features/users/usuarios').then(m=>m.Usuarios), canActivate:[PermissionGuard], data:{permission: 'VER_USUARIOS'} },
     { path: 'ventas', loadComponent: () => import('./features/sales/ventas').then(m=>m.Ventas), canActivate:[PermissionGuard], data:{permission: 'VER_VENTAS'} },
+    { path: 'salehistory', loadComponent: () => import('./features/salehistory/salehistory').then(m=>m.Salehistory), canActivate:[PermissionGuard], data:{permission: 'VER_VENTAS'} },
     { path: 'caja', loadComponent: () => import('./features/cash/caja').then(m=>m.Caja), canActivate:[PermissionGuard], data:{permission: 'VER_CAJA'} },
     { path: 'categorias', loadComponent: () => import('./features/categories/categorias').then(m=>m.Categorias), canActivate:[PermissionGuard], data:{permission: 'VER_CATEGORIAS'} },
     { path: 'roles', loadComponent: () => import('./features/roles/roles').then(m=>m.Roles), canActivate:[PermissionGuard], data:{permission: 'VER_ROLES'} },

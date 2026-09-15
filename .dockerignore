@@ -6,10 +6,20 @@ dist
 
 .git
 
+.gitignore
+
 .vscode
+
+.env
+
+.env.*
+
+coverage
 
 Dockerfile
 
 README.md
 
 npm-debug.log
+
+*.log

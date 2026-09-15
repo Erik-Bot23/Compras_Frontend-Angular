@@ -15,8 +15,12 @@
     <!--Contenido principal-->
     <main class="content">
        <div class="top-bar">
-            <!--Buscador de productos (barcode + nombre)-->
+            <!-- Tarjeta de busqueda: mismo estilo visual que .cash-info (fondo, borde,
+                 radio 16px, padding y sombra). La clase .search-bar en CSS ahora
+                 es la "tarjeta"; los inputs y el dropdown viven dentro de ella. -->
             <div class="search-bar">
+                <h4>Buscar producto</h4>
+
                 <input
                     [(ngModel)]="sale.barcode"
                     (keyup.enter)="sale.searchBarcode()"
@@ -230,6 +234,14 @@
                     </div>
 
                     <div class="modal-buttons">
+                        <!-- Si el pago anterior fue rechazado, permitir reintentarlo sin
+                             volver a capturar los datos de la tarjeta -->
+                        <button type="button" *ngIf="sale.pendingPaymentId !== null"
+                                (click)="sale.retryCardPayment()"
+                                [disabled]="sale.cardProcessing" class="btn-retry">
+                            Reintentar pago
+                        </button>
+
                         <button type="button" (click)="sale.confirmCardPayment()" [disabled]="sale.cardProcessing" class="btn-pay">
                             {{ sale.cardProcessing ? 'Procesando...' : 'Pagar' }}
                         </button>

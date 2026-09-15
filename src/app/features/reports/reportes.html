@@ -1,8 +1,186 @@
-<!-- 
-  REPORTES - placeholder (no implementado)
-  sidebar.menuOpen del SidebarService (singleton).
-  [class.collapsed]="!sidebar.menuOpen" → transicion 800ms ease-in-out.
+<!--
+  REPORTES - dashboard analítico (datos reales de /api/reports)
+  Trabaja en 3 bloques:
+    1) Filtros + tarjetas de resumen (GET /api/reports/summary)
+    2) Gráficas: tendencia, top productos, métodos de pago, categorías
+    3) Stock bajo (GET /api/reports/low-stock) + Corte de caja (GET /api/cash/summary)
+  Las exportaciones (PDF/XLSX) se hacen 100% en el cliente.
 -->
 <div class="layout" [class.collapsed]="!sidebar.menuOpen">
-    <app-sidebar (toggle)="sidebar.menuOpen = $event"></app-sidebar>
+  <app-sidebar (toggle)="sidebar.menuOpen = $event"></app-sidebar>
+
+  <main class="content">
+    <!-- Cabecera -->
+    <div class="header-row fade-in">
+      <h2>Reportes</h2>
+      <div class="actions">
+        <button class="btn btn-secondary" (click)="exportPDF()">Exportar PDF</button>
+        <button class="btn btn-secondary" (click)="exportExcel()">Exportar Excel</button>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card filters fade-in">
+      <div class="filter">
+        <label>Desde</label>
+        <input type="date" [(ngModel)]="from" />
+      </div>
+      <div class="filter">
+        <label>Hasta</label>
+        <input type="date" [(ngModel)]="to" />
+      </div>
+      <div class="filter">
+        <label>Agrupación</label>
+        <select [(ngModel)]="groupBy">
+          <option value="DAY">Día</option>
+          <option value="MONTH">Mes</option>
+          <option value="YEAR">Año</option>
+        </select>
+      </div>
+      <div class="filter">
+        <label>Top productos</label>
+        <input type="number" min="1" max="100" [(ngModel)]="topN" />
+      </div>
+      <div class="filter">
+        <label>Stock máximo</label>
+        <input type="number" min="0" [(ngModel)]="threshold" />
+      </div>
+      <button class="btn btn-primary" (click)="applyFilters()" [disabled]="loading">
+        {{ loading ? 'Cargando…' : 'Aplicar' }}
+      </button>
+    </div>
+
+    <!-- Tarjetas resumen -->
+    <div class="summary-grid fade-in" *ngIf="summary">
+      <div class="card summary-card">
+        <span class="summary-label">Ventas</span>
+        <span class="summary-value">{{ summary.totalSales }}</span>
+      </div>
+      <div class="card summary-card">
+        <span class="summary-label">Total vendido</span>
+        <span class="summary-value">{{ summary.totalAmount | number:'1.2-2' }}</span>
+      </div>
+      <div class="card summary-card">
+        <span class="summary-label">Ticket promedio</span>
+        <span class="summary-value">{{ summary.averageTicket | number:'1.2-2' }}</span>
+      </div>
+      <div class="card summary-card" *ngFor="let m of summary.paymentMethods">
+        <span class="summary-label">{{ m.label }}</span>
+        <span class="summary-value">{{ m.total | number:'1.2-2' }}</span>
+        <span class="summary-sub">{{ m.count }} tickets</span>
+      </div>
+    </div>
+
+    <!-- Gráficas -->
+    <div class="charts-grid fade-in">
+      <div class="card chart-card chart-full">
+        <h3>Tendencia de ventas</h3>
+        <div class="chart-box"><canvas #trendCanvas></canvas></div>
+      </div>
+
+      <div class="card chart-card">
+        <h3>Métodos de pago</h3>
+        <div class="chart-box"><canvas #methodCanvas></canvas></div>
+      </div>
+
+      <div class="card chart-card">
+        <h3>Top productos</h3>
+        <div class="chart-box"><canvas #topCanvas></canvas></div>
+      </div>
+
+      <div class="card chart-card chart-full">
+        <h3>Rendimiento por categoría</h3>
+        <div class="chart-box"><canvas #catCanvas></canvas></div>
+      </div>
+    </div>
+
+    <!-- Stock bajo -->
+    <div class="table-container fade-in">
+      <div class="table-card">
+        <div class="table-title">
+          <h3>Stock bajo (≤ {{ threshold }})</h3>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>SKU</th>
+                <th>Código de barras</th>
+                <th>Categoría</th>
+                <th>Stock</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="loading">
+                <td colspan="5" class="empty-row">Cargando…</td>
+              </tr>
+              <tr *ngFor="let p of lowStock">
+                <td>{{ p.name }}</td>
+                <td>{{ p.sku || '—' }}</td>
+                <td>{{ p.barcode || '—' }}</td>
+                <td>{{ p.category || 'Sin categoría' }}</td>
+                <td>
+                  <span class="stock-badge" [class.danger]="p.stock <= 0" [class.warn]="p.stock > 0">
+                    {{ p.stock }}
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="!loading && lowStock.length === 0">
+                <td colspan="5" class="empty-row">Sin productos por debajo del umbral</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Corte de caja (imprimible / exportable) -->
+    <div class="table-container cortes fade-in">
+      <div class="table-card corte-print">
+        <div class="table-title">
+          <h3>Corte de caja</h3>
+          <div class="actions">
+            <button class="btn btn-secondary" (click)="printCorte()">Imprimir</button>
+            <button class="btn btn-secondary" (click)="exportCortePDF()">PDF</button>
+            <button class="btn btn-secondary" (click)="exportCorteExcel()">Excel</button>
+          </div>
+        </div>
+
+        <div class="corte-body" *ngIf="cashSummary; else noCash">
+          <div class="corte-row"><span>Caja #</span><strong>{{ cashSummary.cashId }}</strong></div>
+          <div class="corte-row"><span>Fondo inicial</span><strong>{{ cashSummary.openingAmount | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Ventas en efectivo</span><strong>{{ cashSummary.cashSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Ventas débito</span><strong>{{ cashSummary.debitSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Ventas crédito</span><strong>{{ cashSummary.creditSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row total"><span>Total ventas</span><strong>{{ cashSummary.totalSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Tickets</span><strong>{{ cashSummary.totalTickets }}</strong></div>
+          <div class="corte-row total"><span>Monto esperado</span><strong>{{ cashSummary.expectedAmount | number:'1.2-2' }}</strong></div>
+          <div class="corte-row" [class.warn]="cashSummary.difference !== 0">
+            <span>Diferencia</span><strong>{{ cashSummary.difference | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+
+        <ng-template #noCash>
+          <div class="empty-row">No hay caja abierta o cerrada para mostrar (permiso VER_CAJA)</div>
+        </ng-template>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Zona que solo se imprime (window.print) -->
+<div class="print-only corte-print" *ngIf="cashSummary">
+  <h1>Corte de caja</h1>
+  <p>Generado: {{ cashSummary.cashId }} · {{ today | date:'dd/MM/yyyy HH:mm' }}</p>
+  <table>
+    <tr><td>Fondo inicial</td><td>{{ cashSummary.openingAmount | number:'1.2-2' }}</td></tr>
+    <tr><td>Ventas en efectivo</td><td>{{ cashSummary.cashSales | number:'1.2-2' }}</td></tr>
+    <tr><td>Ventas débito</td><td>{{ cashSummary.debitSales | number:'1.2-2' }}</td></tr>
+    <tr><td>Ventas crédito</td><td>{{ cashSummary.creditSales | number:'1.2-2' }}</td></tr>
+    <tr><td>Total ventas</td><td>{{ cashSummary.totalSales | number:'1.2-2' }}</td></tr>
+    <tr><td>Tickets</td><td>{{ cashSummary.totalTickets }}</td></tr>
+    <tr><td>Monto esperado</td><td>{{ cashSummary.expectedAmount | number:'1.2-2' }}</td></tr>
+    <tr><td>Diferencia</td><td>{{ cashSummary.difference | number:'1.2-2' }}</td></tr>
+  </table>
 </div>

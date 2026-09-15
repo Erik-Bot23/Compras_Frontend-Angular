@@ -104,6 +104,20 @@
            grid y el CSS (:only-child) la expande a todo el ancho de la pagina. -->
       <div *ngIf="!loading" class="table-container fade-in">
         <div class="table-card">
+          <!-- Barra de filtros: dropdown con las categorias existentes.
+               [ngValue] preserva el number del id (con [value] llegaria string
+               y la comparacion === del getter fallaria).
+               (ngModelChange) resetea la pagina al cambiar el criterio. -->
+          <div class="table-filter-bar">
+            <div class="table-filter-field">
+              <label for="filterCategory">Filtrar por categoría</label>
+              <select class="filter-select" id="filterCategory" [(ngModel)]="selectedCategory" (ngModelChange)="onCategoryFilterChange()">
+                <option [ngValue]="null">Todas</option>
+                <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
+              </select>
+            </div>
+          </div>
+
           <div class="table-scroll">
             <table class="product-table">
               <thead>
@@ -120,8 +134,10 @@
               </thead>
 
               <tbody>
-                <tr *ngFor="let p of products">
-                  <td><img [src]="p.img" alt="{{ p.name }}" class="img"></td>
+                <!-- El getter 'filteredProducts' aplica el filtro de categoria
+                     y el pipe 'paginate' recorta el resultado a una pagina. -->
+                <tr *ngFor="let p of filteredProducts | paginate: page : pageSize">
+                  <td><img [src]="imageUrl(p.img)" alt="{{ p.name }}" class="img"></td>
                   <td>{{ p.name }}</td>
                   <td>${{ p.price }}</td>
                   <td>{{ p.stock }}</td>
@@ -139,6 +155,17 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Pie de tabla con paginacion:
+               total = longitud de la lista FILTRADA (no la completa); page/
+               pageSize = estado del componente. (pageChange)="page = $event"
+               guarda la pagina elegida. -->
+          <app-pagination
+            [total]="filteredProducts.length"
+            [pageSize]="pageSize"
+            [page]="page"
+            (pageChange)="page = $event">
+          </app-pagination>
         </div>
       </div>
     </div>

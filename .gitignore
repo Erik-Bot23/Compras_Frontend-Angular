@@ -42,3 +42,17 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Entornos / variables locales (por si algún dia se meten secretos)
+.env
+.env.*
+*.local
+
+# Logs generales
+*.log
+
+# NOTA: AGENTS.md ya NO está en .gitignore.
+# Se sube al repo a propósito como única fuente de contexto del proyecto
+# (historial de decisiones + estado actual), para retomar el trabajo desde
+# cualquier máquina. Actualízalo siempre que avances.
+# AGENTS.md

@@ -210,6 +210,58 @@ body {
   flex-direction: column;
 }
 
+/* Barra de filtros (arriba de la tabla):
+   - Mismo lenguaje visual que el pie de paginacion (pagination-bar): fondo
+     #1e293b + borde separador. Va como PRIMER hijo de .table-card, asi el
+     overflow:hidden de la tarjeta redondea sus esquinas superiores.
+   - align-items:flex-end → las etiquetas quedan sobre cada select (baseline
+     abajo). flex-wrap:wrap → en pantallas angostas los filtros se acomodan
+     en varias lineas en vez de desbordarse.
+   - Uso en el HTML:
+       <div class="table-filter-bar">
+         <div class="table-filter-field">
+           <label for="...">Etiqueta</label>
+           <select class="filter-select" ...>...</select>
+         </div>
+       </div> */
+.table-filter-bar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 15px;
+  background: #1e293b;
+  border-bottom: 1px solid #263449;
+}
+
+/* Etiqueta pequena en mayusculas sobre el select */
+.table-filter-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+/* Select del filtro: oscuro, sin recuadros llamativos, en linea con la UI */
+.table-filter-field select.filter-select {
+  min-width: 180px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.table-filter-field select.filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
 /* Area desplazable:
    - flex:1 + min-height:0 → ocupa el alto restante de la tarjeta y permite
      scroll interno (en vez de desbordar la pagina).

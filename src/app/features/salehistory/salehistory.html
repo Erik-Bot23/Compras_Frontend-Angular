@@ -1,7 +1,62 @@
-<tr *ngFor="let sale of sales">
-    <td> {{ sale.id }} </td>
-    <td> {{ sale.saleDate }} </td>
-    <td> {{ sale.total }} </td>
-    <td> {{ sale.paymentMethod }} </td>
-    <td> {{ sale.changeAmount }} </td>
-</tr>
+<!--
+  HISTORIAL DE VENTAS - listado con datos reales del backend (GET /api/sales)
+  sidebar.menuOpen del SidebarService (singleton).
+  [class.collapsed]="!sidebar.menuOpen" → transicion 800ms ease-in-out.
+-->
+<div class="layout" [class.collapsed]="!sidebar.menuOpen">
+  <app-sidebar (toggle)="sidebar.menuOpen = $event"></app-sidebar>
+
+  <!-- CONTENIDO -->
+  <main class="content">
+    <h2>Historial de ventas</h2>
+
+    <!-- Estructura de tabla responsive (clases compartidas en styles.css):
+       .table-container / .table-card / .table-scroll -->
+    <div class="table-container fade-in">
+      <div class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Método de pago</th>
+                <th>Efectivo</th>
+                <th>Cambio</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <!-- pipe 'paginate: page : pageSize' recorta la lista a una pagina -->
+              <tr *ngIf="loading">
+                <td colspan="6" class="empty-row">Cargando ventas…</td>
+              </tr>
+
+              <tr *ngFor="let sale of sales | paginate: page : pageSize">
+                <td>{{ sale.id }}</td>
+                <td>{{ sale.saleDate | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ formatPaymentMethod(sale.paymentMethod) }}</td>
+                <td>{{ sale.cashReceived != null ? (sale.cashReceived | number:'1.2-2') : '—' }}</td>
+                <td>{{ sale.changeAmount != null ? (sale.changeAmount | number:'1.2-2') : '—' }}</td>
+                <td>{{ sale.total | number:'1.2-2' }}</td>
+              </tr>
+
+              <tr *ngIf="!loading && sales.length === 0">
+                <td colspan="6" class="empty-row">No hay ventas registradas</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pie de tabla con paginacion -->
+        <app-pagination
+          [total]="sales.length"
+          [pageSize]="pageSize"
+          [page]="page"
+          (pageChange)="page = $event">
+        </app-pagination>
+      </div>
+    </div>
+  </main>
+</div>

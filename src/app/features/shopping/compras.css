@@ -1,0 +1,337 @@
+/* Pestañas del módulo */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  justify-content: center;
+}
+
+.tab {
+  background: #1e293b;
+  border: 2px solid #334155;
+  color: #cbd5e1;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.tab:hover {
+  transform: translateY(-2px);
+}
+
+.tab.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+/* Barra de acciones sobre la tabla de compras */
+.toolbar {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.toolbar-filter {
+  min-width: 220px;
+}
+
+.toolbar .primary {
+  background: #16a34a;
+  border: none;
+  color: white;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.toolbar .primary:hover {
+  background: #15803d;
+  transform: translateY(-2px);
+}
+
+/* Formulario de proveedores (mismos estilos que categorias/productos) */
+.form-card {
+  background: #1e293b;
+  align-self: start;
+  padding: 16px;
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto 15px auto;
+}
+
+.form-card input, .custom-select {
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 2px solid #334155;
+  background: #020617;
+  color: white;
+  transition: 0.3s;
+  outline: none;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.form-card input:focus, .custom-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 8px rgba(59,130,246,0.4);
+}
+
+.form-card button {
+  margin-top: 10px;
+  background: #2563eb;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.form-card button:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.custom-select {
+  cursor: pointer;
+  appearance: none;
+  display: flex;
+  align-items: center;
+}
+
+.custom-select option {
+  background: #0f172a;
+  color: white;
+}
+
+.table-container {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Botones de acción de las tablas */
+.editRole, .delete, .view, .add-linea {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+
+.view {
+  background: #475569;
+}
+
+.view:hover {
+  background: #334155;
+}
+
+.editRole {
+  background: linear-gradient(135deg, #facc15, #eab308);
+}
+
+.editRole:hover {
+  background: linear-gradient(135deg, #eab308, #ca8a04);
+  transform: scale(1.05);
+}
+
+.delete {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.delete:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: scale(1.05);
+}
+
+/* Detalle expandible (renglones de la compra) */
+.detalle {
+  margin-top: 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.subtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.subtable th, .subtable td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid #1e293b;
+}
+
+/* Badge de margen */
+.badge-margin {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.badge-margin.low {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.badge-margin.mid {
+  background: linear-gradient(135deg, #facc15, #eab308);
+  color: #0f172a;
+}
+
+.badge-margin:not(.low):not(.mid) {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: white;
+}
+
+/* Avisos (permiso faltante / explicación) */
+.aviso {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+/* Modal "Nueva compra" */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 22px;
+  width: min(720px, 94vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal h3 {
+  margin: 0 0 4px 0;
+  text-align: center;
+}
+
+/* Lista de renglones: cada uno es una fila en grid */
+.lineas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.linea {
+  display: grid;
+  grid-template-columns: 2fr 80px 120px 90px 36px;
+  gap: 8px;
+  align-items: center;
+}
+
+.linea input {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid #334155;
+  background: #020617;
+  color: white;
+  outline: none;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.linea-subtotal {
+  text-align: right;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.add-linea {
+  background: #1e293b;
+  border: 2px dashed #334155;
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  color: #94a3b8;
+}
+
+.add-linea:hover {
+  border-color: #3b82f6;
+  color: white;
+}
+
+.modal-total {
+  text-align: right;
+  font-size: 18px;
+  color: white;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.modal-actions button {
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.modal-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-actions .primary {
+  background: #16a34a;
+}
+
+.modal-actions .primary:hover:not(:disabled) {
+  background: #15803d;
+}

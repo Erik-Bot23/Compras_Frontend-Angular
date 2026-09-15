@@ -1,0 +1,20 @@
+<!-- Pie de tabla con paginacion.
+     Se oculta por completo cuando no hay registros (total = 0).
+     Las flechas "←" / "→" son texto simple (sin iconos externos).
+     Los botones se deshabilitan en los extremos para evitar navegar a
+     paginas inexistentes. -->
+<div class="pagination-bar" *ngIf="total > 0">
+  <!-- Contador: rango visible y total de registros -->
+  <span class="pagination-info">
+    Mostrando {{ from }}–{{ to }} de {{ total }}
+  </span>
+
+  <!-- Controles de navegacion -->
+  <div class="pagination-buttons">
+    <button type="button" [disabled]="currentPage <= 0" (click)="prev()">← Anterior</button>
+
+    <span class="pagination-page">Página {{ currentPage + 1 }} de {{ totalPages }}</span>
+
+    <button type="button" [disabled]="currentPage >= totalPages - 1" (click)="next()">Siguiente →</button>
+  </div>
+</div>

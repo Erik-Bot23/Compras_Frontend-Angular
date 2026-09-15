@@ -1,0 +1,281 @@
+/* -------- Página de reportes -------- */
+
+.content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.content h2 {
+  text-align: center;
+  margin: 0;
+}
+
+.card {
+  background: #1e293b;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: 0.25s;
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #2563eb;
+  border-color: transparent;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.empty-row {
+  text-align: center;
+  padding: 24px;
+  opacity: 0.7;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* -------- Filtros -------- */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 16px;
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter label {
+  font-size: 0.72rem;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter input,
+.filter select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font-size: 0.9rem;
+  min-height: 36px;
+}
+
+.filter select option {
+  background: #1e1f2b;
+}
+
+/* -------- Tarjetas resumen -------- */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+}
+
+.summary-label {
+  font-size: 0.72rem;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.summary-sub {
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
+/* -------- Gráficas -------- */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.chart-card {
+  padding: 16px;
+}
+
+.chart-card h3 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.chart-full {
+  grid-column: 1 / -1;
+}
+
+.chart-box {
+  position: relative;
+  height: 300px;
+}
+
+@media (max-width: 800px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  .chart-full {
+    grid-column: auto;
+  }
+}
+
+/* -------- Tablas -------- */
+.table-container {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-card table {
+  min-width: 560px;
+}
+
+.table-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.table-title h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.stock-badge {
+  display: inline-block;
+  min-width: 32px;
+  text-align: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.stock-badge.warn {
+  background: rgba(255, 184, 107, 0.18);
+  color: #ffb86b;
+}
+
+.stock-badge.danger {
+  background: rgba(255, 107, 138, 0.2);
+  color: #ff6b8a;
+}
+
+/* -------- Corte de caja -------- */
+.cortes {
+  margin-top: 4px;
+}
+
+.corte-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 14px 14px;
+  max-width: 420px;
+}
+
+.corte-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
+}
+
+.corte-row.total {
+  font-weight: 700;
+  border-bottom-style: solid;
+}
+
+.corte-row.warn {
+  color: #ffb86b;
+}
+
+/* Zona que solo aparece al imprimir el corte (window.print) */
+.print-only {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-only {
+    visibility: visible;
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .print-only table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .print-only td {
+    border-bottom: 1px solid #333;
+    padding: 6px 4px;
+  }
+}

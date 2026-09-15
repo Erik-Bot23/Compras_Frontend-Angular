@@ -1,3 +1,264 @@
-<div class="layout" [class.collapsed]="!menuOpen">
-    <app-sidebar (toggle)="menuOpen = $event"></app-sidebar>
+<!--
+  COMPRAS - módulo de compras a proveedores
+  Tres pestañas: Compras (historial + registro), Proveedores (CRUD) y
+  Márgenes (costo real vs precio de venta, requiere VER_REPORTES).
+-->
+<div class="layout" [class.collapsed]="!sidebar.menuOpen">
+  <app-sidebar (toggle)="sidebar.menuOpen = $event"></app-sidebar>
+
+  <main class="content">
+    <h2>Módulo de Compras</h2>
+
+    <!-- Tabs (estilos locales en compras.css) -->
+    <div class="tabs">
+      <button class="tab" [class.active]="activeTab === 'compras'" (click)="activeTab = 'compras'">Compras</button>
+      <button class="tab" [class.active]="activeTab === 'proveedores'" (click)="activeTab = 'proveedores'">Proveedores</button>
+      <button class="tab" [class.active]="activeTab === 'margenes'" (click)="activeTab = 'margenes'">Márgenes</button>
+    </div>
+
+    <!-- ==================== PESTAÑA COMPRAS ==================== -->
+    <div *ngIf="activeTab === 'compras'">
+      <div class="toolbar">
+        <button *hasPermission="'CREAR_COMPRAS'" class="primary" (click)="abrirModal()">+ Nueva compra</button>
+
+        <!-- Filtro por proveedor -->
+        <div class="table-filter-field toolbar-filter">
+          <label for="filterProvider">Filtrar por proveedor</label>
+          <select class="filter-select" id="filterProvider" [(ngModel)]="filterProviderId" (ngModelChange)="page = 0">
+            <option [ngValue]="null">Todos</option>
+            <option *ngFor="let p of providers" [ngValue]="p.id">{{ p.name }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-container fade-in">
+        <div class="table-card">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Proveedor</th>
+                  <th>Artículos</th>
+                  <th>Total</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let c of filteredPurchases | paginate: page : pageSize">
+                  <td>{{ c.purchaseDate | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ c.providerName }}</td>
+                  <td>{{ c.totalItems }}</td>
+                  <td>${{ c.total }}</td>
+                  <td>
+                    <div class="table-actions">
+                      <button type="button" class="view" (click)="toggleDetalle(c.id)">
+                        {{ detalleAbiertaIds.has(c.id) ? 'Ocultar' : 'Detalle' }}
+                      </button>
+                      <button *hasPermission="'CANCELAR_COMPRAS'" type="button" class="delete" (click)="cancelarCompra(c.id)">
+                        Cancelar
+                      </button>
+                    </div>
+
+                    <!-- Renglones expandibles de la compra -->
+                    <div *ngIf="detalleAbiertaIds.has(c.id)" class="detalle">
+                      <table class="subtable">
+                        <thead>
+                          <tr>
+                            <th>Producto</th>
+                            <th>Cant.</th>
+                            <th>Costo unit.</th>
+                            <th>Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of c.items">
+                            <td>{{ item.productName }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>${{ item.unitCost }}</td>
+                            <td>${{ item.subtotal }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <app-pagination
+            [total]="filteredPurchases.length"
+            [pageSize]="pageSize"
+            [page]="page"
+            (pageChange)="page = $event">
+          </app-pagination>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PESTAÑA PROVEEDORES ==================== -->
+    <div *ngIf="activeTab === 'proveedores'">
+      <div class="form-card" *ngIf="auth.hasPermission('CREAR_PROVEEDORES') || auth.hasPermission('EDITAR_PROVEEDORES')">
+        <div class="field">
+          <label>Nombre</label>
+          <input [(ngModel)]="formProvider.name" placeholder="Nombre del proveedor">
+        </div>
+        <div class="field">
+          <label>RFC</label>
+          <input [(ngModel)]="formProvider.rfc" placeholder="RFC o identificador fiscal">
+        </div>
+        <div class="field">
+          <label>Teléfono</label>
+          <input [(ngModel)]="formProvider.phone" placeholder="Opcional">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input [(ngModel)]="formProvider.email" placeholder="Opcional">
+        </div>
+
+        <button (click)="guardarProveedor()">{{ editingProviderId ? 'Actualizar proveedor' : 'Guardar proveedor' }}</button>
+        <button *ngIf="editingProviderId" class="delete" (click)="cancelarEdicionProveedor()">Cancelar</button>
+      </div>
+
+      <div class="table-container fade-in">
+        <div class="table-card">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>RFC</th>
+                  <th>Teléfono</th>
+                  <th>Email</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let p of providers | paginate: page : pageSize">
+                  <td>{{ p.name }}</td>
+                  <td>{{ p.rfc }}</td>
+                  <td>{{ p.phone || '—' }}</td>
+                  <td>{{ p.email || '—' }}</td>
+                  <td>
+                    <div class="table-actions">
+                      <button *hasPermission="'EDITAR_PROVEEDORES'" class="editRole" (click)="editarProveedor(p)">Editar</button>
+                      <button *hasPermission="'ELIMINAR_PROVEEDORES'" class="delete" (click)="eliminarProveedor(p.id!)">Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <app-pagination
+            [total]="providers.length"
+            [pageSize]="pageSize"
+            [page]="page"
+            (pageChange)="page = $event">
+          </app-pagination>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PESTAÑA MÁRGENES ==================== -->
+    <div *ngIf="activeTab === 'margenes'">
+      <p *ngIf="!auth.hasPermission('VER_REPORTES')" class="aviso">
+        Necesitas permiso VER_REPORTES para consultar los márgenes.
+      </p>
+
+      <div *ngIf="auth.hasPermission('VER_REPORTES')" class="aviso">
+        Costo real (última compra) vs precio de venta, ordenado de menor a mayor margen.
+        Los primeros son los más urgentes de renegociar con el proveedor.
+      </div>
+
+      <div class="table-container fade-in">
+        <div class="table-card">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>SKU</th>
+                  <th>Costo</th>
+                  <th>Precio</th>
+                  <th>Margen</th>
+                  <th>%</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let m of margins | paginate: page : pageSize">
+                  <td>{{ m.name }}</td>
+                  <td>{{ m.sku || '—' }}</td>
+                  <td>${{ m.cost }}</td>
+                  <td>${{ m.price }}</td>
+                  <td>${{ m.margin }}</td>
+                  <td>
+                    <span class="badge-margin" [class.low]="m.marginPercent < 20" [class.mid]="m.marginPercent >= 20 && m.marginPercent < 40">
+                      {{ m.marginPercent.toFixed(1) }}%
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <app-pagination
+            [total]="margins.length"
+            [pageSize]="pageSize"
+            [page]="page"
+            (pageChange)="page = $event">
+          </app-pagination>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ==================== MODAL "NUEVA COMPRA" ==================== -->
+<div *ngIf="showModal" class="modal-overlay">
+  <div class="modal">
+    <h3>Nueva compra</h3>
+
+    <div class="field">
+      <label>Proveedor</label>
+      <select class="custom-select" [(ngModel)]="modalProviderId">
+        <option [ngValue]="null">Selecciona un proveedor</option>
+        <option *ngFor="let p of providers" [ngValue]="p.id">{{ p.name }}</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Fecha (opcional; si se deja vacía se usa la actual)</label>
+      <input type="date" [(ngModel)]="modalFecha">
+    </div>
+
+    <!-- Renglones de la compra -->
+    <div class="lineas">
+      <div class="linea" *ngFor="let l of lineas; let i = index">
+        <select class="custom-select" [(ngModel)]="l.productId" (ngModelChange)="onProductoSeleccionado(l)">
+          <option [ngValue]="null">Producto...</option>
+          <option *ngFor="let prod of products" [ngValue]="prod.id">{{ prod.name }} (${{ prod.price }})</option>
+        </select>
+        <input type="number" min="1" [(ngModel)]="l.quantity" title="Cantidad">
+        <input type="number" min="0" [(ngModel)]="l.unitCost" title="Costo unitario">
+        <span class="linea-subtotal">${{ subtotal(l) }}</span>
+        <button type="button" class="delete" (click)="quitarLinea(i)">×</button>
+      </div>
+    </div>
+
+    <button type="button" class="add-linea" (click)="agregarLinea()">+ Agregar producto</button>
+
+    <div class="modal-total">
+      <strong>Total: ${{ totalCompra }}</strong>
+    </div>
+
+    <div class="modal-actions">
+      <button [disabled]="!compraValida" class="primary" (click)="guardarCompra()">Guardar compra</button>
+      <button class="delete" (click)="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
 </div>

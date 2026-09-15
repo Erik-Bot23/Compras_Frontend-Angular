@@ -50,6 +50,9 @@ export class SaleFacade {
   waitingAttempts = 0;
   waitingInterval? : any;
 
+  //Pago rechazado del que se puede reintentar (null = no hay pendiente)
+  pendingPaymentId: number | null = null;
+
   //Lista de métodos
   //Permite generar botones automaticamente
   paymentMethods = [
@@ -234,6 +237,9 @@ export class SaleFacade {
     this.cardProcessing = true;
     this.showWaitingModal = true;
 
+    //Si se confirma un pago nuevo, ya no hay rechazo previo que reintentar
+    this.pendingPaymentId = null;
+
     //Continuar con el pago
     this.processCardPayment();
   }
@@ -261,6 +267,7 @@ export class SaleFacade {
       next: (response) => {
         if(response.paymentStatus === 'PENDING' && response.cardPaymentResponse){
           //Iniciar polling para consultar estado
+          this.pendingPaymentId = response.cardPaymentResponse.paymentId;
           this.waitingTransactionId = response.cardPaymentResponse.transactionId;
           this.startPolling(response.cardPaymentResponse);
         } else if(response.paymentStatus === 'APPROVED' && response.cardPaymentResponse){
@@ -268,6 +275,7 @@ export class SaleFacade {
           this.handleCardSuccess(response.cardPaymentResponse);
         } else {
           //Pago rechazado
+          this.pendingPaymentId = null;
           this.handleCardError('Pago rechazado');
         }
       },
@@ -312,10 +320,12 @@ export class SaleFacade {
           if(response.status === 'APPROVED'){
             //Pago aprobado
             clearInterval(this.waitingInterval);
+            this.pendingPaymentId = null;
             this.handleCardSuccess(response);
           } else if(response.status === 'REJECTED'){
             //Pago rechazado
             clearInterval(this.waitingInterval);
+            this.pendingPaymentId = response.paymentId;
             const errorMsg = response.message || 'Pago rechazado por el banco';
             this.handleCardError(errorMsg);
           }
@@ -334,6 +344,39 @@ export class SaleFacade {
         }
       });
     }, 5000); //Consultar cada 5 segundos
+  }
+
+  //Reintentar un pago rechazado (POST /api/payments/retry/{paymentId})
+  retryCardPayment(){
+    if(this.pendingPaymentId === null) return;
+
+    this.cardError = undefined;
+    this.showCardModal = false;
+    this.cardProcessing = true;
+    this.showWaitingModal = true;
+
+    this.paymentService.retryPayment(this.pendingPaymentId).subscribe({
+      next: (response) => {
+        if(response.status === 'PENDING'){
+          this.waitingTransactionId = response.transactionId;
+          this.startPolling(response);
+        } else if(response.status === 'APPROVED'){
+          this.pendingPaymentId = null;
+          this.handleCardSuccess(response);
+        } else {
+          //Sigue rechazado: mantener el ID para poder reintentar de nuevo
+          this.pendingPaymentId = response.paymentId;
+          this.handleCardError(response.message || 'Pago rechazado');
+        }
+      },
+      error: (err) => {
+        this.cardProcessing = false;
+        this.showWaitingModal = false;
+        alert(err.error?.message || 'No se pudo reintentar el pago');
+        this.cardError = undefined;
+        this.showCardModal = true;
+      }
+    });
   }
 
   //Manejar éxito de tarjeta
@@ -362,6 +405,7 @@ export class SaleFacade {
       this.cardNumber = '';
       this.cardPin = '';
       this.cardPaymentResult = undefined;
+      this.pendingPaymentId = null;
     }, 0);
   }
 

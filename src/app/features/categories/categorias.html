@@ -11,14 +11,15 @@
   <main class="content">
     <h2>Gestión de categorías</h2>
 
-        <!--Formulario-->
-        <div class="form-card" *ngIf="auth.hasPermission('CREAR_CATEGORIAS')">
+        <!--Formulario (crear o editar)-->
+        <div class="form-card" *ngIf="auth.hasPermission('CREAR_CATEGORIAS') || auth.hasPermission('EDITAR_CATEGORIAS')">
             <div class="field">
-                <label>Nombre de la categoría</label>
+                <label>{{ editingCategoryId ? 'Nombre de la categoría (edición)' : 'Nombre de la categoría' }}</label>
                 <input [(ngModel)]="categoryName">
             </div>
 
-            <button (click)="saveCategory()">Guardar</button>
+            <button (click)="saveCategory()">{{ editingCategoryId ? 'Actualizar' : 'Guardar' }}</button>
+            <button *ngIf="editingCategoryId" class="delete" (click)="cancelEdit()">Cancelar</button>
         </div>
 
         <!-- Estructura de tabla responsive (clases compartidas en styles.css):
@@ -37,11 +38,16 @@
                         </thead>
 
                         <tbody>
-                            <tr *ngFor="let c of categories">
+                            <!-- pipe 'paginate: page : pageSize' recorta la lista
+                                 a una pagina → nada de scroll infinito -->
+                            <tr *ngFor="let c of categories | paginate: page : pageSize">
                                 <td>{{ c.name }}</td>
                                 <td>
                                     <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
                                     <div class="table-actions">
+                                        <button *hasPermission="'EDITAR_CATEGORIAS'" class="editRole" (click)="editCategory(c)">
+                                            Editar
+                                        </button>
                                         <button *hasPermission="'ELIMINAR_CATEGORIAS'" (click)="deleteCategory(c.id)" class="delete">
                                             Eliminar
                                         </button>
@@ -51,6 +57,14 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pie de tabla con paginacion -->
+                <app-pagination
+                    [total]="categories.length"
+                    [pageSize]="pageSize"
+                    [page]="page"
+                    (pageChange)="page = $event">
+                </app-pagination>
             </div>
         </div> 
   </main>

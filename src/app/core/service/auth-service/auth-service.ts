@@ -3,6 +3,8 @@ import { Component, Injectable } from '@angular/core';
 import { delay, Observable, of } from 'rxjs';
 import { environment } from '../../../../environments/environment'; 
 import { AuthUser, LoginRequest, LoginResponse } from '../../interfaces/login/login';
+// Acceso seguro a localStorage (no rompe SSR/prerender)
+import { safeGetItem, safeRemoveItem, safeSetItem } from '../../utils/storage-utils';
 
 @Injectable({ providedIn: 'root' })
 
@@ -19,14 +21,14 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.api}/login`, data);
   }
 
-  //Guardar el token
+  //Guardar el token (via helper seguro → no peta en SSR)
   saveToken(token: string): void{
-    localStorage.setItem('token', token);
+    safeSetItem('token', token);
   }
 
   //Obtener el token
   getToken(): string | null{
-    return localStorage.getItem('token');
+    return safeGetItem('token');
   }
 
   //Guardar el usuario
@@ -39,13 +41,22 @@ export class AuthService {
       permissions: user.permissions
     }
     
-    localStorage.setItem('user', JSON.stringify(authUser));
+    safeSetItem('user', JSON.stringify(authUser));
   }
  
-  //Obtener el usuario
+  //Obtener el usuario.
+  //JSON.parse con try/catch: si localStorage fue manipulado o corrompido,
+  //se devuelve null en vez de romper la app con un error de parseo.
   getUser(): AuthUser | null{
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) as AuthUser : null;
+    const user = safeGetItem('user');
+
+    if(!user) return null;
+
+    try {
+      return JSON.parse(user) as AuthUser;
+    } catch {
+      return null;
+    }
   }
 
   //Obtener el nombre
@@ -58,15 +69,42 @@ export class AuthService {
     return this.getUser()?.role ?? '';
   }
 
-  //Saber si inicio sesión
+  //Saber si inició sesion (token presente Y no expirado).
+  //Antes solo comprobaba que existiera la string; ahara tambien se decodifica
+  //el payload del JWT para leer su claim "exp" y descartar tokens vencidos.
   isLogged(): boolean{
-    return !!this.getToken();
+    const token = this.getToken();
+
+    if(!token) return false;
+
+    const exp = this.getTokenExpiration(token);
+
+    //Token sin claim exp → se considera valido (siempre expira en backend).
+    return exp === null || exp * 1000 > Date.now();
+  }
+
+  //Decodifica el payload del JWT (parte del medio, base64url) y extrae "exp".
+  //Es solo lectura local, sin dependencias; no valida la firma (eso lo hace
+  //el backend). Firma invalida o parse fallido → null (no rompe nada).
+  private getTokenExpiration(token: string): number | null{
+    const parts = token.split('.');
+
+    if(parts.length < 2) return null;
+
+    try {
+      const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
+      const payload = JSON.parse(atob(padded));
+      return typeof payload.exp === 'number' ? payload.exp : null;
+    } catch {
+      return null;
+    }
   }
 
   //Cerrar sesión
   logout(){
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    safeRemoveItem('token');
+    safeRemoveItem('user');
   }
 
   //Recuperar contraseña si se olvido

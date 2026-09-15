@@ -191,7 +191,12 @@
   background: #22c55e;
 }
 
-/* BUSCADOR */
+/* BUSCADOR - tarjeta de busqueda (mismo estilo visual que .cash-info):
+   - position:relative → ancla el dropdown que vive dentro (posicion absoluta).
+   - flex:1 → la tarjeta ocupa todo el ancho restante del .top-bar (la tarjeta
+     de caja .cash-info tiene ancho fijo 320px al lado).
+   - Fondo/borde/radio/padding/sombra identicos a .cash-info para que ambas
+     tarjetas se vean como un solo conjunto. */
 .search-bar {
   position: relative;
   flex: 1;
@@ -199,10 +204,27 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+
+/* Titulo de la tarjeta: mismo estilo que .cash-info h4 */
+.search-bar h4 {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 18px;
 }
 
 .search-bar input {
   width: 100%;
+  /* FIX desbordamiento:
+     Por defecto los <input> usan box-sizing: content-box, asi que
+     "width:100% + padding 15px" media 100% + extra y se salia de la tarjeta.
+     Con border-box, el width ya INCLUYE padding y borde → entra perfecto. */
+  box-sizing: border-box;
   padding: 12px 15px;
   border-radius: 10px;
   border: 1px solid #334155;
@@ -225,7 +247,10 @@
 .search-dropdown {
   position: absolute;
   width: 100%;
-  top: 110%;
+  /* calc(100% + 10px) en vez de 110%: al ser la tarjeta mas alta ahora
+     (titulo + inputs + padding), "top:110%" se alejaba demasiado;
+     este valor lo mantiene siempre a 10px por debajo de la tarjeta. */
+  top: calc(100% + 10px);
   background: #020617;
   border: 1px solid #1e293b;
   border-radius: 10px;
@@ -816,6 +841,28 @@ tbody tr:hover {
 }
 
 .btn-cancel:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Botón para reintentar un pago rechazado */
+.btn-retry {
+    background: #f59e0b;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-retry:hover:not(:disabled) {
+    background: #d97706;
+    transform: scale(1.02);
+}
+
+.btn-retry:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }

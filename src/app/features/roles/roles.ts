@@ -10,10 +10,13 @@ import { HasPermissionDirectives } from '../../core/routes/directives/has-permis
 import { AuthService } from '../../core/service/auth-service/auth-service';
 // Servicio compartido del sidebar
 import { SidebarService } from '../../core/service/sidebar-service/sidebar-service';
+// Paginacion reutilizable: pipe recorta la lista / control pinta el pie de tabla
+import { PaginatePipe } from '../../core/pipes/paginate/paginate';
+import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
 
 @Component({
   selector: 'app-roles',
-  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives],
+  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl],
   templateUrl: './roles.html',
   styleUrl: './roles.css',
 })
@@ -22,6 +25,10 @@ export class Roles {
 
   roles: RoleModel[] = [];
   roleName = '';
+
+  // Estado de paginacion (los botones del pie solo navegan paginas validas)
+  page = 0;
+  pageSize = 8;
 
   permissions: PermissionModel[] = [];
   groupedPermissions: {[module: string]: PermissionModel[];} = {};
@@ -140,12 +147,17 @@ export class Roles {
   }
 
   deleteRole(id: number): void{
-    if(confirm('¿Eliminar rol?')){
+    if(!confirm('¿Eliminar rol?')) return;
 
-      this.roleService.deleteRole(id).subscribe(() => {
+    this.roleService.deleteRole(id).subscribe({
+      next: () => {
         this.roles = this.roles.filter(role => role.id !== id);
-      });
-    }
+      },
+      error: (err) => {
+        // El backend devuelve 409 si el rol tiene usuarios asignados
+        alert(err.error?.message || 'No se pudo eliminar el rol');
+      }
+    });
   }
 
   resetForm(): void{

@@ -8,12 +8,16 @@ import { CategoryService } from '../../core/service/category-service/category-se
 import { Sidebar } from '../sidebar/sidebar';
 import { AuthService } from '../../core/service/auth-service/auth-service';
 import { HasPermissionDirectives } from '../../core/routes/directives/has-permission-directives';
+import { environment } from '../../../environments/environment';
 // Servicio compartido del sidebar (reemplaza menuOpen local)
 import { SidebarService } from '../../core/service/sidebar-service/sidebar-service';
+// Paginacion reutilizable: pipe recorta la lista / control pinta el pie de tabla
+import { PaginatePipe } from '../../core/pipes/paginate/paginate';
+import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
 
 @Component({
   selector: 'app-productos',
-  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives],
+  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl],
   templateUrl: './productos.html',
   styleUrl: './productos.css',
 })
@@ -28,6 +32,33 @@ export class Productos implements OnInit {
   @ViewChild('fileInput') fileInput: any;
   isSaving = false;
   private loaded = false;
+
+  // Estado de paginacion (el pie de tabla y el pipe 'paginate' lo consumen).
+  // El clamp de pagina fuera de rango lo resuelve el propio pipe, asi no hay
+  // que resetear manualmente tras borrar el ultimo item de una pagina.
+  page = 0;
+  pageSize = 8;
+
+  // Filtro por categoria (dropdown en la tabla): null = "Todas".
+  // Se usa [ngValue] en el <option> para que el valor sea number (no string)
+  // y la comparacion estricta (===) del getter funcione.
+  selectedCategory: number | null = null;
+
+  // Lista filtrada: si hay categoria seleccionada devuelve solo los productos
+  // de esa categoria; si no, la lista completa. Se reevalua automaticamente
+  // en cada deteccion de cambios (zone.js) al cambiar selectedCategory.
+  get filteredProducts(): ProductForm[] {
+    return this.selectedCategory !== null
+      ? this.products.filter(p => p.categoryId === this.selectedCategory)
+      : this.products;
+  }
+
+  // Al cambiar el filtro se vuelve a la primera pagina: si estabas en la
+  // pagina 3 y filtras, el clamp del pipe evitaria la tabla vacia, pero es
+  // mas claro empezar desde el inicio con el nuevo criterio.
+  onCategoryFilterChange(): void {
+    this.page = 0;
+  }
 
   //Se inicializan los atributos de la interface
   //form:
@@ -198,6 +229,21 @@ export class Productos implements OnInit {
 
   categorias(){
     this.router.navigate(['/categorias'])
+  }
+
+  //Arma la URL de la imagen del producto.
+  //- Si el backend devuelve una URL absoluta (http://...) se usa tal cual.
+  //- Si devuelve una ruta relativa (ej: "uploads/x.png") se completa contra
+  //  environment.api. Asi las imagenes no dependen de "localhost" al deployar
+  //  (backend en Railway devuelve rutas relativas).
+  imageUrl(img?: string): string {
+    if (!img) return '';
+
+    if (img.startsWith('http://') || img.startsWith('https://')) {
+      return img;
+    }
+
+    return `${environment.api}${img.startsWith('/') ? '' : '/'}${img}`;
   }
 
 }

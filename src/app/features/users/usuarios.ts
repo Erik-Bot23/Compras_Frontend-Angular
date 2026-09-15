@@ -9,10 +9,13 @@ import { HasPermissionDirectives } from '../../core/routes/directives/has-permis
 import { AuthService } from '../../core/service/auth-service/auth-service';
 // Servicio compartido del sidebar
 import { SidebarService } from '../../core/service/sidebar-service/sidebar-service';
+// Paginacion reutilizable: pipe recorta la lista / control pinta el pie de tabla
+import { PaginatePipe } from '../../core/pipes/paginate/paginate';
+import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
 
 @Component({
   selector: 'app-usuarios',
-  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives],
+  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl],
   templateUrl: './usuarios.html',
   styleUrl: './usuarios.css',
 })
@@ -23,6 +26,33 @@ export class Usuarios implements OnInit {
   roles: UserRole[] = [];
   loading = true;
   isSaving = false;
+
+  // Estado de paginacion (los botones del pie solo navegan paginas validas)
+  page = 0;
+  pageSize = 8;
+
+  // Filtros de la tabla (dropdowns). null = "Todos" en cada criterio.
+  // Se usan [ngValue] (no [value]) para preservar number/boolean y que las
+  // comparaciones estrictas del getter funcionen.
+  selectedRole: number | null = null;
+  selectedState: boolean | null = null;
+
+  // Lista filtrada aplicando AMBOS criterios con AND:
+  //   - rol seleccionado → roleId debe coincidir.
+  //   - estado seleccionado → active debe coincidir (true=Activo/false=Inactivo).
+  // Se reevalua sola al cambiar cualquiera de los selects (zone.js).
+  get filteredUsers(): User[] {
+    return this.users.filter(user =>
+      (this.selectedRole === null || user.roleId === this.selectedRole) &&
+      (this.selectedState === null || user.active === this.selectedState)
+    );
+  }
+
+  // Al cambiar cualquier filtro se vuelve a la pagina 1 para no quedarse en
+  // una pagina vacia con el nuevo criterio.
+  onFilterChange(): void {
+    this.page = 0;
+  }
 
   form: User = {
     name: '',
