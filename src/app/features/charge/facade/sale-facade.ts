@@ -474,7 +474,7 @@ export class SaleFacade {
           cardData: undefined //No hay datos de tarjeta
         });
 
-        alert(`Venta completada\n\nTotal: $${response.total}\nCmabio: $${response.changeAmount}`);
+        alert(`Venta completada\n\nTotal: $${response.total}\nCambio: $${response.changeAmount}`);
 
         this.cobro.clear();
         this.loadProducts();

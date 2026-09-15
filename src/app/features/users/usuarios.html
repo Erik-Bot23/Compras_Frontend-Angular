@@ -43,6 +43,16 @@
           <!--{{ isSaving ? 'Guardando...' : 'Guardar' }}-->
            {{ form.id ? 'Actualizar usuarios' : 'Guardar usuario' }}
         </button>
+
+        <!--
+          Boton cancelar: solo en modo edicion (editingUserId != null).
+          cancelEdit() = resetForm() → limpia el formulario y quita el id
+          (si se edito, password queda vacio para no mostrar la anterior).
+          Mismo patron que categorias.
+        -->
+        <button type="button" *ngIf="editingUserId" class="cancel" (click)="cancelEdit()">
+          Cancelar
+        </button>
       </div>
 
       <!-- LISTADO -->

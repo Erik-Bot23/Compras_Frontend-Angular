@@ -2,6 +2,8 @@
   HISTORIAL DE VENTAS - listado con datos reales del backend (GET /api/sales)
   sidebar.menuOpen del SidebarService (singleton).
   [class.collapsed]="!sidebar.menuOpen" → transicion 800ms ease-in-out.
+  La barra .table-filter-bar filtra client-side (rango de fechas + metodo de pago)
+  y el pie de tabla pagina la lista FILTRADA (filteredSales).
 -->
 <div class="layout" [class.collapsed]="!sidebar.menuOpen">
   <app-sidebar (toggle)="sidebar.menuOpen = $event"></app-sidebar>
@@ -14,6 +16,32 @@
        .table-container / .table-card / .table-scroll -->
     <div class="table-container fade-in">
       <div class="table-card">
+        <!-- Barra de filtros: fecha desde/hasta + metodo de pago -->
+        <div class="table-filter-bar">
+          <div class="table-filter-field">
+            <label>Desde</label>
+            <input type="date" class="filter-input" [(ngModel)]="fromDate"
+                   (ngModelChange)="onFilterChange()">
+          </div>
+
+          <div class="table-filter-field">
+            <label>Hasta</label>
+            <input type="date" class="filter-input" [(ngModel)]="toDate"
+                   (ngModelChange)="onFilterChange()">
+          </div>
+
+          <div class="table-filter-field">
+            <label>Método de pago</label>
+            <select class="filter-select" [(ngModel)]="selectedMethod"
+                    (ngModelChange)="onFilterChange()">
+              <option [ngValue]="null">Todos</option>
+              <option [ngValue]="PaymentMethod.CASH">Efectivo</option>
+              <option [ngValue]="PaymentMethod.DEBIT">Tarjeta débito</option>
+              <option [ngValue]="PaymentMethod.CREDIT">Tarjeta crédito</option>
+            </select>
+          </div>
+        </div>
+
         <div class="table-scroll">
           <table>
             <thead>
@@ -33,7 +61,7 @@
                 <td colspan="6" class="empty-row">Cargando ventas…</td>
               </tr>
 
-              <tr *ngFor="let sale of sales | paginate: page : pageSize">
+              <tr *ngFor="let sale of filteredSales | paginate: page : pageSize">
                 <td>{{ sale.id }}</td>
                 <td>{{ sale.saleDate | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td>{{ formatPaymentMethod(sale.paymentMethod) }}</td>
@@ -45,13 +73,17 @@
               <tr *ngIf="!loading && sales.length === 0">
                 <td colspan="6" class="empty-row">No hay ventas registradas</td>
               </tr>
+
+              <tr *ngIf="!loading && sales.length > 0 && filteredSales.length === 0">
+                <td colspan="6" class="empty-row">No hay ventas que coincidan con los filtros</td>
+              </tr>
             </tbody>
           </table>
         </div>
 
         <!-- Pie de tabla con paginacion -->
         <app-pagination
-          [total]="sales.length"
+          [total]="filteredSales.length"
           [pageSize]="pageSize"
           [page]="page"
           (pageChange)="page = $event">

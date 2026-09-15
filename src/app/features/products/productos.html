@@ -35,7 +35,7 @@
           <label>Stock</label>
           <input 
             [(ngModel)]="form.stock"
-            min="1"
+            min="0"
             (input)="validateNumber('stock')"
             type="number"
           />
@@ -87,6 +87,15 @@
            <!--?-->
            <!--:-->
            {{ form.id ? 'Actualizar producto' : 'Guardar producto' }}
+        </button>
+
+        <!--
+          Boton cancelar: solo en modo edicion (editingProductId != null).
+          cancelEdit() = resetForm() → limpia el formulario y quita el id,
+          el formulario vuelve a modo "crear". Mismo patron que categorias.
+        -->
+        <button type="button" *ngIf="editingProductId" class="cancel" (click)="cancelEdit()">
+          Cancelar
         </button>
       </div>
 

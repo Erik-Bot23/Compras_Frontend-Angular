@@ -38,6 +38,13 @@
                     <button (click)="saveRole()">
                         {{ editingRoleId ? 'Actualizar rol' : 'Guardar rol'}}
                     </button>
+
+                    <!--
+                      Boton cancelar: solo aparece en modo edicion (editingRoleId != null).
+                      resetForm() limpia roleName, selectedPermissions y editingRoleId
+                      → el formulario vuelve al estado "crear".
+                    -->
+                    <button *ngIf="editingRoleId" class="cancel" (click)="resetForm()">Cancelar</button>
                 </div>
             </div>
 
@@ -67,7 +74,11 @@
                                         <td>
                                             <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
                                             <div class="table-actions">
-                                                <button *hasPermission="'EDITAR_ROLES'" class="editRole" (click)="editRole(c)">
+                                                <!--
+                                                  editRole → edit: se reemplaza el estilo azul solido por el degradado
+                                                  amarillo unificado que ya usan productos/categorias/usuarios.
+                                                -->
+                                                <button *hasPermission="'EDITAR_ROLES'" class="edit" (click)="editRole(c)">
                                                     Editar
                                                 </button>
                                                 <button *hasPermission="'ELIMINAR_ROLES'" class="delete" (click)="deleteRole(c.id)">

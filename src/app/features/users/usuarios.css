@@ -124,7 +124,7 @@
 /*Botones de accion:
    El espaciado lo maneja .table-actions (flex con gap, styles.css).
    white-space:nowrap evita que las etiquetas se partan en dos lineas. */
-.edit, .delete, .activate {
+.edit, .delete, .cancel, .activate {
   border: none;
   padding: 6px 12px;
   border-radius: 8px;
@@ -150,6 +150,16 @@
 
 .delete:hover {
   background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: scale(1.05);
+}
+
+/* Cancelar edicion: gris neutro para distinguirlo de Editar/Eliminar/Activar */
+.cancel {
+  background: linear-gradient(135deg, #64748b, #475569);
+}
+
+.cancel:hover {
+  background: linear-gradient(135deg, #475569, #334155);
   transform: scale(1.05);
 }
 

@@ -19,7 +19,7 @@
             </div>
 
             <button (click)="saveCategory()">{{ editingCategoryId ? 'Actualizar' : 'Guardar' }}</button>
-            <button *ngIf="editingCategoryId" class="delete" (click)="cancelEdit()">Cancelar</button>
+            <button *ngIf="editingCategoryId" class="cancel" (click)="cancelEdit()">Cancelar</button>
         </div>
 
         <!-- Estructura de tabla responsive (clases compartidas en styles.css):
@@ -45,7 +45,11 @@
                                 <td>
                                     <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
                                     <div class="table-actions">
-                                        <button *hasPermission="'EDITAR_CATEGORIAS'" class="editRole" (click)="editCategory(c)">
+                                        <!--
+                                          editRole → edit: en categorias.css solo existen .edit (amarillo) y .delete (rojo),
+                                          la clase anterior no tenia estilo asignado. Mismo patron visual que productos/usuarios.
+                                        -->
+                                        <button *hasPermission="'EDITAR_CATEGORIAS'" class="edit" (click)="editCategory(c)">
                                             Editar
                                         </button>
                                         <button *hasPermission="'ELIMINAR_CATEGORIAS'" (click)="deleteCategory(c.id)" class="delete">

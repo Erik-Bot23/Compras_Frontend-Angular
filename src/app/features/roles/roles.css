@@ -80,9 +80,9 @@
   flex-direction: column;
 }
 
-/*Botones de accion:
+/* Botones de accion de la tabla: editar (amarillo) / eliminar (rojo) / cancelar (gris).
    El espaciado lo maneja .table-actions (flex con gap, styles.css). */
-.delete {
+.edit, .delete, .cancel {
   border: none;
   padding: 6px 12px;
   border-radius: 8px;
@@ -93,12 +93,32 @@
   transition: all 0.25s ease;
 }
 
+/* Amarillo: mismo gradiente que productos/categorias/usuarios */
+.edit {
+  background: linear-gradient(135deg, #facc15, #eab308);
+}
+
+.edit:hover {
+  background: linear-gradient(135deg, #eab308, #ca8a04);
+  transform: scale(1.05);
+}
+
 .delete {
   background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
 .delete:hover {
   background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: scale(1.05);
+}
+
+/* Gris: boton neutral para cancelar la edicion (no confundir con eliminar) */
+.cancel {
+  background: linear-gradient(135deg, #64748b, #475569);
+}
+
+.cancel:hover {
+  background: linear-gradient(135deg, #475569, #334155);
   transform: scale(1.05);
 }
 
@@ -128,21 +148,6 @@
   margin: 6px 0;
   font-size: 14px;
   color: #e2e8f0;
-}
-
-/* Boton "Editar" del rol: azul solido, ya sin margin-right
-   (el espaciado lo da .table-actions con gap). */
-.editRole{
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-.editRole:hover{
-  background: #2563eb;
 }
 
 /* Layout en dos paneles:

@@ -33,6 +33,11 @@ export class Productos implements OnInit {
   isSaving = false;
   private loaded = false;
 
+  // Modo edicion: sería null y se "activa" con el id del producto al hacer clic
+  // en Editar. Sirve al template para mostrar el boton Cancelar (*ngIf) y para
+  // saber cuando el formulario esta en modo "Actualizar".
+  editingProductId: number | null = null;
+
   // Estado de paginacion (el pie de tabla y el pipe 'paginate' lo consumen).
   // El clamp de pagina fuera de rango lo resuelve el propio pipe, asi no hay
   // que resetear manualmente tras borrar el ultimo item de una pagina.
@@ -187,10 +192,22 @@ export class Productos implements OnInit {
     this.selectedFile = null
     this.fileInput.nativeElement.value = '';//nativeElement
     this.isSaving = false;
+    // Fuera de modo edicion: al terminar de crear/actualizar el formulario
+    // vuelve al estado "crear" y el boton Cancelar desaparece.
+    this.editingProductId = null;
+  }
+
+  //Cancela la edicion a mano: resetea el formulario completo (mismo efecto que
+  //resetForm, pero es la accion del boton Cancelar mientras se edita).
+  cancelEdit(){
+    this.resetForm();
   }
 
   //Se edita el producto
   editProduct(product: ProductForm){ //Variable de la interface(se consumen sus atributos)
+    // Marca el producto en edicion → el template muestra el boton Cancelar.
+    this.editingProductId = product.id ?? null;
+
     this.form = {
       id: product.id,
       name: product.name,
@@ -221,9 +238,11 @@ export class Productos implements OnInit {
   }
 
   //Validar campos numericos
-  validateNumber(field: 'price' | 'stock'){//Field: 
-    if(this.form[field] < 1){
-      this.form[field] = 1;
+  validateNumber(field: 'price' | 'stock'){//Field:
+    // El stock puede ser 0 (agotado); el precio no puede bajar de 1.
+    const min = field === 'stock' ? 0 : 1;
+    if(this.form[field] < min){
+      this.form[field] = min;
     }
   }
 

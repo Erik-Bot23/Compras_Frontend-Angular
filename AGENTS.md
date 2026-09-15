@@ -88,6 +88,51 @@ src/app/
 
 ## Registro de cambios / decisiones
 
+### 2026-09-15 — Botones Editar/Cancelar unificados en CRUDs + estilos
+
+> Pequeña tanda posterior a la de tests/filtros. Solo UI de los 4 CRUDs (productos, categorías, usuarios, roles). Nada de backend.
+
+#### 1. Botones "Editar" unificados a amarillo
+- **Problema**: en **categorías** el botón editar usaba `class="editRole"`, clase que **no existe** en `categorias.css` (solo hay `.edit` y `.delete`) → quedaba sin estilo. En **roles** `.editRole` sí existía pero era **azul sólido** (`#3b82f6`), distinto al degradado amarillo de productos/usuarios.
+- **Fix**: `categorias.html` y `roles.html` ahora usan `class="edit"`. En `roles.css` se reemplazó el bloque `.editRole` azul por `.edit`/`.delete`/`.cancel` con el mismo degradado amarillo `linear-gradient(135deg, #facc15, #eab308)` de los demás CRUDs.
+- Resultado: los 4 CRUDs comparten el mismo lenguaje visual de botones de acción.
+
+#### 2. Botón "Cancelar" en edición (productos, roles, usuarios)
+- Antes solo **categorías** mostraba un botón cancelar al editar (`*ngIf="editingCategoryId"`). Se replicó el patrón en los otros tres:
+  - **productos.ts**: nueva prop `editingProductId: number | null`, se setea en `editProduct()` (`product.id ?? null`), reseteada en `resetForm()`; método `cancelEdit()` que delega en `resetForm()`.
+  - **usuarios.ts**: igual con `editingUserId`.
+  - **roles.ts**: ya existía `editingRoleId` + `resetForm()` → solo se agregó el botón en el HTML.
+- **HTML**: `<button *ngIf="editingXId" class="cancel" (click)="cancelEdit()">Cancelar</button>` tras el botón guardar. El `*ngIf` hace que solo aparezca en modo edición.
+- **CSS**: nueva clase `.cancel` (gris `#64748b→#475569`) para no confundirlo con el botón eliminar (rojo). Se agregó a los 4 CSS. El cancelar de **categorías** también pasó de `class="delete"` (rojo) a `class="cancel"` por consistencia.
+
+#### Verificación
+- `ng build` production: OK (solo warnings pre-existentes: budget `cobro.css` y CommonJS de canvg/jspdf).
+- `npx ng test --watch=false`: 18 archivos / 19 tests, **todos pasan**.
+
+### 2026-09-15 — Suite de tests en verde + filtros en Salehistory + bugs menores
+
+#### 1. Tests: 19/19 en verde (antes 15/19)
+- **`app.spec.ts`**: el test "should render title" buscaba `Hello, Demo-IraCar` (plantilla de ng new) → reemplazado por "should render the router outlet" (verifica `<router-outlet>`); se agregó `provideRouter([])`.
+- **login/forgot-password/reset-password specs**: fallaban por `NG0201: No provider found for ActivatedRoute` (los templates usan `RouterLink` / los componentes inyectan `ActivatedRoute`). Fix: `providers: [provideRouter([])]` en cada `TestBed`.
+- Resultado: `npx ng test --watch=false` → **18 archivos / 19 tests, todos pasan**.
+
+#### 2. Filtros client-side en Salehistory (`features/salehistory`)
+- **Estado nuevo**: `fromDate`, `toDate` (inputs `type="date"`) y `selectedMethod: PaymentMethod | null` (select con `[ngValue]`), publicados como `PaymentMethod` para usarlos en el template.
+- **Getter `filteredSales`**: filtro con `selectedMethod` (comparación estricta `===`) + rango de fechas comparando **strings `yyyy-MM-dd`** (`saleDate.substring(0,10)`, lexicográfico = cronológico, inmune a timezones).
+- **Template**: nueva barra `.table-filter-bar` (primer hijo de `.table-card`, mismo lenguaje visual que productos/usuarios) con un `<input type="date" class="filter-input">` por fecha y el select de método. `(ngModelChange)` → `onFilterChange()` resetea `page = 0`.
+- El `*ngFor` y `[total]` ahora usan `filteredSales` (el pie pagina la lista filtrada) + nueva fila "No hay ventas que coincidan con los filtros" cuando hay datos pero ninguno coincide.
+- **`styles.css`**: nuevo `.table-filter-field input.filter-input` (espejo del `.filter-select`) + `::-webkit-calendar-picker-indicator` invertido (icono del date picker visible sobre fondo oscuro). Se importó `FormsModule` en el componente.
+
+#### 3. Bugs menores
+- Typo `Cmabio` → `Cambio` en mensaje de venta completada (`sale-facade.ts:477`).
+- `forgot-password.css`: `width: 350;` (sin unidad) → `350px`.
+- `roles.ts`: ahora `export class Roles implements OnInit` (definía `ngOnInit` sin declararlo).
+- `perfil.ts`: ya no lee `localStorage.getItem('user')` directo → usa `this.auth.getUser()` (helpers SSR-safe de `storage-utils`, JSON corrompido devuelve null en vez de romper).
+
+#### Verificación
+- `ng build` production: OK (solo warning pre-existente `cobro.css` 9.33 kB > 8 kB).
+- `npx ng test --watch=false`: 18 archivos / 19 tests, **todos pasan**.
+
 ### 2026-09-13 — Revisión completa del proyecto (actualización de contexto)
 
 > Esta sesión solo actualizó `AGENTS.md` al estado real. Nada del código cambió.
@@ -181,10 +226,10 @@ src/app/
 
 ## Pendientes / issues conocidos
 
+- ✅ **Tests**: 19/19 en verde (2026-09-15). Si al clonar falta `chart.js`/`xlsx` en `node_modules`, basta `npm install` (ocurrió 2026-09-15: el `npm test` fallaba con `TS2307`).
 - ⚠️ **`retryPayment` y `reversePayment`**: `reversePayment` sigue sin uso en componentes (el retry sí se usa en el POS).
 - **Placeholders sin implementar**: Caja, Ventas, Clientes, Facturas.
 - Alert/confirm nativos en Compras y en el reintento de pago del POS (consistencia → MatSnackBar/MatDialog).
-- Salehistory sin filtros (rango de fechas / método de pago) — suscribir más adelante.
 - Sin unsubscriptions (`takeUntil`) en componentes con múltiples suscripciones HTTP.
 - Warnings CommonJS de build por jsPDF/canvg/xlsx → posible `allowedCommonJsDependencies` en `angular.json`.
 - `environment-prod.ts` está en placeholder `https://TU-APP.up.railway.app/api` → reemplazar al crear la app en Railway.

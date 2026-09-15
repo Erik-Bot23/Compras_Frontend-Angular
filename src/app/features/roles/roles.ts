@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Sidebar } from '../sidebar/sidebar';
 import { RoleService } from '../../core/service/role-service/role-service';
@@ -20,7 +20,7 @@ import { PaginationControl } from '../../core/components/pagination-control/pagi
   templateUrl: './roles.html',
   styleUrl: './roles.css',
 })
-export class Roles {
+export class Roles implements OnInit {
   // ANTES: menuOpen = false aqui. AHORA: se usa sidebar.menuOpen del servicio
 
   roles: RoleModel[] = [];

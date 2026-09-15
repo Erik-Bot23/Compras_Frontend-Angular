@@ -31,14 +31,10 @@ export class Perfil implements OnInit {
     private snack: MatSnackBar
   ){}
 
-  //Se traen los datos del usuario
-  //ngOnInit:
+  //Se traen los datos del usuario desde el AuthService (lee localStorage con
+  //utilidades SSR-safe; un JSON corrompido devuelve null en vez de romper la app).
   ngOnInit(): void {
-    const userData  = localStorage.getItem('user');
-
-    if(userData){
-      this.user = JSON.parse(userData); //JSON.parse: 
-    }
+    this.user = this.auth.getUser();
   }
 
   //Abrir modal para cambiar contraseña

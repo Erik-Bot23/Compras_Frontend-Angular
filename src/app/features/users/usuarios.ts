@@ -27,6 +27,10 @@ export class Usuarios implements OnInit {
   loading = true;
   isSaving = false;
 
+  // Modo edicion: guarda el id del usuario que se esta editando. null = crear.
+  // El template lo usa para mostrar el boton Cancelar con *ngIf.
+  editingUserId: number | null = null;
+
   // Estado de paginacion (los botones del pie solo navegan paginas validas)
   page = 0;
   pageSize = 8;
@@ -144,9 +148,21 @@ export class Usuarios implements OnInit {
       roleId: 0
     };
     this.isSaving = false;
+    // Fuera de modo edicion: despues de crear/actualizar el formulario vuelve
+    // a "crear" y el boton Cancelar desaparece.
+    this.editingUserId = null;
+  }
+
+  //Cancela la edicion a mano: resetea el formulario completo (mismo efecto que
+  //resetForm, pero es la accion del boton Cancelar mientras se edita).
+  cancelEdit(){
+    this.resetForm();
   }
 
   editUser(user: User){
+    // Marca el usuario en edicion → el template muestra el boton Cancelar.
+    this.editingUserId = user.id ?? null;
+
     this.form = {
       id: user.id,
       name: user.name,

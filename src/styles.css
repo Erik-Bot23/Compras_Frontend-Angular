@@ -262,6 +262,28 @@ body {
   border-color: #3b82f6;
 }
 
+/* Input del filtro (fechas, busquedas): mismo lenguaje visual que el select */
+.table-filter-field input.filter-input {
+  min-width: 150px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.table-filter-field input.filter-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* El icono del date picker nativo es oscuro → lo invertimos para el tema claro */
+.table-filter-field input.filter-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
+}
+
 /* Area desplazable:
    - flex:1 + min-height:0 → ocupa el alto restante de la tarjeta y permite
      scroll interno (en vez de desbordar la pagina).

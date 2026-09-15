@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Sidebar } from '../sidebar/sidebar';
 import { SaleService } from '../../core/service/sale-service/sale-service';
 import { SaleHistory } from '../../core/interfaces/sale/sale';
@@ -12,7 +13,7 @@ import { PaginationControl } from '../../core/components/pagination-control/pagi
 
 @Component({
   selector: 'app-salehistory',
-  imports: [CommonModule, Sidebar, PaginatePipe, PaginationControl],
+  imports: [CommonModule, FormsModule, Sidebar, PaginatePipe, PaginationControl],
   templateUrl: './salehistory.html',
   styleUrl: './salehistory.css',
 })
@@ -20,9 +21,43 @@ export class Salehistory implements OnInit {
   sales: SaleHistory[] = [];
   loading = true;
 
+  //Exponer el enum para usarlo en el template (opciones del filtro)
+  PaymentMethod = PaymentMethod;
+
   // Estado de paginacion (los botones del pie solo navegan paginas validas)
   page = 0;
   pageSize = 10;
+
+  // Filtros client-side (la lista completa ya esta cargada en memoria)
+  fromDate = '';
+  toDate = '';
+  selectedMethod: PaymentMethod | null = null;
+
+  //Lista filtrada por rango de fechas y/o metodo de pago. El pie pagina esta lista.
+  get filteredSales(): SaleHistory[] {
+    let result = this.sales;
+
+    if (this.selectedMethod !== null) {
+      result = result.filter(sale => sale.paymentMethod === this.selectedMethod);
+    }
+
+    //Comparacion de strings 'yyyy-MM-dd': lexicograficamente = cronologicamente
+    if (this.fromDate || this.toDate) {
+      result = result.filter(sale => {
+        const datePart = sale.saleDate.substring(0, 10);
+        if (this.fromDate && datePart < this.fromDate) return false;
+        if (this.toDate && datePart > this.toDate) return false;
+        return true;
+      });
+    }
+
+    return result;
+  }
+
+  //Al cambiar un criterio se vuelve a la primera pagina
+  onFilterChange(): void {
+    this.page = 0;
+  }
 
   constructor(
     private saleService: SaleService,

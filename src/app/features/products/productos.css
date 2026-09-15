@@ -162,7 +162,7 @@
    El espaciado entre ellos ya no usa margin-right: lo maneja .table-actions
    (flex con gap, styles.css). white-space:nowrap evita que "Editar"/"Eliminar"
    se partan en dos lineas dentro de la celda de acciones. */
-.edit, .delete {
+.edit, .delete, .cancel {
   border: none;
   padding: 6px 12px;
   border-radius: 8px;
@@ -188,6 +188,16 @@
 
 .delete:hover {
   background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: scale(1.05);
+}
+
+/* Cancelar edicion: gris neutro para distinguirlo de Editar/Eliminar */
+.cancel {
+  background: linear-gradient(135deg, #64748b, #475569);
+}
+
+.cancel:hover {
+  background: linear-gradient(135deg, #475569, #334155);
   transform: scale(1.05);
 }
 
