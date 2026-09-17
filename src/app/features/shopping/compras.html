@@ -46,42 +46,61 @@
               </thead>
 
               <tbody>
-                <tr *ngFor="let c of filteredPurchases | paginate: page : pageSize">
-                  <td>{{ c.purchaseDate | date: 'dd/MM/yyyy HH:mm' }}</td>
-                  <td>{{ c.providerName }}</td>
-                  <td>{{ c.totalItems }}</td>
-                  <td>${{ c.total }}</td>
-                  <td>
-                    <div class="table-actions">
-                      <button type="button" class="view" (click)="toggleDetalle(c.id)">
-                        {{ detalleAbiertaIds.has(c.id) ? 'Ocultar' : 'Detalle' }}
-                      </button>
-                      <button *hasPermission="'CANCELAR_COMPRAS'" type="button" class="delete" (click)="cancelarCompra(c.id)">
-                        Cancelar
-                      </button>
-                    </div>
+                <!-- ng-container agrupa las dos <tr> (fila + detalle expandido) sin
+                     inyectar nodos: Angular permite varios <tr> por cada item. -->
+                <ng-container *ngFor="let c of filteredPurchases | paginate: page : pageSize">
+                  <tr>
+                    <td>{{ c.purchaseDate | date: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ c.providerName }}</td>
+                    <td>{{ c.totalItems }}</td>
+                    <!-- class="money" → alinea a la derecha con digitos tabulares (compras.css).
+                         | number:'1.2-2' formatea a 2 decimales (ej: 1500 → 1,500.00). -->
+                    <td class="money">{{ c.total | number:'1.2-2' }}</td>
+                    <td>
+                      <div class="table-actions">
+                        <button type="button" class="view" (click)="toggleDetalle(c.id)">
+                          {{ detalleAbiertaIds.has(c.id) ? 'Ocultar' : 'Detalle' }}
+                        </button>
+                        <button *hasPermission="'CANCELAR_COMPRAS'" type="button" class="delete" (click)="cancelarCompra(c.id)">
+                          Cancelar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
 
-                    <!-- Renglones expandibles de la compra -->
-                    <div *ngIf="detalleAbiertaIds.has(c.id)" class="detalle">
-                      <table class="subtable">
-                        <thead>
-                          <tr>
-                            <th>Producto</th>
-                            <th>Cant.</th>
-                            <th>Costo unit.</th>
-                            <th>Subtotal</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr *ngFor="let item of c.items">
-                            <td>{{ item.productName }}</td>
-                            <td>{{ item.quantity }}</td>
-                            <td>${{ item.unitCost }}</td>
-                            <td>${{ item.subtotal }}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+                  <!-- Renglones de la compra: fila completa (colspan) bajo la compra,
+                       con animacion fade-in. Ver compras.css .detalle. -->
+                  <tr *ngIf="detalleAbiertaIds.has(c.id)" class="detalle-row">
+                    <td colspan="5">
+                      <div class="detalle fade-in">
+                        <div class="detalle-title">Artículos de la compra</div>
+                        <table class="subtable">
+                          <thead>
+                            <tr>
+                              <th>Producto</th>
+                              <th>Cant.</th>
+                              <th>Costo unit.</th>
+                              <th>Subtotal</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let item of c.items">
+                              <td>{{ item.productName }}</td>
+                              <td>{{ item.quantity }}</td>
+                              <td class="money">${{ item.unitCost | number:'1.2-2' }}</td>
+                              <td class="money">${{ item.subtotal | number:'1.2-2' }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+
+                <!-- Estado vacio: sin compras o sin coincidencias con el filtro -->
+                <tr *ngIf="!loading && filteredPurchases.length === 0">
+                  <td colspan="5" class="empty-row">
+                    {{ purchases.length === 0 ? 'No hay compras registradas' : 'No hay compras que coincidan con el filtro' }}
                   </td>
                 </tr>
               </tbody>
@@ -119,7 +138,7 @@
         </div>
 
         <button (click)="guardarProveedor()">{{ editingProviderId ? 'Actualizar proveedor' : 'Guardar proveedor' }}</button>
-        <button *ngIf="editingProviderId" class="delete" (click)="cancelarEdicionProveedor()">Cancelar</button>
+        <button *ngIf="editingProviderId" class="cancel" (click)="cancelarEdicionProveedor()">Cancelar</button>
       </div>
 
       <div class="table-container fade-in">
@@ -144,10 +163,15 @@
                   <td>{{ p.email || '—' }}</td>
                   <td>
                     <div class="table-actions">
-                      <button *hasPermission="'EDITAR_PROVEEDORES'" class="editRole" (click)="editarProveedor(p)">Editar</button>
+                      <button *hasPermission="'EDITAR_PROVEEDORES'" class="edit" (click)="editarProveedor(p)">Editar</button>
                       <button *hasPermission="'ELIMINAR_PROVEEDORES'" class="delete" (click)="eliminarProveedor(p.id!)">Eliminar</button>
                     </div>
                   </td>
+                </tr>
+
+                <tr *ngIf="providers.length === 0">
+                  <!-- colspan abarca las 5 columnas para que la fila vacia ocupe todo el ancho -->
+                  <td colspan="5" class="empty-row">No hay proveedores registrados</td>
                 </tr>
               </tbody>
             </table>
@@ -193,14 +217,19 @@
                 <tr *ngFor="let m of margins | paginate: page : pageSize">
                   <td>{{ m.name }}</td>
                   <td>{{ m.sku || '—' }}</td>
-                  <td>${{ m.cost }}</td>
-                  <td>${{ m.price }}</td>
-                  <td>${{ m.margin }}</td>
+                  <td class="money">${{ m.cost | number:'1.2-2' }}</td>
+                  <td class="money">${{ m.price | number:'1.2-2' }}</td>
+                  <td class="money">${{ m.margin | number:'1.2-2' }}</td>
                   <td>
                     <span class="badge-margin" [class.low]="m.marginPercent < 20" [class.mid]="m.marginPercent >= 20 && m.marginPercent < 40">
                       {{ m.marginPercent.toFixed(1) }}%
                     </span>
                   </td>
+                </tr>
+
+                <tr *ngIf="margins.length === 0">
+                  <!-- colspan abarca las 6 columnas para que la fila vacia ocupe todo el ancho -->
+                  <td colspan="6" class="empty-row">Sin datos de márgenes</td>
                 </tr>
               </tbody>
             </table>
@@ -253,12 +282,16 @@
     <button type="button" class="add-linea" (click)="agregarLinea()">+ Agregar producto</button>
 
     <div class="modal-total">
-      <strong>Total: ${{ totalCompra }}</strong>
+      <!-- Total en vivo: getter totalCompra = suma de subtotales de cada renglon -->
+      <strong>Total: ${{ totalCompra | number:'1.2-2' }}</strong>
     </div>
 
     <div class="modal-actions">
+      <!-- [disabled] deshabilita Guardar mientras compraValida sea false
+           (falta proveedor o algun renglon incompleto). -->
       <button [disabled]="!compraValida" class="primary" (click)="guardarCompra()">Guardar compra</button>
-      <button class="delete" (click)="cerrarModal()">Cancelar</button>
+      <!-- .cancel = gris neutro; antes era .delete (rojo) y confundia con eliminar -->
+      <button class="cancel" (click)="cerrarModal()">Cancelar</button>
     </div>
   </div>
 </div>

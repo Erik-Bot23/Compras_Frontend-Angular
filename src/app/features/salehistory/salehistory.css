@@ -3,3 +3,81 @@
   padding: 24px;
   opacity: 0.7;
 }
+
+/* -------- Resumen de la lista filtrada (dentro de la barra de filtros) -------- */
+
+/* Indicador empujado al extremo derecho de .table-filter-bar */
+.sales-summary {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+}
+
+.sales-summary .summary-count {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #94a3b8;
+}
+
+/* Importe acumulado: resaltado con el acento verde de la app */
+.sales-summary .summary-total {
+  font-size: 16px;
+  font-weight: 800;
+  color: #34c98c;
+}
+
+/* -------- Badge del metodo de pago -------- */
+
+/* Pildora de color segun el metodo: mismo lenguaje que .badge-margin de Compras */
+.method-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Efectivo: verde */
+.method-badge.cash {
+  background: rgba(52, 201, 140, 0.16);
+  color: #34c98c;
+  border: 1px solid rgba(52, 201, 140, 0.35);
+}
+
+/* Debito: azul */
+.method-badge.debit {
+  background: rgba(79, 140, 255, 0.16);
+  color: #4f8cff;
+  border: 1px solid rgba(79, 140, 255, 0.35);
+}
+
+/* Credito: morado */
+.method-badge.credit {
+  background: rgba(141, 123, 255, 0.16);
+  color: #8d7bff;
+  border: 1px solid rgba(141, 123, 255, 0.35);
+}
+
+/* -------- Columnas de montos -------- */
+
+/* Derecha + digitos tabulares: los numeros quedan alineados y estables
+   (font-variant-numeric: tabular-nums evita que el ancho fluctue). */
+.money {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding-right: 18px !important;
+}
+
+/* Total: semibold para que sea la columna protagonista */
+.money.total {
+  font-weight: 700;
+  color: #fbbf24;
+}

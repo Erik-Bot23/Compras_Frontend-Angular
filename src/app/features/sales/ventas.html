@@ -1,8 +1,0 @@
-<!-- 
-  VENTAS - placeholder (no implementado)
-  sidebar.menuOpen del SidebarService (singleton).
-  [class.collapsed]="!sidebar.menuOpen" → transicion 800ms ease-in-out.
--->
-<div class="layout" [class.collapsed]="!sidebar.menuOpen">
-    <app-sidebar (toggle)="sidebar.menuOpen = $event"></app-sidebar>
-</div>

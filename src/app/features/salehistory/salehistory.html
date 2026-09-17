@@ -40,6 +40,13 @@
               <option [ngValue]="PaymentMethod.CREDIT">Tarjeta crédito</option>
             </select>
           </div>
+
+          <!-- Resumen de la lista filtrada: recuento e importe acumulado.
+               margin-left:auto empuja el indicador al extremo derecho. -->
+          <div class="sales-summary" *ngIf="!loading && sales.length > 0">
+            <span class="summary-count">{{ filteredCount }} ventas</span>
+            <span class="summary-total">Total: ${{ filteredTotal | number:'1.2-2' }}</span>
+          </div>
         </div>
 
         <div class="table-scroll">
@@ -64,10 +71,19 @@
               <tr *ngFor="let sale of filteredSales | paginate: page : pageSize">
                 <td>{{ sale.id }}</td>
                 <td>{{ sale.saleDate | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td>{{ formatPaymentMethod(sale.paymentMethod) }}</td>
-                <td>{{ sale.cashReceived != null ? (sale.cashReceived | number:'1.2-2') : '—' }}</td>
-                <td>{{ sale.changeAmount != null ? (sale.changeAmount | number:'1.2-2') : '—' }}</td>
-                <td>{{ sale.total | number:'1.2-2' }}</td>
+                <!-- Badge de color segun el metodo de pago (estilos en salehistory.css) -->
+                <td>
+                  <span class="method-badge"
+                        [class.cash]="sale.paymentMethod === PaymentMethod.CASH"
+                        [class.debit]="sale.paymentMethod === PaymentMethod.DEBIT"
+                        [class.credit]="sale.paymentMethod === PaymentMethod.CREDIT">
+                    {{ formatPaymentMethod(sale.paymentMethod) }}
+                  </span>
+                </td>
+                <td class="money">{{ sale.cashReceived != null ? (sale.cashReceived | number:'1.2-2') : '—' }}</td>
+                <td class="money">{{ sale.changeAmount != null ? (sale.changeAmount | number:'1.2-2') : '—' }}</td>
+                <!-- .money alinea a la derecha; .total añade amarillo semibold (salehistory.css) -->
+                <td class="money total">{{ sale.total | number:'1.2-2' }}</td>
               </tr>
 
               <tr *ngIf="!loading && sales.length === 0">

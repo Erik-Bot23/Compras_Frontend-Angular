@@ -19,7 +19,8 @@
       </div>
     </div>
 
-    <!-- Filtros -->
+    <!-- Filtros: inputs solidos #0f172a (estilo unificado con .table-filter-field).
+         "Aplicar" vuelve a pedir todos los endpoints con el rango elegido. -->
     <div class="card filters fade-in">
       <div class="filter">
         <label>Desde</label>
@@ -50,46 +51,49 @@
       </button>
     </div>
 
-    <!-- Tarjetas resumen -->
+    <!-- Tarjetas resumen: el acento de color superior distingue cada metrica -->
     <div class="summary-grid fade-in" *ngIf="summary">
-      <div class="card summary-card">
+      <div class="card summary-card accent-blue">
         <span class="summary-label">Ventas</span>
         <span class="summary-value">{{ summary.totalSales }}</span>
+        <span class="summary-sub">tickets en el periodo</span>
       </div>
-      <div class="card summary-card">
+      <div class="card summary-card accent-green">
         <span class="summary-label">Total vendido</span>
-        <span class="summary-value">{{ summary.totalAmount | number:'1.2-2' }}</span>
+        <span class="summary-value">${{ summary.totalAmount | number:'1.2-2' }}</span>
+        <span class="summary-sub">importe acumulado</span>
       </div>
-      <div class="card summary-card">
+      <div class="card summary-card accent-orange">
         <span class="summary-label">Ticket promedio</span>
-        <span class="summary-value">{{ summary.averageTicket | number:'1.2-2' }}</span>
+        <span class="summary-value">${{ summary.averageTicket | number:'1.2-2' }}</span>
+        <span class="summary-sub">promedio por venta</span>
       </div>
       <div class="card summary-card" *ngFor="let m of summary.paymentMethods">
         <span class="summary-label">{{ m.label }}</span>
-        <span class="summary-value">{{ m.total | number:'1.2-2' }}</span>
+        <span class="summary-value">${{ m.total | number:'1.2-2' }}</span>
         <span class="summary-sub">{{ m.count }} tickets</span>
       </div>
     </div>
 
-    <!-- Gráficas -->
+    <!-- Gráficas: el punto de color del header identifica el tipo de grafica -->
     <div class="charts-grid fade-in">
       <div class="card chart-card chart-full">
-        <h3>Tendencia de ventas</h3>
+        <h3><span class="chart-dot line"></span>Tendencia de ventas</h3>
         <div class="chart-box"><canvas #trendCanvas></canvas></div>
       </div>
 
       <div class="card chart-card">
-        <h3>Métodos de pago</h3>
+        <h3><span class="chart-dot doughnut"></span>Métodos de pago</h3>
         <div class="chart-box"><canvas #methodCanvas></canvas></div>
       </div>
 
       <div class="card chart-card">
-        <h3>Top productos</h3>
+        <h3><span class="chart-dot bar"></span>Top productos</h3>
         <div class="chart-box"><canvas #topCanvas></canvas></div>
       </div>
 
       <div class="card chart-card chart-full">
-        <h3>Rendimiento por categoría</h3>
+        <h3><span class="chart-dot bar-secondary"></span>Rendimiento por categoría</h3>
         <div class="chart-box"><canvas #catCanvas></canvas></div>
       </div>
     </div>
@@ -148,16 +152,17 @@
         </div>
 
         <div class="corte-body" *ngIf="cashSummary; else noCash">
+          <!-- Cada monto se muestra con $ y | number:'1.2-2' (2 decimales, tabular-nums en CSS) -->
           <div class="corte-row"><span>Caja #</span><strong>{{ cashSummary.cashId }}</strong></div>
-          <div class="corte-row"><span>Fondo inicial</span><strong>{{ cashSummary.openingAmount | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Ventas en efectivo</span><strong>{{ cashSummary.cashSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Ventas débito</span><strong>{{ cashSummary.debitSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Ventas crédito</span><strong>{{ cashSummary.creditSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row total"><span>Total ventas</span><strong>{{ cashSummary.totalSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Fondo inicial</span><strong>${{ cashSummary.openingAmount | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Ventas en efectivo</span><strong>${{ cashSummary.cashSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Ventas débito</span><strong>${{ cashSummary.debitSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Ventas crédito</span><strong>${{ cashSummary.creditSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row total"><span>Total ventas</span><strong>${{ cashSummary.totalSales | number:'1.2-2' }}</strong></div>
           <div class="corte-row"><span>Tickets</span><strong>{{ cashSummary.totalTickets }}</strong></div>
-          <div class="corte-row total"><span>Monto esperado</span><strong>{{ cashSummary.expectedAmount | number:'1.2-2' }}</strong></div>
+          <div class="corte-row total"><span>Monto esperado</span><strong>${{ cashSummary.expectedAmount | number:'1.2-2' }}</strong></div>
           <div class="corte-row" [class.warn]="cashSummary.difference !== 0">
-            <span>Diferencia</span><strong>{{ cashSummary.difference | number:'1.2-2' }}</strong>
+            <span>Diferencia</span><strong>${{ cashSummary.difference | number:'1.2-2' }}</strong>
           </div>
         </div>
 

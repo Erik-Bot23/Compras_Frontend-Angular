@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Guía de Estudio — Frontend Ventas (Angular 21)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    color: #1e293b; line-height: 1.55; margin: 0; font-size: 14px;
+  }
+  h1, h2, h3, h4 { color: #0f172a; line-height: 1.25; }
+  h1 { font-size: 30px; margin: 0 0 6px; }
+  h2 {
+    font-size: 22px; border-bottom: 3px solid #2563eb; padding-bottom: 6px;
+    margin-top: 38px; page-break-after: avoid;
+  }
+  h3 { font-size: 17px; color: #1d4ed8; margin-top: 24px; page-break-after: avoid; }
+  h4 { font-size: 15px; color: #334155; margin: 16px 0 6px; page-break-after: avoid; }
+  p { margin: 8px 0; }
+  code {
+    background: #f1f5f9; padding: 1px 5px; border-radius: 4px;
+    font-family: Consolas, 'Courier New', monospace; font-size: 0.86em; color: #be185d;
+  }
+  pre {
+    background: #0f172a; color: #e2e8f0; padding: 12px 14px; border-radius: 8px;
+    overflow: auto; font-family: Consolas, 'Courier New', monospace;
+    font-size: 11.5px; line-height: 1.5; page-break-inside: avoid; white-space: pre-wrap;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  .callout {
+    border-left: 5px solid #2563eb; background: #eff6ff;
+    padding: 10px 14px; border-radius: 6px; margin: 12px 0; page-break-inside: avoid;
+  }
+  .callout.warn { border-color: #f59e0b; background: #fffbeb; }
+  .callout.concept { border-color: #16a34a; background: #f0fdf4; }
+  .callout.bug { border-color: #dc2626; background: #fef2f2; }
+  .callout .t { font-weight: 700; display: block; margin-bottom: 3px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 10px 0; page-break-inside: avoid; }
+  th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #e2e8f0; }
+  ul, ol { margin: 6px 0 6px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .page-break { page-break-before: always; }
+  .cover { text-align: center; padding-top: 150px; }
+  .cover .sub { font-size: 18px; color: #475569; }
+  .cover .meta { margin-top: 60px; color: #64748b; font-size: 13px; }
+  .badge {
+    display: inline-block; background: #2563eb; color: #fff;
+    padding: 2px 10px; border-radius: 999px; font-size: 11px; margin-right: 4px;
+  }
+  .badge.g { background: #16a34a; }
+  .badge.o { background: #ea580c; }
+  .tag { color: #64748b; font-size: 12px; }
+  .toc a { color: #1d4ed8; text-decoration: none; }
+  .toc li { margin: 5px 0; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<!-- ===================== PORTADA ===================== -->
+<section class="cover">
+  <h1>Guía de Estudio</h1>
+  <p class="sub">Frontend <strong>Ventas</strong> — Angular 21</p>
+  <p class="sub">Bitácora razonada de cambios y glosario de conceptos</p>
+  <p class="meta">
+    Proyecto <code>Ventas-Frontend</code> (<code>demo-ira-car</code>)<br>
+    Documento generado a partir de la bitácora del 9 al 17 de septiembre de 2026<br>
+    Uso: material de repaso / estudio del código
+  </p>
+</section>
+
+<!-- ===================== ÍNDICE ===================== -->
+<section class="page-break">
+  <h2>Índice</h2>
+  <ol class="toc">
+    <li><a href="#contexto">Contexto general del proyecto</a></li>
+    <li><a href="#glosario">Glosario de conceptos base</a></li>
+    <li><a href="#bitacora">Bitácora razonada de cambios</a>
+      <ul class="toc">
+        <li>3.1 Imágenes de productos (2026-09-09)</li>
+        <li>3.2 Fixes UI/UX + change detection + animaciones (2026-09-10)</li>
+        <li>3.3 Seguridad + preparación Netlify/Railway (2026-09-12)</li>
+        <li>3.4 Paginación client-side (2026-09-12)</li>
+        <li>3.5 Filtros client-side (2026-09-12)</li>
+        <li>3.6 Tests en verde + filtros Salehistory + bugs (2026-09-15)</li>
+        <li>3.7 Botones Editar/Cancelar unificados (2026-09-15)</li>
+        <li>3.8 Rediseño Compras/Reportes/Salehistory + limpieza de rutas (2026-09-17)</li>
+      </ul>
+    </li>
+    <li><a href="#patrones">Patrones y convenciones del proyecto</a></li>
+    <li><a href="#mapa">Mapa de archivos</a></li>
+    <li><a href="#comandos">Comandos de trabajo</a></li>
+  </ol>
+</section>
+
+<!-- ===================== 1. CONTEXTO ===================== -->
+<section class="page-break" id="contexto">
+  <h2>1. Contexto general del proyecto</h2>
+
+  <h3>1.1 Stack tecnológico</h3>
+  <table>
+    <tr><th>Capa</th><th>Tecnología</th><th>Para qué se usa</th></tr>
+    <tr><td>Framework</td><td>Angular 21 (standalone)</td><td>SPA sin <code>NgModules</code>; cada componente declara sus propios imports.</td></tr>
+    <tr><td>Lenguaje</td><td>TypeScript ~5.9</td><td>Tipado estático de modelos e interfaces.</td></tr>
+    <tr><td>Reactividad</td><td>RxJS 7</td><td><code>Observable</code> de HTTP, <code>BehaviorSubject</code> del carrito.</td></tr>
+    <tr><td>UI</td><td>Angular Material 21 + CDK</td><td>Date pickers, diálogos, snackbars.</td></tr>
+    <tr><td>Reportes</td><td>Chart.js 4, xlsx, jsPDF + autotable</td><td>Gráficas y exportaciones 100% en el navegador.</td></tr>
+    <tr><td>Change detection</td><td>zone.js (reactivado)</td><td>Que las respuestas HTTP repinten la UI automáticamente.</td></tr>
+    <tr><td>Testing</td><td>Vitest + jsdom</td><td>Pruebas unitarias de componentes y servicios.</td></tr>
+    <tr><td>SSR</td><td>Angular SSR</td><td>Prerender para despliegue (Netlify / nginx).</td></tr>
+  </table>
+
+  <h3>1.2 Arquitectura de carpetas</h3>
+<pre><code>src/app/
+├── app.ts / app.html / app.css      → Root (solo &lt;router-outlet&gt;)
+├── app.config.ts                    → providers globales (router, http + interceptor)
+├── app.routes.ts                    → rutas (lazy load por componente)
+├── core/
+│   ├── interfaces/                  → login, product, sale, payment, cobro, user, purchases, reports
+│   ├── models/                      → role-model.ts
+│   ├── enums/paymentMethod.ts       → CASH | DEBIT | CREDIT
+│   ├── utils/storage-utils.ts       → safeGetItem/safeSetItem/safeRemoveItem (SSR-safe)
+│   ├── pipes/paginate/              → PaginatePipe (paginación client-side)
+│   ├── components/pagination-control/→ PaginationControl (pie de tabla reutilizable)
+│   ├── service/                     → auth, product, sale, cash, payment, user, role,
+│   │                                  category, cobro, ticket, permission, sidebar,
+│   │                                  provider, purchase, report
+│   └── routes/
+│       ├── guards/permission-guard.ts
+│       ├── directives/has-permission-*.ts
+│       └── auth-interceptor/auth-interceptor.ts
+└── features/
+    ├── login/ + forgot-password/ + reset-password/
+    ├── charge/    → cobro (POS) + facade/ (sale-facade, cash-facade)  ← NÚCLEO
+    ├── sidebar/   → menú lateral reutilizable
+    ├── products/  → CRUD productos con imagen
+    ├── categories/, users/, roles/  → CRUD completos
+    ├── profile/   → datos + cambio de contraseña + logout
+    ├── shopping/  → Compras (3 tabs: compras / proveedores / márgenes)
+    ├── reports/   → Reportes (Chart.js + export PDF/XLSX)
+    └── salehistory/→ Historial de ventas (paginado + filtros)</code></pre>
+
+  <h3>1.3 Backend conectado</h3>
+  <ul>
+    <li>Backend hermano <code>Ventas-Backend</code> — Spring Boot en <code>http://localhost:8081/api</code>.</li>
+    <li><code>environment.ts</code> (dev): <code>api: 'http://localhost:8081/api'</code>.</li>
+    <li><code>environment-prod.ts</code>: placeholder <code>https://TU-APP.up.railway.app/api</code>.</li>
+    <li>JWT: <code>AuthInterceptor</code> agrega <code>Authorization: Bearer &lt;token&gt;</code> a cada request.</li>
+  </ul>
+
+  <div class="callout">
+    <span class="t">Cómo se relacionan frontend y backend</span>
+    El frontend no guarda reglas de negocio críticas: solo las presenta. El carrito del POS vive
+    en memoria, pero la venta real, el stock y los pagos los resuelve el backend. El frontend pide
+    datos por HTTP y los pinta; los permisos de UI salen del <code>localStorage</code> (por eso el
+    backend DEBE validar el JWT por endpoint — ver sección 3.3).
+  </div>
+</section>
+
+<!-- ===================== 2. GLOSARIO ===================== -->
+<section class="page-break" id="glosario">
+  <h2>2. Glosario de conceptos base</h2>
+  <p>Conceptos que aparecen una y otra vez en el código. Léelos antes de la bitácora: ahí se
+  aplican con ejemplos reales.</p>
+
+  <h3>2.1 Componente standalone</h3>
+  <p>Angular 21 no usa <code>NgModules</code>. Cada componente declara lo que necesita en el
+  arreglo <code>imports</code> de su decorador <code>@Component</code>. Así no hay una "mochila"
+  global de imports y el lazy loading es más limpio.</p>
+<pre><code>@Component({
+  selector: 'app-salehistory',
+  imports: [CommonModule, FormsModule, Sidebar, PaginatePipe, PaginationControl],
+  templateUrl: './salehistory.html',
+  styleUrl: './salehistory.css',
+})
+export class Salehistory implements OnInit { /* ... */ }</code></pre>
+  <div class="callout concept">
+    <span class="t">Punto clave</span>
+    Si un template falla con <code>NG0303: Can't bind to 'ngForOf'</code> o similar, casi siempre
+    falta importar <code>CommonModule</code> (directivas <code>ngIf/ngFor</code>, pipes
+    <code>date</code>, <code>number</code>) o <code>FormsModule</code> (<code>ngModel</code>).
+  </div>
+
+  <h3>2.2 Observable vs BehaviorSubject</h3>
+  <p>Un <code>Observable</code> es un flujo de datos al que te <em>suscribes</em>. Un
+  <code>BehaviorSubject</code> es un observable especial que <strong>guarda el último valor</strong>
+  y lo entrega de inmediato a quien se suscribe. Eso lo hace ideal para estado compartido.</p>
+<pre><code>// Estado compartido del menú lateral (singleton providedIn: 'root')
+private menuOpen$ = new BehaviorSubject&lt;boolean&gt;(true);
+menuOpen = this.menuOpen$;   // se expone como Observable de solo lectura
+toggle(v: boolean) { this.menuOpen$.next(v); }</code></pre>
+  <p>El carrito del POS (<code>CobroService</code>) también usa
+  <code>BehaviorSubject&lt;CobroItem[]&gt;</code>: cada componente que se suscribe ve el carrito
+  actual y todos los cambios siguientes.</p>
+
+  <h3>2.3 subscribe y change detection</h3>
+  <p><code>HttpClient.get()</code> devuelve un observable frío: hay que <code>.subscribe()</code>
+  para disparar el request. El callback <code>next</code> recibe la respuesta.</p>
+<pre><code>this.saleService.getSales().subscribe({
+  next: (data) =&gt; { this.sales = data; this.loading = false; },
+  error: () =&gt; { this.loading = false; }
+});</code></pre>
+  <div class="callout warn">
+    <span class="t">Aquí está la razón de reactivar zone.js (sección 3.2)</span>
+    En apps <em>zoneless</em>, asignar <code>this.sales = data</code> dentro del callback NO
+    redibuja la tabla sola: Angular no sabe que "algo cambió". zone.js parchea
+    <code>XMLHttpRequest</code>/<code>fetch</code> y avisa a Angular para que corra la detección
+    de cambios al terminar cada request.
+  </div>
+
+  <h3>2.4 Pipes</h3>
+  <p>Un pipe transforma un dato en el template. Los "puros" (por defecto) solo recalculan cuando
+  cambia la referencia de entrada.</p>
+  <ul>
+    <li><code>{{ total | number:'1.2-2' }}</code> — formato numérico: mínimo 1 entero, 2 decimales.</li>
+    <li><code>{{ fecha | date:'dd/MM/yyyy HH:mm' }}</code> — formato de fecha.</li>
+    <li><code>{{ lista | paginate: page : pageSize }}</code> — pipe propio que recorta la lista.</li>
+  </ul>
+
+  <h3>2.5 ng-container y ng-template</h3>
+  <p><code>&lt;ng-container&gt;</code> agrupa elementos sin generar un nodo en el DOM. Es la forma
+  idiomática de repetir <strong>varias filas</strong> por cada elemento de un <code>*ngFor</code>
+  sin envolverlas (lo que rompería la tabla HTML).</p>
+
+  <h3>2.6 Data binding</h3>
+  <table>
+    <tr><th>Sintaxis</th><th>Dirección</th><th>Ejemplo</th></tr>
+    <tr><td><code>[prop]="expr"</code></td><td>Componente → DOM</td><td><code>[disabled]="!valido"</code></td></tr>
+    <tr><td><code>(event)="fn()"</code></td><td>DOM → Componente</td><td><code>(click)="abrirModal()"</code></td></tr>
+    <tr><td><code>[(ngModel)]="campo"</code></td><td>Bidireccional</td><td>inputs de formulario</td></tr>
+    <tr><td><code>[class.activo]="cond"</code></td><td>Activa una clase CSS</td><td><code>[class.active]="tab === 'compras'"</code></td></tr>
+    <tr><td><code>[ngValue]</code></td><td>Objeto real en <code>&lt;option&gt;</code></td><td>ver sección 3.5</td></tr>
+  </table>
+  <div class="callout concept">
+    <span class="t">[value] vs [ngValue]</span>
+    <code>[value]</code> siempre entrega un string. <code>[ngValue]</code> entrega el valor
+    <strong>real</strong> (number, boolean, objeto). Si comparas con <code>===</code> en un getter,
+    necesitas <code>[ngValue]</code>, o <code>"5" !== 5</code> te romperá el filtro.
+  </div>
+
+  <h3>2.7 Guard funcional (CanActivateFn)</h3>
+  <p>Función que decide si se puede entrar a una ruta. En este proyecto valida
+  <code>route.data.permission</code> contra los permisos del usuario en <code>localStorage</code>.</p>
+<pre><code>// app.routes.ts
+{ path: 'compras', component: Compras, canActivate: [permissionGuard],
+  data: { permission: 'VER_COMPRAS' } }</code></pre>
+
+  <h3>2.8 Directiva estructural *hasPermission</h3>
+  <p>Oculta/muestra UI según permisos sin tocar los components. Uso:
+  <code>*hasPermission="'CREAR_COMPRAS'"</code>. Es la contraparte de los guards a nivel de
+  fragmento.</p>
+
+  <h3>2.9 Interceptor HTTP funcional</h3>
+  <p>Se ejecuta en cada request/response. Aquí agrega el token y maneja el 401 global.</p>
+<pre><code>// Agrega Authorization: Bearer &lt;token&gt; y, ante un 401, limpia sesión y va a '/'
+intercept(req, next) {
+  const token = safeGetItem('token');
+  const authReq = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+  return next(authReq).pipe(catchError(err =&gt; { /* 401 → logout */ }));
+}</code></pre>
+
+  <h3>2.10 SSR-safe: guard de window</h3>
+  <p>En SSR/prerender no existe <code>localStorage</code> ni <code>window</code>. Los helpers
+  envuelven el acceso para que el build de Netlify/nginx no explote.</p>
+<pre><code>export function safeGetItem(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try { return window.localStorage.getItem(key); } catch { return null; }
+}</code></pre>
+
+  <h3>2.11 CSS que se repite en el proyecto</h3>
+  <table>
+    <tr><th>Concepto</th><th>Dónde</th><th>Por qué</th></tr>
+    <tr><td>Flexbox (<code>display:flex</code>)</td><td>toolbars, botones, tarjetas</td><td>Alinear en una dimensión.</td></tr>
+    <tr><td>Grid (<code>display:grid</code>)</td><td>formularios de filtros, líneas del modal</td><td>Columnas alineadas sin calcular anchos.</td></tr>
+    <tr><td><code>position: sticky</code></td><td><code>thead</code> de tablas</td><td>Encabezado fijo al hacer scroll.</td></tr>
+    <tr><td><code>font-variant-numeric: tabular-nums</code></td><td>columnas de dinero</td><td>Dígitos de ancho fijo → montos alineados.</td></tr>
+    <tr><td><code>overflow: hidden</code> + <code>border-radius</code></td><td><code>.table-card</code></td><td>Que las esquinas redondeen también el pie de paginación.</td></tr>
+    <tr><td><code>::before</code></td><td>barra de acento de tarjetas</td><td>Dibujar la franja de color sin HTML extra.</td></tr>
+    <tr><td><code>transition</code> / <code>@keyframes</code></td><td>sidebar, tablas</td><td>Animaciones suaves (colapso 800ms, <code>fade-in-up</code>).</td></tr>
+  </table>
+</section>
+
+<!-- ===================== 3. BITÁCORA ===================== -->
+<section class="page-break" id="bitacora">
+  <h2>3. Bitácora razonada de cambios</h2>
+  <p>Cada bloque sigue la misma estructura: <strong>problema → razonamiento → solución → código
+  clave → concepto</strong>.</p>
+</section>
+
+<!-- 3.1 -->
+<section id="c0909">
+  <h3>3.1 Imágenes de productos (2026-09-09) <span class="badge g">ok</span></h3>
+  <h4>Problema</h4>
+  <p>Las imágenes de productos no se veían porque el backend devolvía rutas relativas o
+  <code>null</code> y el frontend las usaba tal cual.</p>
+  <h4>Razonamiento</h4>
+  <p>El origen de la imagen puede cambiar (localhost → Railway). Si la URL es relativa, hay que
+  completarla contra <code>environment.api</code>; si es absoluta, respetarla. Así las imágenes
+  sobreviven al cambio de dominio sin tocar el backend.</p>
+  <h4>Solución</h4>
+<pre><code>// productos.ts — imageUrl()
+imageUrl(p): string {
+  if (!p.img) return 'assets/placeholder.png';
+  return /^https?:\/\//.test(p.img) ? p.img : `${environment.api}${p.img}`;
+}</code></pre>
+  <div class="callout concept"><span class="t">Concepto</span>
+    <code>/^https?:\/\//.test(x)</code> es una expresión regular que comprueba si el string empieza
+    por <code>http://</code> o <code>https://</code>.</div>
+</section>
+
+<!-- 3.2 -->
+<section id="c0910">
+  <h3>3.2 Fixes UI/UX + change detection + animaciones (2026-09-10) <span class="badge g">ok</span></h3>
+
+  <h4>3.2.1 SidebarService (estado compartido del menú)</h4>
+  <ul>
+    <li><strong>Problema:</strong> cada componente tenía su <code>menuOpen</code> local; al navegar
+    el menú no se sincronizaba.</li>
+    <li><strong>Solución:</strong> un singleton (<code>providedIn: 'root'</code>) con
+    <code>menuOpen$</code> y suscripción a <code>router.events</code>.</li>
+    <li><strong>Detalle fino:</strong> se escucha <code>NavigationStart</code> (no
+    <code>NavigationEnd</code>) para que el cierre empiece al hacer clic y la animación de 800ms
+    alcance a terminar antes de cargar el componente nuevo.</li>
+  </ul>
+<pre><code>this.router.events
+  .pipe(filter(e =&gt; e instanceof NavigationStart))
+  .subscribe(() =&gt; this.toggle(false));</code></pre>
+
+  <h4>3.2.2 Reactivación de zone.js (el bug más importante)</h4>
+  <div class="callout bug">
+    <span class="t">Síntoma</span>
+    Las tablas y el estado de caja no aparecían hasta que el usuario hacía clic en algún lado. La
+    petición HTTP sí llegaba, pero la vista no se actualizaba.
+  </div>
+  <p><strong>Causa raíz:</strong> Angular 21 usa <em>zoneless</em> por defecto. Sin zone.js, los
+  callbacks de <code>HttpClient.subscribe()</code> no disparan detección de cambios.</p>
+  <p><strong>Fix (3 pasos):</strong></p>
+<pre><code>npm install zone.js @angular/ssr@21.2.1
+
+// angular.json
+"polyfills": ["zone.js"]
+
+// app.config.ts
+providers: [ provideZoneChangeDetection(), /* ... */ ]</code></pre>
+  <div class="callout concept"><span class="t">Concepto: change detection</span>
+    Angular debe saber cuándo revisar los bindings. Zoneless depende de signals o de
+    <code>markForCheck()</code>; con zone.js, Angular intercepta eventos y async y revisa solo. Se
+    reactivó porque el proyecto usa RxJS + <code>*ngFor</code> clásicos.</div>
+
+  <h4>3.2.3 Animaciones suaves</h4>
+<pre><code>/* src/styles.css — colapso natural del sidebar */
+.layout .sidebar { transition: width 800ms ease-in-out, padding 800ms ease-in-out; }
+
+/* Tablas CRUD */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fade-in-up 250ms ease-out; }</code></pre>
+  <p>Se aplica <code>class="table-container fade-in"</code> dentro de
+  <code>&lt;div *ngIf="!loading"&gt;</code>: la animación se reproduce justo al desaparecer el
+  estado de carga.</p>
+</section>
+
+<!-- 3.3 -->
+<section class="page-break" id="c0912a">
+  <h3>3.3 Seguridad + preparación de despliegue (2026-09-12) <span class="badge g">ok</span></h3>
+
+  <h4>3.3.1 storage-utils.ts (helpers SSR-safe)</h4>
+  <p>Centraliza el acceso a <code>localStorage</code> y evita errores en SSR/prerender y ante un
+  <code>localStorage</code> manipulado.</p>
+<pre><code>export function safeGetItem(key: string): string | null {
+  if (typeof window === 'undefined') return null;      // SSR/prerender
+  try { return window.localStorage.getItem(key); }
+  catch { return null; }                                // contexto restringido / JSON roto
+}</code></pre>
+
+  <h4>3.3.2 isLogged() valida la expiración del JWT</h4>
+  <p>Antes bastaba con que existiera un token; si estaba expirado la app se veía "logeada" pero
+  todo fallaba. Ahora se decodifica el payload (claim <code>exp</code>) y se rechaza el token
+  vencido.</p>
+  <div class="callout concept"><span class="t">Concepto: JWT</span>
+    Un JWT son 3 partes separadas por punto: <code>header.payload.signature</code>. El payload va
+    en Base64 y contiene claims como <code>exp</code> (expiración, en segundos Unix). El frontend
+    puede LEERLO para saber si expiró, pero <strong>no puede validar la firma</strong>: eso es del
+    backend.</div>
+
+  <h4>3.3.3 AuthInterceptor: 401 global</h4>
+  <p>Si el backend responde 401, el interceptor limpia la sesión y redirige a <code>/</code>.
+  Excluye <code>/auth/login</code>, <code>forgot-password</code> y <code>reset-password</code>,
+  porque ahí un 401 es un fallo de credenciales normal, no una sesión vencida.</p>
+
+  <h4>3.3.4 Despliegue Netlify + Railway</h4>
+  <table>
+    <tr><th>Archivo</th><th>Función</th></tr>
+    <tr><td><code>angular.json</code></td><td><code>fileReplacements</code> en production → usa <code>environment-prod.ts</code> (antes era código muerto y todo apuntaba a localhost).</td></tr>
+    <tr><td><code>public/_redirects</code></td><td><code>/*  /index.html  200</code> → SPA fallback. Sin esto, recargar <code>/productos</code> da 404 en Netlify.</td></tr>
+    <tr><td><code>Dockerfile</code></td><td><code>node:22-alpine</code> → build → copia <code>dist/.../browser</code> a nginx.</td></tr>
+    <tr><td><code>nginx.conf</code></td><td>SPA fallback + cache 1 año para assets con hash + headers de seguridad.</td></tr>
+  </table>
+  <div class="callout warn"><span class="t">Pendiente de backend</span>
+    El frontend lee <code>permissions</code> de <code>localStorage</code> (manipulable). El backend
+    DEBE validar el JWT por endpoint. También debe permitir el origen de Netlify en CORS.</div>
+</section>
+
+<!-- 3.4 -->
+<section id="c0912b">
+  <h3>3.4 Paginación client-side (2026-09-12) <span class="badge g">ok</span></h3>
+  <h4>Razonamiento</h4>
+  <p>Los servicios ya cargan TODOS los registros. En vez de tocar el backend, se pagina en memoria:
+  más simple, instantáneo, sin endpoints nuevos. El precio es que no escala a miles de filas (ahí
+  sí habría que paginar en servidor).</p>
+  <h4>Solución</h4>
+<pre><code>// core/pipes/paginate/paginate.ts (pipe PURO, standalone)
+transform(list: T[], page: number, pageSize: number): T[] {
+  const start = page * pageSize;
+  return list.slice(start, start + pageSize);   // clampa si la página quedó fuera de rango
+}
+
+// template
+&lt;tr *ngFor="let p of filteredProducts | paginate: page : pageSize"&gt; ... &lt;/tr&gt;
+&lt;app-pagination [total]="filteredProducts.length" [pageSize]="pageSize"
+                [page]="page" (pageChange)="page = $event"&gt;&lt;/app-pagination&gt;</code></pre>
+  <div class="callout concept"><span class="t">¿Por qué el pipe clampa?</span>
+    Si borras el último ítem de una página, <code>page</code> puede quedar fuera de rango y la tabla
+    se vería vacía. El pipe ajusta la página al último índice válido.</div>
+  <p><strong>Decisión:</strong> el carrito del POS NO se pagina — es un carrito vivo, no una tabla de
+  registros.</p>
+</section>
+
+<!-- 3.5 -->
+<section id="c0912c">
+  <h3>3.5 Filtros client-side (2026-09-12) <span class="badge g">ok</span></h3>
+  <h4>Patrón</h4>
+  <p>Estado de filtro en el componente + un <strong>getter</strong> que devuelve la lista filtrada.
+  El <code>*ngFor</code> y el <code>[total]</code> de la paginación usan la lista filtrada, así el
+  pie cuenta solo lo visible.</p>
+<pre><code>// componentes CRUD
+selectedCategory: number | null = null;   // null = "Todas"
+
+get filteredProducts(): Product[] {
+  if (this.selectedCategory === null) return this.products;
+  return this.products.filter(p =&gt; p.categoryId === this.selectedCategory);
+}
+
+// al cambiar el criterio, volver a la primera página
+onCategoryFilterChange() { this.page = 0; }</code></pre>
+  <div class="callout warn"><span class="t">Trampa resuelta con [ngValue]</span>
+    <code>&lt;option [value]="p.id"&gt;</code> entrega el string <code>"3"</code>, pero el getter
+    compara <code>p.categoryId === 3</code> (número). Con <code>[ngValue]="p.id"</code> el select
+    entrega un number real y la comparación estricta funciona. Igual con booleanos
+    (Activo/Inactivo) en Usuarios.</div>
+  <p>La barra usa clases compartidas en <code>styles.css</code>:
+  <code>.table-filter-bar</code>, <code>.table-filter-field</code>, <code>.filter-select</code>,
+  <code>.filter-input</code>. Va como primer hijo de <code>.table-card</code>, con el mismo lenguaje
+  visual que el pie de paginación.</p>
+</section>
+
+<!-- 3.6 -->
+<section class="page-break" id="c0915a">
+  <h3>3.6 Tests en verde + filtros Salehistory + bugs (2026-09-15) <span class="badge g">ok</span></h3>
+
+  <h4>3.6.1 Arreglo de 4 tests (de 15/19 a 19/19)</h4>
+  <table>
+    <tr><th>Spec</th><th>Fallo</th><th>Fix</th></tr>
+    <tr><td><code>app.spec.ts</code></td><td>Buscaba <code>Hello, Demo-IraCar</code> (plantilla de <code>ng new</code>)</td><td>Test "should render the router outlet" + <code>provideRouter([])</code></td></tr>
+    <tr><td><code>login.spec.ts</code></td><td><code>NG0201: No provider for ActivatedRoute</code></td><td><code>providers: [provideRouter([])]</code></td></tr>
+    <tr><td><code>forgot-password.spec.ts</code></td><td>idem (usa <code>RouterLink</code>)</td><td><code>provideRouter([])</code></td></tr>
+    <tr><td><code>reset-password.spec.ts</code></td><td>idem (inyecta <code>ActivatedRoute</code>)</td><td><code>provideRouter([])</code></td></tr>
+  </table>
+  <div class="callout concept"><span class="t">Concepto</span>
+    Un <code>TestBed</code> se configura como una mini-app: si el componente en su template usa
+    <code>routerLink</code> o inyecta <code>ActivatedRoute</code>, hay que ofrecer los providers del
+    router o el test explota antes de correr.</div>
+
+  <h4>3.6.2 Filtros client-side en Salehistory (fechas + método)</h4>
+<pre><code>fromDate = '';
+toDate = '';
+selectedMethod: PaymentMethod | null = null;
+
+get filteredSales(): SaleHistory[] {
+  let result = this.sales;
+  if (this.selectedMethod !== null) {
+    result = result.filter(s =&gt; s.paymentMethod === this.selectedMethod);
+  }
+  if (this.fromDate || this.toDate) {
+    result = result.filter(s =&gt; {
+      const datePart = s.saleDate.substring(0, 10);   // 'yyyy-MM-dd'
+      if (this.fromDate &amp;&amp; datePart &lt; this.fromDate) return false;
+      if (this.toDate   &amp;&amp; datePart &gt; this.toDate)   return false;
+      return true;
+    });
+  }
+  return result;
+}</code></pre>
+  <div class="callout concept"><span class="t">Truco: comparar fechas como strings</span>
+    <code>saleDate</code> viene como ISO (<code>2026-09-15T10:30:00</code>). Al cortar los primeros
+    10 caracteres queda <code>2026-09-15</code>. Como ese formato es <code>yyyy-MM-dd</code>,
+    comparar con <code>&lt;</code> / <code>&gt;</code> es equivalente a comparar cronológicamente y
+    es inmune a timezones (a diferencia de <code>new Date()</code>, que puede correr el día).</div>
+
+  <h4>3.6.3 Bugs menores</h4>
+  <ul>
+    <li>Typo <code>Cmabio</code> → <code>Cambio</code> en <code>sale-facade.ts:477</code>.</li>
+    <li><code>forgot-password.css</code>: <code>width: 350;</code> (sin unidad, CSS lo ignora) → <code>350px</code>.</li>
+    <li><code>roles.ts</code>: definía <code>ngOnInit</code> sin declarar <code>implements OnInit</code>.</li>
+    <li><code>perfil.ts</code>: leía <code>localStorage.getItem('user')</code> directo → ahora usa <code>auth.getUser()</code> (JSON corrupto devuelve null en vez de romper).</li>
+  </ul>
+</section>
+
+<!-- 3.7 -->
+<section id="c0915b">
+  <h3>3.7 Botones Editar/Cancelar unificados (2026-09-15) <span class="badge g">ok</span></h3>
+  <h4>Problema</h4>
+  <p>Cada CRUD tenía su propio estilo de botón "Editar": productos/usuarios usaban amarillo;
+  categorías usaba <code>class="editRole"</code> (clase que ni existía → botón sin estilo); roles
+  usaba <code>.editRole</code> azul sólido. Además solo categorías mostraba botón Cancelar al editar.</p>
+  <h4>Razonamiento</h4>
+  <p>Un lenguaje visual consistente reduce carga cognitiva: el usuario aprende una vez que amarillo =
+  editar, rojo = eliminar, gris = cancelar. Se eligió <code>.cancel</code> gris (no rojo) para no
+  confundir cancelar-edición con eliminar-registro.</p>
+  <h4>Solución</h4>
+  <ul>
+    <li>Categorías y roles pasan a <code>class="edit"</code>.</li>
+    <li>Se agrega Cancelar en edición a productos, usuarios y roles:
+      <code>&lt;button *ngIf="editingXId" class="cancel" (click)="cancelEdit()"&gt;Cancelar&lt;/button&gt;</code>.
+      El <code>*ngIf</code> hace que solo aparezca en modo edición.</li>
+    <li>Nueva clase <code>.cancel</code> (gris <code>#64748b → #475569</code>) en los 4 CSS.</li>
+  </ul>
+<pre><code>/* Lenguaje de botones de acción, igual en los 4 CRUDs */
+.edit   { background: linear-gradient(135deg, #facc15, #eab308); } /* amarillo */
+.delete { background: linear-gradient(135deg, #ef4444, #dc2626); } /* rojo   */
+.cancel { background: linear-gradient(135deg, #64748b, #475569); } /* gris   */</code></pre>
+<pre><code>// productos.ts — estado de edición + cancelar
+editingProductId: number | null = null;
+
+editProduct(p: ProductForm) { this.editingProductId = p.id ?? null; /* ... */ }
+resetForm()                  { this.editingProductId = null; /* ... */ }
+cancelEdit()                 { this.resetForm(); }</code></pre>
+</section>
+
+<!-- 3.8 -->
+<section class="page-break" id="c0917">
+  <h3>3.8 Rediseño Compras/Reportes/Salehistory + limpieza (2026-09-17) <span class="badge g">ok</span></h3>
+  <p>Objetivo: alinear los 3 últimos módulos al lenguaje visual de los CRUDs (tarjetas
+  <code>#1e293b</code> con borde <code>#263449</code>, botones <code>.edit/.delete/.cancel</code>,
+  inputs sólidos <code>#0f172a</code>, montos <code>| number:'1.2-2'</code>).</p>
+
+  <h4>3.8.1 Limpieza: placeholders eliminados</h4>
+  <div class="callout bug"><span class="t">El build estaba roto</span>
+    Los archivos de Caja, Ventas, Clientes y Facturas no existían en disco, pero
+    <code>app.routes.ts</code> aún los importaba → <code>TS2307: Cannot find module</code>. Se
+    quitaron las 4 rutas (<code>/clientes</code>, <code>/facturas</code>, <code>/ventas</code>,
+    <code>/caja</code>). El sidebar ya no las enlazaba. Los specs asociados también se borraron
+    (18/19 → 14/15).</div>
+  <div class="callout concept"><span class="t">Lección</span>
+    Al borrar un componente con lazy loading, hay que quitar su ruta e <code>import()</code> en
+    <code>app.routes.ts</code>, no solo el archivo. El compilador de rutas carga en build.</div>
+
+  <h4>3.8.2 Salehistory: badges + resumen + montos</h4>
+  <p>De texto plano a <em>badges</em> con color por método de pago, y un resumen analítico de la
+  lista filtrada.</p>
+<pre><code>&lt;span class="method-badge"
+      [class.cash]="sale.paymentMethod === PaymentMethod.CASH"
+      [class.debit]="sale.paymentMethod === PaymentMethod.DEBIT"
+      [class.credit]="sale.paymentMethod === PaymentMethod.CREDIT"&gt;
+  {{ formatPaymentMethod(sale.paymentMethod) }}
+&lt;/span&gt;</code></pre>
+<pre><code>// salehistory.ts — resumen reactivo de lo filtrado
+get filteredCount(): number { return this.filteredSales.length; }
+get filteredTotal(): number {
+  return this.filteredSales.reduce((sum, s) =&gt; sum + (s.total ?? 0), 0);
+}</code></pre>
+  <div class="callout concept"><span class="t">Getters como "computed" sin signals</span>
+    Un getter se recalcula cada ciclo de detección: simple pero no gratis. Para listas pequeñas
+    (historial paginado) es perfecto. Con listas grandes convendría memoizar o usar
+    <code>computed()</code> de signals.</div>
+<pre><code>/* .money: derecha + dígitos tabulares; .total: amarillo semibold */
+.money { text-align: right; font-variant-numeric: tabular-nums; }
+.money.total { color: #facc15; font-weight: 600; }</code></pre>
+  <p><code>[class.cash]</code> es la forma de activar una clase CSS sin <code>*ngIf</code>: más
+  limpio y con menos ciclos que envolver en condicionales.</p>
+
+  <h4>3.8.3 Compras: tabs, detalle en fila completa, botones y estados vacíos</h4>
+  <ul>
+    <li><strong>Tabs:</strong> de botones sueltos a control segmentado (contenedor <code>#1e293b</code>,
+    <code>.tab.active</code> azul <code>#2563eb</code> + sombra).</li>
+    <li><strong>Botones:</strong> <code>.editRole</code> → <code>.edit</code>; los "Cancelar" pasan
+    de <code>.delete</code> (rojo) a <code>.cancel</code> (gris).</li>
+    <li><strong>Detalle expandible:</strong> antes era un <code>&lt;div&gt;</code> dentro de la celda
+    de acciones (columna angosta). Ahora es una <strong>fila completa</strong> con
+    <code>colspan="5"</code>.</li>
+    <li><strong>Estados vacíos</strong> en las 3 tablas + prop <code>loading</code>.</li>
+    <li><strong>Montos</strong> con <code>| number:'1.2-2'</code>; botón primario verde → azul.</li>
+  </ul>
+<pre><code>&lt;!-- ng-container agrupa las dos &lt;tr&gt; por compra sin inyectar nodos al DOM --&gt;
+&lt;ng-container *ngFor="let c of filteredPurchases | paginate: page : pageSize"&gt;
+  &lt;tr&gt;
+    &lt;td&gt;{{ c.purchaseDate | date:'dd/MM/yyyy HH:mm' }}&lt;/td&gt;
+    &lt;td class="money"&gt;{{ c.total | number:'1.2-2' }}&lt;/td&gt;
+    &lt;td&gt;&lt;button class="view" (click)="toggleDetalle(c.id)"&gt;Detalle&lt;/button&gt;&lt;/td&gt;
+  &lt;/tr&gt;
+
+  &lt;!-- Fila de detalle: ocupa toda la tabla con colspan --&gt;
+  &lt;tr *ngIf="detalleAbiertaIds.has(c.id)" class="detalle-row"&gt;
+    &lt;td colspan="5"&gt;
+      &lt;div class="detalle fade-in"&gt; ... subtabla ... &lt;/div&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/ng-container&gt;</code></pre>
+  <div class="callout concept"><span class="t">Por qué &lt;ng-container&gt; y no un &lt;div&gt;</span>
+    Dentro de <code>&lt;tbody&gt;</code> solo pueden ir <code>&lt;tr&gt;</code>. Un
+    <code>&lt;div&gt;</code> rompería el HTML. <code>&lt;ng-container&gt;</code> permite repetir dos
+    filas hermanas lógicamente agrupadas sin generar un elemento real.</div>
+  <p>El estado de expansión se guarda en un <code>Set&lt;number&gt;</code>:</p>
+<pre><code>detalleAbiertaIds = new Set&lt;number&gt;();
+detalleAbiertaIds.has(id)   // ¿está abierto?
+toggleDetalle(id: number) { /* agrega/quita del Set */ }</code></pre>
+  <p><strong>Estado vacío con mensaje diferenciado</strong> — clave para debugging de filtros:</p>
+<pre><code>&lt;tr *ngIf="!loading &amp;&amp; filteredPurchases.length === 0"&gt;
+  &lt;td colspan="5" class="empty-row"&gt;
+    {{ purchases.length === 0
+        ? 'No hay compras registradas'
+        : 'No hay compras que coincidan con el filtro' }}
+  &lt;/td&gt;
+&lt;/tr&gt;</code></pre>
+  <div class="callout concept"><span class="t">Lección de UX</span>
+    Distinguir "no hay datos" de "los filtros no arrojan nada" evita que el usuario crea que se
+    borraron los registros. El mismo patrón se usó en Salehistory.</div>
+
+  <h4>3.8.4 Reportes: filtros sólidos, tarjetas con acento y corte de caja</h4>
+  <ul>
+    <li><strong>Filtros:</strong> de <code>rgba(255,255,255,0.06)</code> translúcido a sólido
+    <code>#0f172a</code> + borde <code>#334155</code>, focus azul. Se invierte el icono del date
+    picker con <code>::-webkit-calendar-picker-indicator</code> para que se vea sobre fondo oscuro.</li>
+    <li><strong>Tarjetas resumen:</strong> barra de acento superior con <code>::before</code> por
+    métrica (<code>.accent-blue</code> Ventas, <code>.accent-green</code> Total vendido,
+    <code>.accent-orange</code> Ticket promedio), montos con <code>$</code> y subtítulos
+    descriptivos.</li>
+    <li><strong>Gráficas:</strong> cada header lleva un <code>.chart-dot</code> con el color de la
+    serie en Chart.js → leyenda visual sin mirar la gráfica.</li>
+    <li><strong>Corte de caja:</strong> montos con <code>$</code> y <code>tabular-nums</code>;
+    <code>.card</code> alineada a <code>.table-card</code>.</li>
+  </ul>
+<pre><code>/* Barra de acento superior: pseudo-elemento, sin HTML extra */
+.card { position: relative; overflow: hidden; }
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--accent, #2563eb);
+}
+.card.accent-blue   { --accent: #3b82f6; }
+.card.accent-green  { --accent: #22c55e; }
+.card.accent-orange { --accent: #f97316; }</code></pre>
+  <div class="callout concept"><span class="t">Custom properties (variables CSS)</span>
+    Se define <code>--accent</code> en la clase de cada tarjeta y el <code>::before</code> la usa.
+    Es DRY: la regla de dibujo se escribe una vez y cada tarjeta solo cambia el color.</div>
+
+  <h4>3.8.5 Verificación de la tanda</h4>
+  <table>
+    <tr><th>Comando</th><th>Resultado</th></tr>
+    <tr><td><code>ng build</code> (production)</td><td>OK — solo warning pre-existente <code>cobro.css</code> 9.33 kB &gt; 8 kB</td></tr>
+    <tr><td><code>npx ng test --watch=false</code></td><td>14 archivos / 15 tests — todos pasan</td></tr>
+  </table>
+</section>
+
+<!-- ===================== 4. PATRONES ===================== -->
+<section class="page-break" id="patrones">
+  <h2>4. Patrones y convenciones del proyecto</h2>
+
+  <h3>4.1 Estructura estándar de una tabla</h3>
+<pre><code>&lt;div class="table-container fade-in"&gt;
+  &lt;div class="table-card"&gt;
+    &lt;!-- 1) barra de filtros (primer hijo, opcional) --&gt;
+    &lt;div class="table-filter-bar"&gt; ... &lt;/div&gt;
+
+    &lt;!-- 2) scroll + tabla --&gt;
+    &lt;div class="table-scroll"&gt;
+      &lt;table&gt;
+        &lt;thead&gt;&lt;tr&gt;&lt;th&gt;...&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+        &lt;tbody&gt; ... filas + estado vacío ... &lt;/tbody&gt;
+      &lt;/table&gt;
+    &lt;/div&gt;
+
+    &lt;!-- 3) pie de paginación (último hijo) --&gt;
+    &lt;app-pagination [total]="listaFiltrada.length" [pageSize]="pageSize"
+                    [page]="page" (pageChange)="page = $event"&gt;&lt;/app-pagination&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+  <p>El orden importa: <code>.table-card</code> tiene <code>overflow:hidden</code>, así el pie de
+  paginación queda redondeado en las esquinas inferiores.</p>
+
+  <h3>4.2 Semáforo de botones</h3>
+  <table>
+    <tr><th>Clase</th><th>Color</th><th>Significado</th></tr>
+    <tr><td><code>.primary</code></td><td>Azul <code>#2563eb</code></td><td>Acción principal (crear, guardar)</td></tr>
+    <tr><td><code>.edit</code></td><td>Amarillo</td><td>Editar</td></tr>
+    <tr><td><code>.delete</code></td><td>Rojo</td><td>Eliminar (destructivo)</td></tr>
+    <tr><td><code>.cancel</code></td><td>Gris</td><td>Cancelar (neutro, NO destructivo)</td></tr>
+    <tr><td><code>.view</code></td><td>Neutro</td><td>Ver detalle</td></tr>
+  </table>
+
+  <h3>4.3 Filtros client-side (receta)</h3>
+  <ol>
+    <li>Prop de estado con <code>null</code> = "Todos".</li>
+    <li>Getter que devuelve la lista filtrada.</li>
+    <li><code>*ngFor</code> y <code>[total]</code> usan la lista filtrada.</li>
+    <li>Opciones con <code>[ngValue]</code> (no <code>[value]</code>).</li>
+    <li><code>(ngModelChange)</code> resetea <code>page = 0</code>.</li>
+    <li>Estado vacío diferenciado con/sin filtro.</li>
+  </ol>
+
+  <h3>4.4 Formato de dinero</h3>
+  <p>En tablas se usa <code>| number:'1.2-2'</code>; el <code>$</code> se agrega literal cuando
+  aplica (<code>${{ total | number:'1.2-2' }}</code>). Las columnas llevan
+  <code>.money</code> (derecha + tabular-nums).</p>
+
+  <h3>4.5 Manejo de errores HTTP</h3>
+<pre><code>this.svc.accion().subscribe({
+  next: (data) =&gt; { /* asignar */ },
+  error: (err) =&gt; alert(err.error?.message || 'Mensaje genérico')
+});</code></pre>
+  <p class="tag">Pendiente conocido: migrar <code>alert</code>/<code>confirm</code> nativos a
+  MatSnackBar/MatDialog para consistencia.</p>
+</section>
+
+<!-- ===================== 5. MAPA ===================== -->
+<section class="page-break" id="mapa">
+  <h2>5. Mapa de archivos</h2>
+
+  <h3>5.1 Servicios HTTP (core/service)</h3>
+  <table>
+    <tr><th>Servicio</th><th>Base</th><th>Uso</th></tr>
+    <tr><td>AuthService</td><td><code>/auth</code></td><td>login, forgot/reset/change-password, me/authorities; token y usuario en localStorage</td></tr>
+    <tr><td>ProductService</td><td><code>/products</code></td><td>GET (con <code>?category=</code>), POST/PUT multipart, DELETE, barcode, search</td></tr>
+    <tr><td>SaleService</td><td><code>/sales</code> + <code>/products</code></td><td>processSale, catálogo POS, barcode, historial</td></tr>
+    <tr><td>PaymentService</td><td><code>/payments</code></td><td>status/{tx} (polling), retry, reverse</td></tr>
+    <tr><td>CashService</td><td><code>/cash</code></td><td>active, open, close, summary</td></tr>
+    <tr><td>UserService</td><td><code>/users</code> + <code>/roles</code></td><td>CRUD usuarios, activar/desactivar, combo roles</td></tr>
+    <tr><td>RoleService</td><td><code>/roles</code></td><td>CRUD roles</td></tr>
+    <tr><td>PermissionService</td><td><code>/permissions</code></td><td>lista de permisos agrupados por módulo</td></tr>
+    <tr><td>CategoryService</td><td><code>/categories</code></td><td>CRUD (incluye <code>updateCategory</code>)</td></tr>
+    <tr><td>ProviderService</td><td><code>/providers</code></td><td>CRUD proveedores</td></tr>
+    <tr><td>PurchaseService</td><td><code>/purchases</code></td><td>listar / byProvider / crear / cancelar</td></tr>
+    <tr><td>ReportService</td><td><code>/reports</code></td><td>trend, top-products, payment-methods, categories, low-stock, summary</td></tr>
+    <tr><td>CobroService</td><td>—</td><td>carrito local en memoria (sin HTTP)</td></tr>
+    <tr><td>TicketService</td><td>—</td><td>generación de PDF (sin HTTP)</td></tr>
+  </table>
+
+  <h3>5.2 Archivos tocados en las últimas tandas</h3>
+  <table>
+    <tr><th>Archivo</th><th>Cambio</th></tr>
+    <tr><td><code>src/app/app.routes.ts</code></td><td>Se quitaron rutas huérfanas <code>/clientes</code>, <code>/facturas</code>, <code>/ventas</code>, <code>/caja</code>.</td></tr>
+    <tr><td><code>features/shopping/compras.*</code></td><td>Tabs segmentados, detalle en fila completa, botones unificados, <code>loading</code>, estados vacíos, montos formateados.</td></tr>
+    <tr><td><code>features/reports/reportes.*</code></td><td>Filtros sólidos, tarjetas con acento, chart-dots, corte de caja con <code>$</code>.</td></tr>
+    <tr><td><code>features/salehistory/salehistory.*</code></td><td>Badges de método de pago, <code>.money</code>, resumen de lista filtrada.</td></tr>
+    <tr><td><code>features/categories/categorias.*</code></td><td>Botón editar <code>.edit</code>; cancelar <code>.cancel</code>.</td></tr>
+    <tr><td><code>features/roles/roles.*</code></td><td>Editar amarillo; cancelar con <code>editingRoleId</code>.</td></tr>
+    <tr><td><code>features/products/productos.*</code></td><td><code>editingProductId</code> + <code>cancelEdit()</code>.</td></tr>
+    <tr><td><code>features/users/usuarios.*</code></td><td><code>editingUserId</code> + <code>cancelEdit()</code>.</td></tr>
+    <tr><td><code>styles.css</code></td><td>Clases compartidas: tablas, filtros, botones, animaciones.</td></tr>
+    <tr><td><code>core/utils/storage-utils.ts</code></td><td>Helpers SSR-safe.</td></tr>
+    <tr><td><code>core/pipes/paginate/</code>, <code>core/components/pagination-control/</code></td><td>Paginación client-side reutilizable.</td></tr>
+    <tr><td><code>AGENTS.md</code></td><td>Bitácora y contexto del proyecto.</td></tr>
+  </table>
+
+  <h3>5.3 Rutas activas</h3>
+  <p><code>/</code> (login) · <code>/cobro</code> · <code>/perfil</code> · <code>/compras</code> ·
+  <code>/productos</code> · <code>/reportes</code> · <code>/usuarios</code> ·
+  <code>/salehistory</code> · <code>/categorias</code> · <code>/roles</code></p>
+</section>
+
+<!-- ===================== 6. COMANDOS ===================== -->
+<section id="comandos">
+  <h2>6. Comandos de trabajo</h2>
+<pre><code>npm install                       # dependencias
+npm start                         # ng serve → http://localhost:4200
+npm run build                     # build producción (usa environment-prod.ts)
+npx ng test --watch=false         # tests (Vitest) una sola vez</code></pre>
+  <div class="callout warn"><span class="t">Si un test falla con TS2307</span>
+    Faltan dependencias en <code>node_modules</code> (p. ej. <code>chart.js</code> o
+    <code>xlsx</code> tras clonar). Basta con <code>npm install</code>.</div>
+
+  <hr>
+  <p class="tag">
+    Documento de estudio generado automáticamente a partir de la bitácora del proyecto.
+    Para el detalle vivo y siempre actualizado, consultar <code>AGENTS.md</code>.
+  </p>
+</section>
+
+</body>
+</html>

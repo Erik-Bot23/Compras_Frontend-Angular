@@ -54,6 +54,16 @@ export class Salehistory implements OnInit {
     return result;
   }
 
+  //Resumen de la lista filtrada: total de registros e importe acumulado
+  //Se muestran en la barra de filtros como indicador analitico.
+  get filteredCount(): number {
+    return this.filteredSales.length;
+  }
+
+  get filteredTotal(): number {
+    return this.filteredSales.reduce((sum, s) => sum + (s.total ?? 0), 0);
+  }
+
   //Al cambiar un criterio se vuelve a la primera pagina
   onFilterChange(): void {
     this.page = 0;

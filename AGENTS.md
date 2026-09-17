@@ -40,12 +40,11 @@ src/app/
     ├── profile/perfil  ← datos + cambio contraseña + logout
     ├── shopping/   → Compras (3 tabs: compras/proveedores/márgenes)  ← IMPLEMENTADO
     ├── reports/    → Reportes (Chart.js + export PDF/XLSX)            ← IMPLEMENTADO
-    ├── salehistory/→ Historial de ventas (ruteado + paginado)         ← IMPLEMENTADO
-    └── placeholders: cash/, sales/, clients/, invoices/
+    └── salehistory/→ Historial de ventas (ruteado + paginado)         ← IMPLEMENTADO
 ```
 
 **Componentes funcionales**: Login, ForgotPassword, ResetPassword, Cobro (POS), Perfil, Productos, Categorias, Usuarios, Roles, Compras (3 tabs), Reportes, Salehistory, Sidebar.
-**Placeholders**: Caja, Ventas, Clientes, Facturas.
+**Placeholders eliminados (2026-09-17)**: Caja, Ventas, Clientes, Facturas (archivos borrados + rutas quitadas de `app.routes.ts`).
 
 ## Backend conectado
 
@@ -87,6 +86,37 @@ src/app/
 - **Sesión**: `AuthService.isLogged()` rechaza JWT expirados (claim `exp`); el `AuthInterceptor` maneja el 401 global (limpia sesión y lleva a `/`).
 
 ## Registro de cambios / decisiones
+
+### 2026-09-17 — Rediseño de Compras, Reportes e Historial de ventas + limpieza de rutas
+
+> Tanda de diseño sobre los 3 últimos módulos para alinearlos al lenguaje visual de los CRUDs (tarjetas `#1e293b`/borde `#263449`, botones `.edit`/`.delete`/`.cancel`, inputs sólidos `#0f172a`, formato monetario `| number:'1.2-2'`).
+
+#### 0. Limpieza: placeholders eliminados
+- Los archivos de **Caja, Ventas, Clientes y Facturas** ya no existían en disco (borrado en `git status`) pero `app.routes.ts` aún los importaba → el build fallaba con `TS2307`. Se quitaron las 4 rutas (`/clientes`, `/facturas`, `/ventas`, `/caja`). El sidebar ya no los enlazaba. Tests pasaron de 18/19 a 14/15 (los 4 specs borrados).
+
+#### 1. Salehistory
+- **Badges de método de pago**: `<span class="method-badge">` con `.cash` (verde), `.debit` (azul), `.credit` (morado), en vez de texto plano.
+- **Resumen de la lista filtrada**: nueva prop `filteredTotal`/`filteredCount` en `salehistory.ts`; en la barra de filtros se muestra "N ventas · Total: $X" (con `.sales-summary` empujado a la derecha con `margin-left:auto`).
+- **Columnas de montos**: clase `.money` (derecha + `font-variant-numeric: tabular-nums`); la columna Total en amarillo semibold.
+- `salehistory.css` (antes solo `.empty-row`) ampliado con `.sales-summary`, `.method-badge.*` y `.money`.
+
+#### 2. Compras
+- **Tabs**: de botones sueltos a un **control segmentado** (contenedor `#1e293b` con padding, `.tab.active` azul `#2563eb` + sombra).
+- **Botones unificados**: `.editRole` → `.edit` (amarillo) en proveedores; los "Cancelar" de proveedores y del modal pasan de `.delete` (rojo) a `.cancel` (gris). `.view` alineado a la familia de botones.
+- **Detalle expandible**: de `<div>` dentro de la celda de acciones a **fila completa** con `<ng-container *ngFor>` + `<tr class="detalle-row"><td colspan="5">`, con `.detalle-title` y subtabla estilizada. `toggleDetalle` sin cambios.
+- **Estados vacíos** en las 3 tablas (`.empty-row`), incluido mensaje diferenciado con/sin filtro en Compras. Nueva prop `loading` en `compras.ts`.
+- **Formato monetario** con `| number:'1.2-2'` en totales/subtotales/márgenes; botón "+ Nueva compra" y `.primary` del modal pasan de verde a azul primario.
+- `compras.css` reescrito (tabs, familia de botones, `.detalle`, `.money`, responsive del renglón del modal).
+
+#### 3. Reportes
+- **Filtros**: inputs/selects pasan de `rgba(255,255,255,0.06)` a sólido `#0f172a` + borde `#334155` (igual que `.table-filter-field`), focus azul; icono del date picker invertido.
+- **Tarjetas resumen**: barra de acento superior (`::before`) por métrica → `.accent-blue` (Ventas), `.accent-green` (Total vendido), `.accent-orange` (Ticket promedio); montos con `$` y subtítulos descriptivos.
+- **Gráficas**: header `h3` con `.chart-dot` de color acorde a la paleta de Chart.js (line/doughnut/bar/bar-secondary).
+- **Corte de caja**: montos con `$` y `tabular-nums`; `.card` alineada a `.table-card` (borde `#263449`).
+
+#### Verificación
+- `ng build` production: OK (solo warning pre-existente `cobro.css` 9.33 kB).
+- `npx ng test --watch=false`: **14 archivos / 15 tests, todos pasan**.
 
 ### 2026-09-15 — Botones Editar/Cancelar unificados en CRUDs + estilos
 
@@ -228,7 +258,7 @@ src/app/
 
 - ✅ **Tests**: 19/19 en verde (2026-09-15). Si al clonar falta `chart.js`/`xlsx` en `node_modules`, basta `npm install` (ocurrió 2026-09-15: el `npm test` fallaba con `TS2307`).
 - ⚠️ **`retryPayment` y `reversePayment`**: `reversePayment` sigue sin uso en componentes (el retry sí se usa en el POS).
-- **Placeholders sin implementar**: Caja, Ventas, Clientes, Facturas.
+- **Placeholders eliminados (2026-09-17)**: Caja, Ventas, Clientes, Facturas (archivos + rutas borradas).
 - Alert/confirm nativos en Compras y en el reintento de pago del POS (consistencia → MatSnackBar/MatDialog).
 - Sin unsubscriptions (`takeUntil`) en componentes con múltiples suscripciones HTTP.
 - Warnings CommonJS de build por jsPDF/canvg/xlsx → posible `allowedCommonJsDependencies` en `angular.json`.

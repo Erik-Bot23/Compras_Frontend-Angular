@@ -1,5 +1,11 @@
-/* -------- Página de reportes -------- */
+/* ============================================================
+   REPORTES - dashboard analitico
+   Tokens visuales consistentes con el resto de la app:
+   fondo #0f172a / tarjetas #1e293b / bordes #263449
+   inputs solidos #0f172a con focus azul #3b82f6
+   ============================================================ */
 
+/* -------- Pagina de reportes -------- */
 .content {
   flex: 1;
   padding: 20px;
@@ -15,17 +21,20 @@
   margin: 0;
 }
 
+/* Tarjeta base: mismo fondo/borde/radio que .table-card (styles.css) */
 .card {
   background: #1e293b;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid #263449;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
 }
 
+/* -------- Botones -------- */
 .btn {
   padding: 8px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid #334155;
+  background: #0f172a;
   color: white;
   font-weight: 600;
   font-size: 0.85rem;
@@ -35,7 +44,7 @@
 }
 
 .btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.14);
+  background: #1b2a44;
   transform: translateY(-1px);
 }
 
@@ -90,24 +99,41 @@
 
 .filter label {
   font-size: 0.72rem;
+  font-weight: 700;
   opacity: 0.7;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  color: #94a3b8;
 }
 
+/* Inputs/selects solidos: mismo look que .table-filter-field (styles.css) */
 .filter input,
 .filter select {
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: inherit;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
   font-size: 0.9rem;
   min-height: 36px;
+  transition: 0.25s;
+}
+
+.filter input:focus,
+.filter select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.35);
 }
 
 .filter select option {
-  background: #1e1f2b;
+  background: #0f172a;
+}
+
+/* El icono del date picker nativo es oscuro → lo invertimos para el tema oscuro */
+.filter input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
 }
 
 /* -------- Tarjetas resumen -------- */
@@ -119,10 +145,36 @@
 }
 
 .summary-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 16px;
+  overflow: hidden;
+}
+
+/* Acento de color superior: barra de 3px que distingue la metrica.
+   Cada tarjeta clave usa .accent-* ; las de metodos de pago quedan neutras. */
+.summary-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #475569;
+}
+
+.summary-card.accent-blue::before {
+  background: linear-gradient(90deg, #4f8cff, #2563eb);
+}
+
+.summary-card.accent-green::before {
+  background: linear-gradient(90deg, #34c98c, #16a34a);
+}
+
+.summary-card.accent-orange::before {
+  background: linear-gradient(90deg, #ffb86b, #f97316);
 }
 
 .summary-label {
@@ -135,6 +187,7 @@
 .summary-value {
   font-size: 1.5rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .summary-sub {
@@ -142,7 +195,7 @@
   opacity: 0.7;
 }
 
-/* -------- Gráficas -------- */
+/* -------- Graficas -------- */
 .charts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -154,10 +207,27 @@
   padding: 16px;
 }
 
+/* Header de la grafica: dot de color + titulo alineados */
 .chart-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0 0 12px;
   font-size: 0.95rem;
 }
+
+.chart-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Colores de los dots acordes a la PALETTE de las graficas (reportes.ts) */
+.chart-dot.line { background: #4f8cff; }
+.chart-dot.doughnut { background: #34c98c; }
+.chart-dot.bar { background: #ffb86b; }
+.chart-dot.bar-secondary { background: #ff6b8a; }
 
 .chart-full {
   grid-column: 1 / -1;
@@ -242,6 +312,11 @@
   padding: 6px 0;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
   font-size: 0.9rem;
+}
+
+/* Los montos del corte usan digitos tabulares para alinear cifras */
+.corte-row strong {
+  font-variant-numeric: tabular-nums;
 }
 
 .corte-row.total {

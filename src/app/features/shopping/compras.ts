@@ -45,6 +45,9 @@ export class Compras implements OnInit {
   products: ProductForm[] = [];
   margins: MarginDTO[] = [];
 
+  //Flag de carga: la tabla de compras muestra un estado vacio mientras carga
+  loading = false;
+
   //Paginación de las tablas
   page = 0;
   pageSize = 8;
@@ -86,9 +89,16 @@ export class Compras implements OnInit {
   //----- Carga de datos -----
 
   loadPurchases() {
+    this.loading = true;
     this.purchaseService.getPurchases().subscribe({
-      next: (data) => (this.purchases = data),
-      error: (err) => alert(err.error?.message || 'No se pudieron cargar las compras'),
+      next: (data) => {
+        this.purchases = data;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.loading = false;
+        alert(err.error?.message || 'No se pudieron cargar las compras');
+      },
     });
   }
 
