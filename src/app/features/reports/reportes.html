@@ -46,9 +46,13 @@
         <label>Stock máximo</label>
         <input type="number" min="0" [(ngModel)]="threshold" />
       </div>
-      <button class="btn btn-primary" (click)="applyFilters()" [disabled]="loading">
-        {{ loading ? 'Cargando…' : 'Aplicar' }}
-      </button>
+      <!-- Acciones de filtros: Aplicar (azul) y Restablecer (verde), juntos -->
+      <div class="filters-actions">
+        <button class="btn btn-primary" (click)="applyFilters()" [disabled]="loading">
+          {{ loading ? 'Cargando…' : 'Aplicar' }}
+        </button>
+        <button class="btn btn-success" (click)="resetFilters()" [disabled]="loading">Restablecer</button>
+      </div>
     </div>
 
     <!-- Tarjetas resumen: el acento de color superior distingue cada metrica -->
@@ -142,13 +146,14 @@
     <!-- Corte de caja (imprimible / exportable) -->
     <div class="table-container cortes fade-in">
       <div class="table-card corte-print">
-        <div class="table-title">
-          <h3>Corte de caja</h3>
+        <!-- Encabezado del corte: botones ARRIBA del titulo, todo centrado -->
+        <div class="corte-header">
           <div class="actions">
             <button class="btn btn-secondary" (click)="printCorte()">Imprimir</button>
             <button class="btn btn-secondary" (click)="exportCortePDF()">PDF</button>
             <button class="btn btn-secondary" (click)="exportCorteExcel()">Excel</button>
           </div>
+          <h3>Corte de caja</h3>
         </div>
 
         <div class="corte-body" *ngIf="cashSummary; else noCash">

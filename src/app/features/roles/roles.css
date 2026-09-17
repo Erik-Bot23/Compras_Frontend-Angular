@@ -70,8 +70,8 @@
 
 /*Contenedor de la tabla:
    La tarjeta visual (.table-card) y el scroll (.table-scroll) viven en
-   styles.css. Aqui solo se define el wrapper como flex column para que la
-   tarjeta llene el panel (ver .table-panel .table-card abajo). */
+   styles.css. Aqui solo se define el wrapper como flex column; la tarjeta se
+   ajusta a su contenido (ver .table-panel .table-card mas abajo). */
 .table-container {
   width: 100%;
   min-width: 0;
@@ -178,15 +178,25 @@
   min-width: 0;
 }
 
-/* La tarjeta de la tabla rellena el panel verticalmente:
-   flex:1 + min-height:0 → el scroll interno (.table-scroll) aparece dentro
-   de la tarjeta y no empuja el layout. */
+/* El contenedor ocupa el alto del panel (flex:1). La tarjeta de la tabla de
+   abajo NO se estira: se ajusta a su contenido para que el pie de paginacion
+   quede justo despues de la ultima fila. */
 .table-panel .table-container {
   flex: 1;
 }
 
+/* La tarjeta de la tabla se ajusta a su contenido (filas + pie de paginacion).
+   NO usar flex:1 aqui: al ser un flex column, flex:1 estiraba la tarjeta a todo
+   el alto del panel; dentro, .table-scroll (flex:1 en styles.css) se quedaba con
+   el espacio sobrante y empujaba el pie de paginacion al fondo, dejando un
+   hueco vacio bajo la ultima fila. Sin flex:1 la tarjeta mide lo que mide su
+   contenido y el pie queda pegado a la ultima fila (como en productos/usuarios/
+   categorias). */
 .table-panel .table-card {
-  flex: 1;
+  /* Sin sombra: la tarjeta global .table-card (styles.css) trae
+     box-shadow: 0 4px 20px rgba(0,0,0,.25); se quita para homologar el aspecto
+     plano con las tablas de productos/usuarios/categorias. */
+  box-shadow: none;
 }
 
 /*Responsivo*/

@@ -8,8 +8,12 @@ export const routes: Routes = [
     { path: 'perfil', loadComponent: () => import('./features/profile/perfil').then(m=>m.Perfil) },
     { path: 'compras', loadComponent: () => import('./features/shopping/compras').then(m=>m.Compras), canActivate:[PermissionGuard], data:{permission: 'VER_COMPRAS'} },
     { path: 'productos', loadComponent: () => import('./features/products/productos').then(m=>m.Productos), canActivate:[PermissionGuard], data:{permission: 'VER_PRODUCTOS'} },
+    //Vista de productos dados de baja (solo tabla + dar de alta)
+    { path: 'productos-desactivados', loadComponent: () => import('./features/deactivated-products/deactivated-products').then(m=>m.DeactivatedProducts), canActivate:[PermissionGuard], data:{permission: 'VER_PRODUCTOS'} },
     { path: 'reportes', loadComponent: () => import('./features/reports/reportes').then(m=>m.Reportes), canActivate:[PermissionGuard], data:{permission: 'VER_REPORTES'} },
     { path: 'usuarios', loadComponent: () => import('./features/users/usuarios').then(m=>m.Usuarios), canActivate:[PermissionGuard], data:{permission: 'VER_USUARIOS'} },
+    //Vista de usuarios dados de baja (solo tabla + dar de alta)
+    { path: 'usuarios-desactivados', loadComponent: () => import('./features/deactivated-users/deactivated-users').then(m=>m.DeactivatedUsers), canActivate:[PermissionGuard], data:{permission: 'VER_USUARIOS'} },
     { path: 'salehistory', loadComponent: () => import('./features/salehistory/salehistory').then(m=>m.Salehistory), canActivate:[PermissionGuard], data:{permission: 'VER_VENTAS'} },
     { path: 'categorias', loadComponent: () => import('./features/categories/categorias').then(m=>m.Categorias), canActivate:[PermissionGuard], data:{permission: 'VER_CATEGORIAS'} },
     { path: 'roles', loadComponent: () => import('./features/roles/roles').then(m=>m.Roles), canActivate:[PermissionGuard], data:{permission: 'VER_ROLES'} },

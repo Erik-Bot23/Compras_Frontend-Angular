@@ -1,0 +1,65 @@
+<!--
+  USUARIOS DADOS DE BAJA - vista minima: solo la tabla de inactivos y su
+  boton "Dar de alta". Sin formulario ni filtros (los inactivos se filtran
+  client-side de GET /api/users). Incluye <app-sidebar> para conservar el menu
+  sandwich y la navegacion. sidebar.menuOpen viene del SidebarService.
+-->
+<div class="layout" [class.collapsed]="!sidebar.menuOpen">
+  <app-sidebar (toggle)="sidebar.menuOpen = $event"></app-sidebar>
+
+  <!-- CONTENIDO -->
+  <main class="content">
+    <h2>Usuarios dados de baja</h2>
+
+    <!-- Estructura de tabla responsive (clases compartidas en styles.css):
+         .table-container / .table-card / .table-scroll -->
+    <div class="table-container fade-in">
+      <div class="table-card">
+        <div class="table-scroll">
+          <table class="user-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Rol</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngIf="loading">
+                <td colspan="4" class="empty-row">Cargando usuarios dados de baja…</td>
+              </tr>
+
+              <tr *ngFor="let u of users | paginate: page : pageSize">
+                <td>{{ u.name }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.roleName }}</td>
+                <td>
+                  <div class="table-actions">
+                    <!-- Reactiva el usuario: desaparece de aqui y vuelve a /usuarios -->
+                    <button *hasPermission="'ACTIVAR_USUARIOS'" type="button" (click)="activate(u.id)" class="activate">
+                      Dar de alta
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr *ngIf="!loading && users.length === 0">
+                <td colspan="4" class="empty-row">No hay usuarios dados de baja</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pie de tabla con paginacion -->
+        <app-pagination
+          [total]="users.length"
+          [pageSize]="pageSize"
+          [page]="page"
+          (pageChange)="page = $event">
+        </app-pagination>
+      </div>
+    </div>
+  </main>
+</div>

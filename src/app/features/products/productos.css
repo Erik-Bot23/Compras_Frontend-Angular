@@ -162,7 +162,7 @@
    El espaciado entre ellos ya no usa margin-right: lo maneja .table-actions
    (flex con gap, styles.css). white-space:nowrap evita que "Editar"/"Eliminar"
    se partan en dos lineas dentro de la celda de acciones. */
-.edit, .delete, .cancel {
+.edit, .delete, .cancel, .deactivate {
   border: none;
   padding: 6px 12px;
   border-radius: 8px;
@@ -199,6 +199,40 @@
 .cancel:hover {
   background: linear-gradient(135deg, #475569, #334155);
   transform: scale(1.05);
+}
+
+/* Dar de baja (borrado logico): naranja, distinto del rojo de "Eliminar"
+   (borrado fisico) y del amarillo de "Editar". */
+.deactivate {
+  background: linear-gradient(135deg, #fb923c, #f97316);
+}
+
+.deactivate:hover {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  transform: scale(1.05);
+}
+
+/* Boton "Ver desactivados": se empuja al extremo derecho de la barra de
+   filtros con margin-left:auto y usa un estilo "ghost" para no competir
+   visualmente con las acciones primarias de la tabla. */
+.deactivated-link {
+  margin-left: auto;
+  align-self: flex-end;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+
+.deactivated-link:hover {
+  border-color: #3b82f6;
+  color: #93c5fd;
 }
 
 /*Ir al modulo de categorias*/

@@ -1,0 +1,57 @@
+/* Contenido: ocupa el ancho restante del layout (.layout es flex row).
+   flex:1 evita que el modulo quede pegado a la izquierda con un hueco a la
+   derecha. Homologado con usuarios/salehistory. */
+.content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.content h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Contenedor de la tabla: flex column + overflow:hidden para que .table-card y
+   .table-scroll (styles.css) controlen la altura y hagan scroll interno, de
+   modo que el pie de paginacion quede siempre visible. */
+.table-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* min-width fuerza el scroll horizontal en pantallas pequenas */
+.user-table {
+  min-width: 640px;
+}
+
+/* Fila informativa cuando no hay datos o se esta cargando */
+.empty-row {
+  text-align: center;
+  padding: 24px;
+  opacity: 0.7;
+}
+
+/* Boton "Dar de alta": verde, homologado con usuarios y productos inactivos.
+   El gap entre botones lo aporta .table-actions (styles.css). */
+.activate {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+  background: linear-gradient(135deg, #6afd5d, #45ca39);
+}
+
+.activate:hover {
+  background: linear-gradient(135deg, #6afd5d, #45ca39);
+  transform: scale(1.05);
+}

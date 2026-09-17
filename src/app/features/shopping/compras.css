@@ -5,6 +5,107 @@
    / .table-filter-field / .filter-select / .table-filter-bar
    ============================================================ */
 
+/* Contenido: ocupa el ancho restante del layout (.layout es flex row).
+   flex:1 es la clave: sin esta regla .content se encogia a su contenido y el
+   modulo quedaba pegado a la izquierda, con un hueco a la derecha.
+   Homologado con productos/usuarios/categorias. */
+.content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Titulo del modulo centrado, como en los demas modulos */
+.content h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* -------- Layout de las pestanas (alto acotado + scroll interno) -------- */
+
+/* Contenedor de la tabla: flex column + overflow:hidden para que la tarjeta
+   (.table-card) y el area desplazable (.table-scroll, en styles.css) controlen
+   la altura y hagan scroll interno. min-width:0 le permite encogerse por debajo
+   del ancho de su contenido (necesario dentro del grid de proveedores).
+   IMPORTANTE: esta regla faltaba en compras; sin ella el contenedor era un
+   <div> normal, la tarjeta crecia con el contenido y .content (overflow:hidden)
+   la recortaba -> en Margenes no se veian las filas ni el pie de paginacion. */
+.table-container {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cada pestana llena el alto restante de .content (h2 + tabs ya ocupan arriba).
+   min-height:0 es CLAVE: sin el, el flex item no se puede encoger por debajo
+   del alto de su contenido; la tabla crecia, .content (overflow:hidden) la
+   recortaba y el pie de paginacion (anterior/siguiente) desaparecia. */
+.tab-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Pestanas sin formulario (Compras / Margenes): la tabla toma todo el alto
+   libre del panel. Tanto este contenedor como la tarjeta de adentro llevan
+   min-height:0 para que .table-scroll (flex:1 + overflow:auto en styles.css)
+   haga scroll interno cuando hay muchas filas. */
+.tab-panel > .table-container {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Pestana Proveedores: grid de 2 columnas (formulario izq / tabla der), igual
+   que productos/usuarios/categorias. grid-template-rows minmax(0,1fr) fija la
+   fila al alto disponible y permite que la tabla se encoja en vez de desbordar.
+   Esta clase se suma a .tab-panel; al tener mas especificidad, su display:grid
+   gana sobre el display:flex de .tab-panel. */
+.tab-panel.proveedores-grid {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 30px;
+}
+
+/* Los hijos del grid tienen min-width:auto por defecto (su tamano minimo es el
+   del contenido). El formulario medía ~382px porque sus inputs no tienen un
+   ancho fijo, desbordaba su columna de 350px y se pegaba a la tabla (gap real
+   de -2px). Con min-width:0 cada hijo respeta el ancho de su columna y el
+   espacio (gap) de 30px se mantiene. */
+.proveedores-grid > * {
+  min-width: 0;
+}
+
+/* La tarjeta de la tabla se ajusta a su contenido; con muchas filas se encoge
+   (min-height:0) y .table-scroll hace el scroll interno. */
+.tab-panel .table-card {
+  min-height: 0;
+}
+
+/* El contenedor de la tabla (grid item) tambien debe poder encogerse. */
+.proveedores-grid > .table-container {
+  min-height: 0;
+}
+
+/* Si no hay permiso de crear/editar proveedores, el formulario no se renderiza
+   y la tabla es el unico hijo del grid: ocupa las dos columnas. */
+.proveedores-grid > .table-container:only-child {
+  grid-column: 1 / -1;
+}
+
+/* Responsivo: en pantallas angostas el formulario pasa arriba de la tabla. */
+@media (max-width: 900px) {
+  .tab-panel.proveedores-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* -------- Pestanas: control segmentado -------- */
 
 /* Contenedor que agrupa las tabs (parecido a un segmented control) */
@@ -83,6 +184,10 @@
   max-width: 420px;
   width: 100%;
   margin: 0 auto 15px auto;
+  /* border-box: el ancho 100% incluye el padding. Sin esto (content-box) el
+     formulario medía 350px de contenido + 32px de padding = 382px, desbordaba
+     su columna de 350px en el grid y se pegaba a la tabla. */
+  box-sizing: border-box;
 }
 
 .form-card input, .custom-select {
@@ -215,6 +320,9 @@ tr.detalle-row td {
 
 .detalle {
   max-width: 620px;
+  /* margin:auto centra el bloque de detalle dentro de la fila expandida
+     (la <td> abarca las 5 columnas con colspan). */
+  margin: 0 auto;
 }
 
 /* Encabezado del detalle: etiqueta pequeña en mayusculas */
@@ -225,6 +333,8 @@ tr.detalle-row td {
   letter-spacing: 0.6px;
   color: #94a3b8;
   margin-bottom: 8px;
+  /* Centrado junto con el bloque .detalle */
+  text-align: center;
 }
 
 /* Subtabla de renglones: fondo mas oscuro que la tabla principal */

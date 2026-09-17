@@ -17,7 +17,8 @@
     </div>
 
     <!-- ==================== PESTAÑA COMPRAS ==================== -->
-    <div *ngIf="activeTab === 'compras'">
+    <!-- .tab-panel: llena el alto restante y permite scroll interno de la tabla -->
+    <div *ngIf="activeTab === 'compras'" class="tab-panel">
       <div class="toolbar">
         <button *hasPermission="'CREAR_COMPRAS'" class="primary" (click)="abrirModal()">+ Nueva compra</button>
 
@@ -118,7 +119,10 @@
     </div>
 
     <!-- ==================== PESTAÑA PROVEEDORES ==================== -->
-    <div *ngIf="activeTab === 'proveedores'">
+    <!-- .proveedores-grid (se suma a .tab-panel) convierte esta pestana en un
+         grid de 2 columnas: formulario a la izquierda y tabla a la derecha,
+         homologado con productos/usuarios/categorias. -->
+    <div *ngIf="activeTab === 'proveedores'" class="tab-panel proveedores-grid">
       <div class="form-card" *ngIf="auth.hasPermission('CREAR_PROVEEDORES') || auth.hasPermission('EDITAR_PROVEEDORES')">
         <div class="field">
           <label>Nombre</label>
@@ -188,7 +192,9 @@
     </div>
 
     <!-- ==================== PESTAÑA MÁRGENES ==================== -->
-    <div *ngIf="activeTab === 'margenes'">
+    <!-- .tab-panel: acota el alto para que la tabla haga scroll y el pie de
+         paginacion quede siempre visible. -->
+    <div *ngIf="activeTab === 'margenes'" class="tab-panel">
       <p *ngIf="!auth.hasPermission('VER_REPORTES')" class="aviso">
         Necesitas permiso VER_REPORTES para consultar los márgenes.
       </p>

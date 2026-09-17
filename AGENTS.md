@@ -35,15 +35,17 @@ src/app/
     ├── login/ + forgot-password/ + reset-password/
     ├── charge/  → cobro (POS) + facade/ (sale-facade, cash-facade)   ← NÚCLEO
     ├── sidebar/ (menú lateral reutilizable)
-    ├── products/ ← CRUD productos con imagen
+    ├── products/ ← CRUD productos con imagen (+ botón a desactivados)
     ├── categories/, users/, roles/  ← CRUD completos
+    ├── deactivated-products/ ← Productos dados de baja (tabla + dar de alta)
+    ├── deactivated-users/    ← Usuarios dados de baja (tabla + dar de alta)
     ├── profile/perfil  ← datos + cambio contraseña + logout
     ├── shopping/   → Compras (3 tabs: compras/proveedores/márgenes)  ← IMPLEMENTADO
     ├── reports/    → Reportes (Chart.js + export PDF/XLSX)            ← IMPLEMENTADO
     └── salehistory/→ Historial de ventas (ruteado + paginado)         ← IMPLEMENTADO
 ```
 
-**Componentes funcionales**: Login, ForgotPassword, ResetPassword, Cobro (POS), Perfil, Productos, Categorias, Usuarios, Roles, Compras (3 tabs), Reportes, Salehistory, Sidebar.
+**Componentes funcionales**: Login, ForgotPassword, ResetPassword, Cobro (POS), Perfil, Productos, Categorias, Usuarios, Roles, ProductosDesactivados, UsuariosDesactivados, Compras (3 tabs), Reportes, Salehistory, Sidebar.
 **Placeholders eliminados (2026-09-17)**: Caja, Ventas, Clientes, Facturas (archivos borrados + rutas quitadas de `app.routes.ts`).
 
 ## Backend conectado
@@ -86,6 +88,34 @@ src/app/
 - **Sesión**: `AuthService.isLogged()` rechaza JWT expirados (claim `exp`); el `AuthInterceptor` maneja el 401 global (limpia sesión y lleva a `/`).
 
 ## Registro de cambios / decisiones
+
+### 2026-09-17 (2) — Vistas de "Dados de baja" (productos + usuarios)
+
+> Frontend del borrado lógico de **productos** (el backend ya exponía `GET /products/inactive`, `PATCH /products/{id}/deactivate` y `PATCH /products/{id}/active`, con los permisos `DESACTIVAR_PRODUCTOS`/`ACTIVAR_PRODUCTOS`) + reutilización del soft-delete ya existente de **usuarios**. Todas las vistas de baja son simétricas: solo tabla + botón "Dar de alta" + menú sándwich.
+
+#### 1. Productos (`features/products`)
+- **Botón destructivo condicional** en la tabla: `ProductDto` ahora devuelve `hasHistory`; si es `false` → botón rojo **"Eliminar"** (borrado físico, `ELIMINAR_PRODUCTOS`); si es `true` → botón naranja **"Dar de baja"** (borrado lógico, `DESACTIVAR_PRODUCTOS`). Cada rama va en su `<ng-container *hasPermission>` porque no se pueden combinar `*ngIf` + `*hasPermission` en un mismo elemento.
+- **`deactivateProduct(id)`** en `productos.ts`: confirma, llama al servicio y saca el producto de la lista (el backend deja de devolverlo en `GET /products`).
+- **Botón "Ver desactivados"** al extremo derecho de `.table-filter-bar` (clase `.deactivated-link`, `margin-left:auto`, estilo ghost) → `router.navigate(['/productos-desactivados'])`.
+- `productos.css`: nuevas clases `.deactivate` (naranja) y `.deactivated-link`.
+
+#### 2. Usuarios (`features/users`)
+- **Tabla principal solo activos**: `filteredUsers` filtra `active !== false`; se quitó el filtro de estado (`selectedState` + select) y la columna "Estado"; el botón "Dar de alta" inline se movió a la vista de desactivados. `deactivateUser` ahora **quita** al usuario de la lista (antes solo cambiaba `active = false`).
+- **Botón "Ver desactivados"** a la derecha de `.table-filter-bar` → `/usuarios-desactivados`. `.deactivated-link` añadida a `usuarios.css`.
+
+#### 3. Vistas nuevas (scaffolds implementados)
+- **`features/deactivated-products`**: tabla de inactivos (`GET /products/inactive`) con `imageUrl()`, paginación (`PaginatePipe` + `PaginationControl`), estado vacío y botón **"Dar de alta"** (`PATCH /products/{id}/active`, permiso `ACTIVAR_PRODUCTOS`).
+- **`features/deactivated-users`**: filtra client-side los inactivos de `GET /users` (`active === false`), tabla Nombre/Correo/Rol + botón **"Dar de alta"** (`PATCH /users/{id}/active`, permiso `ACTIVAR_USUARIOS`).
+- Ambas incluyen `<app-sidebar>` (menú sándwich) dentro de `.layout` con `[class.collapsed]="!sidebar.menuOpen"` y usan solo `.content` + `.table-container`/`.table-card`/`.table-scroll` (sin formulario ni filtros).
+- **Rutas**: `/productos-desactivados` (`VER_PRODUCTOS`) y `/usuarios-desactivados` (`VER_USUARIOS`) en `app.routes.ts` con `PermissionGuard`.
+
+#### 4. Servicios / interfaces / tests
+- `ProductService`: + `getInactiveProducts()`, `deactivateProduct(id)`, `activateProduct(id)`. `ProductForm` ahora tiene `hasHistory?: boolean`.
+- Specs de las 2 vistas: `fixture.detectChanges()` → `await fixture.whenStable()` (como productos/usuarios) para no disparar el `ngOnInit` con HTTP real en los tests.
+
+#### Verificación
+- `npx ng build --configuration development`: OK.
+- `npx ng test --watch=false`: **16 archivos / 17 tests, todos pasan**.
 
 ### 2026-09-17 — Rediseño de Compras, Reportes e Historial de ventas + limpieza de rutas
 

@@ -100,12 +100,8 @@
 }
 
 /*Contenedor de la tabla:
-   Antes tenia display:flex + justify-content:center → la tabla se veia centrada
-   y con su ancho natural (no ocupaba la pagina). Ahora flex column + ancho 100%
-   para que .table-card/.table-scroll (styles.css) la estiren a todo el ancho.
-   No usa main-grid (a diferencia de productos/usuarios), por eso no necesita
-   la regla :only-child: es un hijo directo de .content (flex column) y al
-   desaparecer el formulario ocupa el 100% automaticamente. */
+   flex column + min-width:0 (clave en CSS Grid) para que .table-card/.table-scroll
+   (styles.css) controlen altura y scroll horizontal sin desbordar la columna 1fr. */
 .table-container {
   width: 100%;
   min-width: 0;
@@ -114,6 +110,15 @@
   align-self: stretch;
   display: flex;
   flex-direction: column;
+}
+
+/* FIX del bug de ancho:
+   Si el usuario SOLO tiene permiso de VER (sin formulario de crear/editar), la
+   tabla queda como unico hijo del grid "350px 1fr" y sin esto quedaria atrapada
+   en los primeros 350px. :only-child + grid-column: 1 / -1 la expande a todo el
+   ancho. Mismo patron que productos/usuarios. */
+.main-grid > .table-container:only-child {
+  grid-column: 1 / -1;
 }
 
 /*Botones de accion:

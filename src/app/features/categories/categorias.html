@@ -2,6 +2,8 @@
   CATEGORIAS - CRUD simple
   sidebar.menuOpen del SidebarService (singleton).
   [class.collapsed]="!sidebar.menuOpen" → transicion 800ms ease-in-out.
+  .main-grid → formulario a la izquierda (350px) y tabla a la derecha (1fr),
+  homologado con productos/usuarios.
   <div class="table-container fade-in"> anima entrada de tabla 250ms.
 -->
 <div class="layout" [class.collapsed]="!sidebar.menuOpen">
@@ -11,6 +13,13 @@
   <main class="content">
     <h2>Gestión de categorías</h2>
 
+    <!--
+      Grid de 2 columnas (homologado con productos/usuarios):
+      · izquierda (350px) → formulario crear/editar
+      · derecha (1fr)     → tabla paginada
+      Por debajo de 900px colapsa a una columna (media query en categorias.css).
+    -->
+    <div class="main-grid">
         <!--Formulario (crear o editar)-->
         <div class="form-card" *ngIf="auth.hasPermission('CREAR_CATEGORIAS') || auth.hasPermission('EDITAR_CATEGORIAS')">
             <div class="field">
@@ -70,6 +79,7 @@
                     (pageChange)="page = $event">
                 </app-pagination>
             </div>
-        </div> 
+        </div>
+    </div>
   </main>
 </div>

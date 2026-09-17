@@ -125,6 +125,17 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  // ------- Reset de filtros -------
+  // Devuelve los filtros a sus valores por defecto y recarga los datos.
+  resetFilters() {
+    this.from = '';
+    this.to = '';
+    this.groupBy = 'MONTH';
+    this.topN = 5;
+    this.threshold = 10;
+    this.applyFilters();
+  }
+
   loadCashSummary() {
     this.cashService.getSummary().subscribe({
       next: (data) => (this.cashSummary = data),
@@ -181,7 +192,13 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
             backgroundColor: PALETTE.slice(0, this.paymentMethods.length),
           }],
         },
-        options: { plugins: { legend: { position: 'bottom' } } } as any,
+        // maintainAspectRatio:false → la dona llena el .chart-box (300px de alto)
+        // y Chart.js la centra en el recuadro. Con el ratio por defecto el canvas
+        // tomaba otras dimensiones y la grafica quedaba descuadrada.
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } },
+        } as any,
       });
     }
 

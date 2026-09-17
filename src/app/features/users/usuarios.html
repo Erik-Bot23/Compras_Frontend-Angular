@@ -68,8 +68,8 @@
            (:only-child) la expande a todo el ancho de la pagina. -->
       <div *ngIf="!loading" class="table-container fade-in">
         <div class="table-card">
-          <!-- Barra de filtros: rol + estado (activo/inactivo). [ngValue]
-               preserva number/boolean para las comparaciones estrictas del
+          <!-- Barra de filtros: solo rol (esta tabla lista unicamente activos).
+               [ngValue] preserva el number para la comparacion estricta del
                getter filteredUsers. (ngModelChange) resetea la pagina. -->
           <div class="table-filter-bar">
             <div class="table-filter-field">
@@ -80,14 +80,11 @@
               </select>
             </div>
 
-            <div class="table-filter-field">
-              <label for="filterState">Filtrar por estado</label>
-              <select class="filter-select" id="filterState" [(ngModel)]="selectedState" (ngModelChange)="onFilterChange()">
-                <option [ngValue]="null">Todos</option>
-                <option [ngValue]="true">Activo</option>
-                <option [ngValue]="false">Inactivo</option>
-              </select>
-            </div>
+            <!-- Acceso a la vista de usuarios dados de baja. margin-left:auto
+                 (clase .deactivated-link) lo empuja al extremo derecho. -->
+            <button type="button" class="deactivated-link" (click)="verDesactivados()">
+              Ver desactivados
+            </button>
           </div>
 
           <div class="table-scroll">
@@ -97,7 +94,6 @@
                   <th>Nombre</th>
                   <th>Correo</th>
                   <th>Rol</th>
-                  <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -109,24 +105,16 @@
                   <td>{{ p.name }}</td>
                   <td>{{ p.email }}</td>
                   <td>{{ p.roleName }}</td>
-                  <td>{{ p.active ? 'Activo' : 'Inactivo' }}</td> <!--Se muestra si esta activo o inactivo-->
                   <td>
-                    <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
+                    <!-- Contenedor flex de botones: gap en vez de margenes sueltos.
+                         Solo "Dar de baja": el alta de un usuario inactivo se hace
+                         desde /usuarios-desactivados (esta tabla solo lista activos). -->
                     <div class="table-actions">
-                      <!--Se verifica si esta activo el usuario-->
                       <button *hasPermission="'EDITAR_USUARIOS'" type="button" (click)="editUser(p)" class="edit">Editar</button>
 
-                      <ng-container *hasPermission="'DESACTIVAR_USUARIOS'">
-                        <button *ngIf="p.active" type="button" (click)="deactivateUser(p.id)" class="delete">
-                          Dar de baja
-                        </button>
-                      </ng-container>
-
-                      <ng-container *hasPermission="'ACTIVAR_USUARIOS'">
-                        <button *ngIf="!p.active" type="button" (click)="activateUser(p.id)" class="activate">
-                          Dar de alta
-                        </button>
-                      </ng-container>
+                      <button *hasPermission="'DESACTIVAR_USUARIOS'" type="button" (click)="deactivateUser(p.id)" class="delete">
+                        Dar de baja
+                      </button>
                     </div>
                   </td>
                 </tr>

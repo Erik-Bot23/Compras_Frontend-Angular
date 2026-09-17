@@ -185,3 +185,25 @@
   color: #cbd5e1;
 }
 
+/* Boton "Ver desactivados": empujado al extremo derecho de la barra de filtros
+   con margin-left:auto. Estilo "ghost" para no competir con las acciones. */
+.deactivated-link {
+  margin-left: auto;
+  align-self: flex-end;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+
+.deactivated-link:hover {
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+

@@ -14,10 +14,25 @@ export class ProductService {
 
   constructor(private http: HttpClient){}
 
-  //Trae los productos de la BD
+  //Trae los productos ACTIVOS de la BD (los dados de baja van a getInactiveProducts)
   getProducts(category?: string): Observable<ProductForm[]> {
     const params = category ? { params: {category}} : {};
     return this.http.get<ProductForm[]>(this.apiUrl, params); //params:
+  }
+
+  //Trae SOLO los productos dados de baja (GET /api/products/inactive)
+  getInactiveProducts(): Observable<ProductForm[]> {
+    return this.http.get<ProductForm[]>(`${this.apiUrl}/inactive`);
+  }
+
+  //Da de baja un producto (borrado logico: deja de venderse pero conserva historico)
+  deactivateProduct(id: number): Observable<ProductForm>{
+    return this.http.patch<ProductForm>(`${this.apiUrl}/${id}/deactivate`, {});
+  }
+
+  //Reactiva (dar de alta) un producto que estaba dado de baja
+  activateProduct(id: number): Observable<ProductForm>{
+    return this.http.patch<ProductForm>(`${this.apiUrl}/${id}/active`, {});
   }
 
   //Añade productos a la BD

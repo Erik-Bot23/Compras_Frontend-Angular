@@ -35,20 +35,20 @@ export class Usuarios implements OnInit {
   page = 0;
   pageSize = 8;
 
-  // Filtros de la tabla (dropdowns). null = "Todos" en cada criterio.
-  // Se usan [ngValue] (no [value]) para preservar number/boolean y que las
-  // comparaciones estrictas del getter funcionen.
+  // Filtro de la tabla (dropdown de rol). null = "Todos".
+  // Se usa [ngValue] (no [value]) para preservar el number y que la
+  // comparacion estricta del getter funcione.
+  // NOTA: ya no hay filtro de estado ni se muestran inactivos aqui. Esta tabla
+  // lista SOLO usuarios activos; los dados de baja viven en /usuarios-desactivados.
   selectedRole: number | null = null;
-  selectedState: boolean | null = null;
 
-  // Lista filtrada aplicando AMBOS criterios con AND:
-  //   - rol seleccionado → roleId debe coincidir.
-  //   - estado seleccionado → active debe coincidir (true=Activo/false=Inactivo).
-  // Se reevalua sola al cambiar cualquiera de los selects (zone.js).
+  // Lista filtrada: solo usuarios activos (active !== false para tolerar
+  // respuestas sin el campo) y, si hay rol elegido, que coincida el roleId.
+  // Se reevalua sola al cambiar el select (zone.js).
   get filteredUsers(): User[] {
     return this.users.filter(user =>
-      (this.selectedRole === null || user.roleId === this.selectedRole) &&
-      (this.selectedState === null || user.active === this.selectedState)
+      user.active !== false &&
+      (this.selectedRole === null || user.roleId === this.selectedRole)
     );
   }
 
@@ -172,35 +172,23 @@ export class Usuarios implements OnInit {
     };
   }
 
+  //Da de baja (borrado logico) un usuario. Como esta tabla solo lista activos,
+  //el usuario se quita de la lista: aparecera en /usuarios-desactivados.
   deactivateUser(id?: number){
     if(!id) return;
 
     if(confirm('¿Seguro que deseas dar de baja este usuario?')){
       this.userservice.deActiveUser(id).subscribe({
         next: () => {
-          const user = this.users.find(u => u.id === id);
-          if(user){
-            user.active = false;
-          }
+          this.users = this.users.filter(u => u.id !== id);
           console.log('Usuario dado de baja');
         }, error: (err) => console.error('Error al dar de baja', err)
       });
     }
   }
 
-  activateUser(id?: number){
-    if (!id) return;
-    
-    if(confirm('¿Seguro que deseas dar de alta a este usuario?')){
-      this.userservice.activateUser(id).subscribe({
-        next: () => {
-          const user = this.users.find(u => u.id === id);
-          if(user){
-            user.active = true;
-          }
-          console.log("Usuario activado")
-        }, error: (err) => console.log('Error al dar de alta', err)
-      });
-    }
+  //Navega a la vista de usuarios dados de baja (boton a la derecha del filtro)
+  verDesactivados(){
+    this.router.navigate(['/usuarios-desactivados']);
   }
 }

@@ -125,6 +125,13 @@
                 <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
               </select>
             </div>
+
+            <!-- Acceso a la vista de productos dados de baja. margin-left:auto
+                 (clase .deactivated-link) lo empuja al extremo derecho de la
+                 barra de filtros. -->
+            <button type="button" class="deactivated-link" (click)="verDesactivados()">
+              Ver desactivados
+            </button>
           </div>
 
           <div class="table-scroll">
@@ -157,7 +164,18 @@
                     <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
                     <div class="table-actions">
                       <button *hasPermission="'EDITAR_PRODUCTOS'" type="button" (click)="editProduct(p)" class="edit">Editar</button>
-                      <button *hasPermission="'ELIMINAR_PRODUCTOS'" type="button" (click)="deleteProduct(p.id)" class="delete">Eliminar</button>
+
+                      <!-- Accion destructiva condicional (hasHistory lo calcula el backend):
+                           - hasHistory = false → el producto nunca se vendio/compro → "Eliminar" (borrado fisico).
+                           - hasHistory = true  → tiene ventas/compras → "Dar de baja" (borrado logico).
+                           Cada rama exige su permiso y se envuelve en ng-container porque no
+                           se pueden combinar dos directivas estructurales (*ngIf + *hasPermission) en un mismo elemento. -->
+                      <ng-container *hasPermission="'ELIMINAR_PRODUCTOS'">
+                        <button *ngIf="!p.hasHistory" type="button" (click)="deleteProduct(p.id)" class="delete">Eliminar</button>
+                      </ng-container>
+                      <ng-container *hasPermission="'DESACTIVAR_PRODUCTOS'">
+                        <button *ngIf="p.hasHistory" type="button" (click)="deactivateProduct(p.id)" class="deactivate">Dar de baja</button>
+                      </ng-container>
                     </div>
                   </td>
                 </tr>

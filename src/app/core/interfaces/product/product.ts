@@ -13,6 +13,10 @@ export interface ProductForm{
   sku: string; //código del producto
   barcode: string;
   active?: boolean;
+  //true si el producto tiene ventas o compras asociadas. Lo decide el backend:
+  //si es true NO se puede eliminar (solo "dar de baja"); si es false se puede
+  //"Eliminar" de forma definitiva. El template elige el boton segun esto.
+  hasHistory?: boolean;
   createdAt?: Date;
 }
 

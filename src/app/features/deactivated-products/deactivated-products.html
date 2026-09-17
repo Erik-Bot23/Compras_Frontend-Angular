@@ -1,0 +1,73 @@
+<!--
+  PRODUCTOS DADOS DE BAJA - vista minima: solo la tabla de inactivos y su
+  boton "Dar de alta". Sin formulario ni filtros (los datos llegan de
+  GET /api/products/inactive). Incluye <app-sidebar> para conservar el menu
+  sandwich y la navegacion. sidebar.menuOpen viene del SidebarService.
+-->
+<div class="layout" [class.collapsed]="!sidebar.menuOpen">
+  <app-sidebar (toggle)="sidebar.menuOpen = $event"></app-sidebar>
+
+  <!-- CONTENIDO -->
+  <main class="content">
+    <h2>Productos dados de baja</h2>
+
+    <!-- Estructura de tabla responsive (clases compartidas en styles.css):
+         .table-container / .table-card / .table-scroll -->
+    <div class="table-container fade-in">
+      <div class="table-card">
+        <div class="table-scroll">
+          <table class="product-table">
+            <thead>
+              <tr>
+                <th>Imagen</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Categoría</th>
+                <th>SKU</th>
+                <th>Barcode</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngIf="loading">
+                <td colspan="8" class="empty-row">Cargando productos dados de baja…</td>
+              </tr>
+
+              <tr *ngFor="let p of products | paginate: page : pageSize">
+                <td><img [src]="imageUrl(p.img)" alt="{{ p.name }}" class="img"></td>
+                <td>{{ p.name }}</td>
+                <td>${{ p.price | number:'1.2-2' }}</td>
+                <td>{{ p.stock }}</td>
+                <td>{{ p.categoryName }}</td>
+                <td>{{ p.sku }}</td>
+                <td>{{ p.barcode }}</td>
+                <td>
+                  <div class="table-actions">
+                    <!-- Reactiva el producto: desaparece de aqui y vuelve a /productos -->
+                    <button *hasPermission="'ACTIVAR_PRODUCTOS'" type="button" (click)="activate(p.id)" class="activate">
+                      Dar de alta
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr *ngIf="!loading && products.length === 0">
+                <td colspan="8" class="empty-row">No hay productos dados de baja</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pie de tabla con paginacion -->
+        <app-pagination
+          [total]="products.length"
+          [pageSize]="pageSize"
+          [page]="page"
+          (pageChange)="page = $event">
+        </app-pagination>
+      </div>
+    </div>
+  </main>
+</div>

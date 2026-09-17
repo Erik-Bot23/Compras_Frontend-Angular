@@ -73,6 +73,8 @@ export class Productos implements OnInit {
     stock: 0,
     sku: '',
     barcode: '',
+    // 0 = "sin categoria todavia". Al llegar el catalogo (loadCategories) se
+    // reemplaza por la primera categoria (categoria por defecto del formulario).
     categoryId: 0
   };
 
@@ -110,6 +112,15 @@ export class Productos implements OnInit {
   loadCategories(){
     this.categoryService.getCategories().subscribe(data => {
       this.categories = data;
+
+      // Categoria por defecto (homologado con el rol por defecto del formulario
+      // de usuarios): si el formulario aun no tiene categoria (0 = sin
+      // seleccionar), se preselecciona la primera del catalogo. Asi el <select>
+      // no aparece vacio y crear un producto sin tocar el combo no envia
+      // categoryId 0.
+      if(data.length > 0 && this.form.categoryId === 0){
+        this.form.categoryId = data[0].id;
+      }
     });
   }
 
@@ -186,7 +197,10 @@ export class Productos implements OnInit {
       stock: 0,
       sku: '',
       barcode: '',
-      categoryId: 0
+      // Se conserva la categoria por defecto (la primera del catalogo) para que
+      // tras guardar/actualizar el formulario quede listo para crear otro
+      // producto sin tener que volver a elegir categoria.
+      categoryId: this.categories.length > 0 ? this.categories[0].id : 0
     };
 
     this.selectedFile = null
@@ -221,20 +235,57 @@ export class Productos implements OnInit {
 
   //Se elimina el producto de la BD
   deleteProduct(id?: number){
+
     if(!this.auth.hasPermission('ELIMINAR_PRODUCTOS')){
       return;
     }
 
+
     if(!id) return;
+
 
     if(confirm('¿Seguro que deseas eliminar este producto?')){
       this.productService.deleteProduct(id).subscribe({
         next: () => {
           this.products = this.products.filter(p => p.id !== id);
           console.log('Producto eliminado');
-        }, error: (err) => console.error('Error al eliminar', err)
+        }, 
+        error: (err) => {
+          // El backend devuelve 409 si el producto tiene ventas asignadas
+          alert(err.error?.message || 'No se pudo eliminar el producto');
+        }
       });
     }
+  }
+
+  //Da de baja el producto (borrado logico). Se usa cuando el producto YA tiene
+  //ventas/compras (hasHistory = true), por eso no se puede eliminar fisicamente.
+  //El backend solo cambia active = false y lo saca del catalogo; se conserva el
+  //historico. El producto desaparece de esta tabla (que es de activos).
+  deactivateProduct(id?: number){
+
+    if(!this.auth.hasPermission('DESACTIVAR_PRODUCTOS')){
+      return;
+    }
+
+    if(!id) return;
+
+    if(confirm('¿Seguro que deseas dar de baja este producto? Dejará de estar disponible para la venta.')){
+      this.productService.deactivateProduct(id).subscribe({
+        next: () => {
+          this.products = this.products.filter(p => p.id !== id);
+          console.log('Producto dado de baja');
+        },
+        error: (err) => {
+          alert(err.error?.message || 'No se pudo dar de baja el producto');
+        }
+      });
+    }
+  }
+
+  //Navega a la vista de productos dados de baja (boton a la derecha del filtro)
+  verDesactivados(){
+    this.router.navigate(['/productos-desactivados']);
   }
 
   //Validar campos numericos
