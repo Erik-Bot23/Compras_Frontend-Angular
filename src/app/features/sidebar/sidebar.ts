@@ -99,7 +99,7 @@ export class Sidebar {
       label: 'Historial de ventas',
       route: '/salehistory',
       permission: 'VER_VENTAS',
-      icon: ''
+      icon: 'assets/icons/historial.png'
     },
   ]
 
