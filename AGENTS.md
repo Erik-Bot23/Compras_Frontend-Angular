@@ -89,6 +89,239 @@ src/app/
 
 ## Registro de cambios / decisiones
 
+### 2026-09-28 — 📋 PLAN (NO IMPLEMENTADO): Enter en botones, validación de inputs, ticket sin multiplicación, SKU duplicado
+
+> **Estado: solo es un plan**, resultado de una auditoría del código. No se escribió
+> nada. Documentado para retomarlo en otra máquina. Contraparte backend:
+> `Compras-Backend/AGENTS.md` (misma fecha, misma sección) para el punto 4.
+>
+> - Origen: reporte de QA — "al hacer clic en un textbox se queda el 0; escribo 56 y
+> queda 056". Solución: `(focus)` → seleccionar todo, o `null` en vez de `0`.
+
+**Contexto heredado de la auditoría (importante para no re-descubrirlo):**
+
+- El proyecto **NO tiene ni un `<form>`** → `Enter` no hace nada en ningún lado.
+- Hay **1 solo `(keyup.enter)`** en toda la app: el escáner de barcode (`cobro.html:26`).
+- **Cero reactive forms**: no hay `ReactiveFormsModule`, `FormBuilder`, `Validators` ni
+  `FormGroup` en ningún archivo. **Toda** la validación es imperativa dentro de los
+  métodos de los componentes, reporta con `alert()`/`confirm()` o `MatSnackBar`.
+- `MatSnackBar` solo se usa en **4** componentes: `login.ts`, `forgot-password.ts`,
+  `reset-password.ts`, `perfil.ts`. Los CRUDs usan `alert()` nativo.
+- `src/styles.css` (407 líneas) **no tiene ninguna clase compartida de input ni de
+  botón** — cada componente re-declara su propio `input {}` / `button {}`. Al tocar
+  inputs, hay que editar el CSS del componente, no el global.
+
+---
+
+#### 1. `Enter` ejecuta el botón → `<form (ngSubmit)>`
+
+`ngSubmit` es un evento de **`FormsModule`, que todos estos componentes ya importan**
+(`productos.ts:20`, `reset-password.ts:10`, …) → **cero cambios en TypeScript**.
+
+`features/login/login.html` (el caso más simple):
+
+```html
+  <form class="login-card" (ngSubmit)="submit()">
+    <input type="text" name="email" placeholder="Correo electronico" [(ngModel)]="email"/>
+    <input type="password" name="password" placeholder="Contraseña" [(ngModel)]="password"/>
+    <button type="submit">Entrar</button>
+  </form>
+```
+
+⚠️ **La trampa**: dentro de un `<form>` todo `<button>` sin `type` es `submit`.
+En `productos.html` ya están bien los tres (`type="button"` en `:54` el `+` de
+categoría, `:97` el `Cancelar`; el de guardar `:85` hay que pasarlo a `type="submit"`).
+**Regla: revisa cada `<button>` que metas dentro del form y ponle `type="button"`
+a todos menos al de enviar.**
+
+**Dónde aplicar**: `login.html`, `forgot-password.html` (sacar el `<a routerLink>`
+fuera del form), `reset-password.html`, `productos.html`, `usuarios.html`,
+`roles.html`, `categorias.html`, `compras.html`, `cobro.html`.
+
+⚠️ En `productos.html` el `<input type="file">` (`:76`) quedaría dentro del form:
+probar que `Enter` en un text input no hace submit ignorando el file. Si molesta,
+la alternativa rápida es `(keyup.enter)="save()"` en el último input de cada pantalla
+(funciona, pero hay que acordarse de moverlo al agregar campos).
+
+---
+
+#### 2. Validación de los textbox
+
+**2.1 Solo números** — Los `type="number"` que ya existen (`productos.html:30`, `:40`,
+`compras.html:281-282`, `cobro.html:160/282/324`) **ya rechazan letras nativamente**;
+no hay que tocarlos. Lo que NO está protegido son los campos de texto que deberían
+ser numéricos: **SKU (`productos.html:62`) y Barcode (`:67`)**, hoy `text` libre.
+
+```html
+<input [(ngModel)]="form.sku" inputmode="numeric" pattern="[0-9]*" (input)="soloNumeros('sku')" />
+```
+
+```ts
+  //productos.ts — deja solo dígitos (se llama en cada tecla)
+  soloNumeros(field: 'sku' | 'barcode'){
+    this.form[field] = this.form[field].replace(/\D/g, '');
+  }
+```
+
+Además `compras.html:281-282` (cantidad / costo unitario) tienen `min="1"` / `min="0"`
+que son **solo pistas visuales, no se imponen**: agregar `(input)="validarLinea(l)"`:
+
+```ts
+  validarLinea(l: LineaCompra){
+    l.quantity = Math.max(1, Number(l.quantity) || 1);
+    l.unitCost = Math.max(0, Number(l.unitCost) || 0);
+  }
+```
+
+**2.2 Contraseña mínimo 8 caracteres** — **YA ESTÁ HECHO**, no tocar:
+`reset-password.ts:34-37` y `perfil.ts:53-56` (ambos con `MatSnackBar`).
+
+> ⚠️ Aclaración importante: la intención era "solo en resetear y **olvidar contraseña**",
+> pero **`forgot-password.html` NO tiene campo de contraseña** (solo el email, línea 6).
+> Así que el estado actual (validar en reset-password + perfil, NO en login ni al crear
+> usuario) ya cumple lo pedido. ✅ Opcional: contador de caracteres en vivo bajo el input.
+
+**2.3 Que el `0` desaparezca al hacer clic** ← el reporte de QA
+
+Causa raíz: los defaults son `0` y **nadie selecciona el texto al enfocar** → el cursor
+va al final y `56` se convierte en `056`.
+
+**Opción rápida** (una línea por input):
+
+```html
+<input [(ngModel)]="form.price" type="number" min="1"
+       (input)="validateNumber('price')" (focus)="$any($event.target).select()" />
+```
+
+**Opción DRY (recomendada)** — nueva directiva `core/directives/select-on-focus.ts`:
+
+```ts
+import { Directive, ElementRef, HostListener, inject } from '@angular/core';
+
+/**
+ * Selecciona todo el contenido del input al recibir el foco.
+ * Sin esto, escribir "56" en un campo que ya tiene "0" produce "056",
+ * porque el cursor se posiciona al final en vez de seleccionar.
+ * Uso: <input [(ngModel)]="form.price" appSelectOnFocus />
+ */
+@Directive({ selector: 'input[appSelectOnFocus]' })
+export class SelectOnFocus {
+  private el = inject<ElementRef<HTMLInputElement>>(ElementRef);
+
+  @HostListener('focus')
+  onFocus(): void { this.el.nativeElement.select(); }
+}
+```
+
+Importarla y sumarla al array `imports` del `@Component`; en el HTML solo el atributo
+`appSelectOnFocus`.
+
+**Los 7 inputs con default numérico (todos tienen el bug):**
+
+| # | Archivo:línea | Campo | Default | Nota |
+|---|---|---|---|---|
+| 1 | `productos.html:26` | Precio | `0` | `validateNumber` **no deja borrarlo**: al vaciar, `null < 1` → lo devuelve a `1` |
+| 2 | `productos.html:36` | Stock | `0` | el 0 sí es válido (agotado) |
+| 3 | `cobro.html:160` | Efectivo recibido | `cashReceived = 0` (`sale-facade.ts:37`) | al vaciar → `null` → `changePreview` da **`$NaN`** (`sale-facade.ts:490-497`) |
+| 4 | `cobro.html:282` | Monto inicial (abrir caja) | `openingAmount = 0` (`cash-facade.ts:17`) | |
+| 5 | `cobro.html:324` | Dinero contado (cerrar caja) | `closingAmount = 0` (`cash-facade.ts:20`) | |
+| 6 | `compras.html:281` | Cantidad (renglón) | **`1`** | escribir `5` → `15`. Mismo bug |
+| 7 | `compras.html:282` | Costo unitario | `0` | |
+
+**Arreglo extra para `price`/`stock` que no se dejan borrar** — `validateNumber`
+(`productos.ts:292-298`) no distingue "vacío" de "cero". La versión null-safe exige
+cambiar `ProductForm.price`/`stock` a `number | null`
+(`core/interfaces/product/product.ts:7-8`) y proteger `save()` (`productos.ts:151-152`),
+donde hoy **`price.toString()` lanza `TypeError`** si el campo quedó en `null`:
+
+```ts
+    formData.append('price', (this.form.price ?? 0).toString());
+    formData.append('stock', (this.form.stock ?? 0).toString());
+```
+
+`changePreview` (`sale-facade.ts:495-496`) también necesita `|| 0` para no pintar `$NaN`.
+
+---
+
+#### 3. Quitar la línea de multiplicación del ticket
+
+Es exactamente `core/service/ticket-service/ticket-service.ts:160-168`:
+
+```ts
+      if (item.quantity > 1) {
+        doc.setFontSize(6);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`(${item.quantity} x $${item.unitPrice.toFixed(2)} = $${item.subtotal.toFixed(2)})`, 10, y);
+        ...
+      }
+```
+
+**Borrar esas 9 líneas** (queda el `y += 4;` de la fila y el `y += 1;` de la 170).
+
+⚠️ **Consecuencia**: la columna se llama `PRECIO` y muestra el **precio unitario**
+(`:157`). Sin la línea de abajo, `3 uds / $10.00` + total `$30.00` obliga al usuario
+a multiplicar de cabeza. **Recomendado**: cambiar la columna a **IMPORTE** y mostrar
+el subtotal acumulado:
+
+```ts
+      doc.text(`IMPORTE`, 68, y, { align: 'center' });   // reemplaza 'PRECIO' en :135
+      doc.text(`$${(item.subtotal ?? 0).toFixed(2)}`, 68, y, { align: 'center' });  // reemplaza :157
+```
+
+**NO tocar** el bloque de `SUBTOTAL` (`:185-191`): ese es el subtotal de toda la
+compra, es otra cosa.
+
+⚠️ La multiplicación que se calcula en `core/service/cobro-service/cobro-service.ts:34`,
+`:59` y `:76` **NO se borra** — eso es el total real que ya usa el backend. Solo se
+quita la línea *impresa* del PDF.
+
+---
+
+#### 4. Aviso de SKU / Barcode duplicado (frontend)
+
+Contraparte backend en `Compras-Backend/AGENTS.md` (2026-09-28). El backend hoy
+devuelve **500 genérico**; el frontend lo **traga en silencio**:
+
+- `productos.ts:171-174` (update) y `:184-187` (create) → solo `console.log`.
+  **El usuario no ve absolutamente nada.**
+
+1. **Importar Material en `productos.ts`** (hoy no lo tiene):
+
+```ts
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+// sumarlo al array imports del @Component y al constructor: private snack: MatSnackBar
+```
+
+2. **Los 3 `error:`** de `productos.ts:171-174` y `:184-187` pasan de `console.log` a:
+
+```ts
+    this.snack.open(err.error?.message || 'No se pudo guardar el producto', 'Cerrar', {duration: 4000});
+```
+
+   El backend responde 409 con el mensaje en `err.error.message` (mismo patrón que ya
+   usan `deleteProduct` `:255` y `deactivateProduct` `:280` con `alert`).
+
+3. **Opcional (UX instantánea)**: en `save()`, tras `if(this.isSaving) return;`, validar
+   contra la lista ya cargada. Es solo ayuda visual — la garantía real es el 409 del
+   backend, porque dos usuarios podrían crear el mismo SKU a la vez:
+
+```ts
+    const sku = (this.form.sku ?? '').trim();
+    if (sku && this.products.some(p => p.sku === sku && p.id !== this.form.id)) {
+      this.snack.open(`El SKU "${sku}" ya está en uso por otro producto`, 'Cerrar', {duration: 4000});
+      return;
+    }
+```
+
+4. **Consistencia a futuro**: `productos.ts` mezcla `alert()`, `console.log` y (nuevo)
+   `MatSnackBar`. Vale la pena homogeneizar los CRUDs a `MatSnackBar` (ya está en
+   `package.json`, ver `reset-password.ts:4`).
+
+**Verificación sugerida**: `npm run build` + `npx ng test --watch=false`, y a mano:
+escribir `56` en Precio (debe quedar `56`, no `056`); `Enter` en login; crear 2 productos
+con el mismo SKU (debe salir el aviso); POS con 2 unidades del mismo producto (el PDF no
+debe mostrar `(2 x $X = $Y)`).
+
 ### 2026-09-17 (2) — Vistas de "Dados de baja" (productos + usuarios)
 
 > Frontend del borrado lógico de **productos** (el backend ya exponía `GET /products/inactive`, `PATCH /products/{id}/deactivate` y `PATCH /products/{id}/active`, con los permisos `DESACTIVAR_PRODUCTOS`/`ACTIVAR_PRODUCTOS`) + reutilización del soft-delete ya existente de **usuarios**. Todas las vistas de baja son simétricas: solo tabla + botón "Dar de alta" + menú sándwich.
@@ -286,6 +519,10 @@ src/app/
 
 ## Pendientes / issues conocidos
 
+- 🔜 **Plan de 4 mejoras de UX listo para implementar** (Enter en botones, validación de inputs / que el `0` desaparezca al hacer clic, quitar la multiplicación del ticket, aviso de SKU duplicado) → ver la sesión **2026-09-28** completa arriba con los snippets. Requiere tocar el backend en paralelo (punto 4).
+- ⚠️ **`productos.ts:171-174` y `:184-187` se tragan los errores del backend** con `console.log` — el usuario no ve nada si falla un guardado. Es el punto 4 del plan de 2026-09-28.
+- ⚠️ **Latente**: `productos.ts:151-152` hace `price.toString()` — si un `type="number"` queda vacío (`null`), **lanza `TypeError`**. Pasa al hacer el arreglo null-safe del plan 2026-09-28.
+- ⚠️ **Latente**: `sale-facade.ts:495-496` (`changePreview`) pinta **`$NaN`** si el campo "Efectivo recibido" (`cobro.html:160`) se vacía, porque `null - total = NaN`.
 - ✅ **Tests**: 19/19 en verde (2026-09-15). Si al clonar falta `chart.js`/`xlsx` en `node_modules`, basta `npm install` (ocurrió 2026-09-15: el `npm test` fallaba con `TS2307`).
 - ⚠️ **`retryPayment` y `reversePayment`**: `reversePayment` sigue sin uso en componentes (el retry sí se usa en el POS).
 - **Placeholders eliminados (2026-09-17)**: Caja, Ventas, Clientes, Facturas (archivos + rutas borradas).
