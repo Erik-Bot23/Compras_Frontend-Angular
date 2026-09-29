@@ -1,10 +1,11 @@
 <div class="login-container">
-  <div class="login-card">
+  <!--(ngSubmit) captura el Enter. ngSubmit viene de FormsModule, que login.ts ya importa-->
+  <form class="login-card" (ngSubmit)="submit()">
     <h2>Iniciar sesión</h2>
 
     <!--[(ngModel)]: -->
-    <input type="text" placeholder="Correo electronico" [(ngModel)]="email"/>
-    <input type="password" placeholder="Contraseña" [(ngModel)]="password"/>
+    <input type="text" name="email" placeholder="Correo electronico" [(ngModel)]="email"/>
+    <input type="password" name="password" placeholder="Contraseña" [(ngModel)]="password"/>
 
     <div class="forgot-container">
       <a routerLink="/forgot-password">
@@ -12,7 +13,7 @@
       </a>
     </div>
 
-    <button (click)="submit()">Entrar</button>
-
-  </div>
+    <!--type="submit" (o simplemente type) es el que dispara el Enter-->
+    <button type="submit">Entrar</button>
+  </form>
 </div>
