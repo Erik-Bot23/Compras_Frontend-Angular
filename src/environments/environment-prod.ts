@@ -13,5 +13,5 @@
 //     coincidir en el mismo dominio.
 export const environment = {
   production: true,
-  api: 'https://TU-APP.up.railway.app/api'
+  api: 'https://compras-backend-production-c115.up.railway.app/api'
 };
