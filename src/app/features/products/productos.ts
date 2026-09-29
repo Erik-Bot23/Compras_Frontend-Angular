@@ -14,10 +14,11 @@ import { SidebarService } from '../../core/service/sidebar-service/sidebar-servi
 // Paginacion reutilizable: pipe recorta la lista / control pinta el pie de tabla
 import { PaginatePipe } from '../../core/pipes/paginate/paginate';
 import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
+import { SelectOnFocus } from '../../core/routes/directives/select-on-focus';
 
 @Component({
   selector: 'app-productos',
-  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl],
+  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl, SelectOnFocus],
   templateUrl: './productos.html',
   styleUrl: './productos.css',
 })
@@ -314,6 +315,12 @@ export class Productos implements OnInit {
     }
 
     return `${environment.api}${img.startsWith('/') ? '' : '/'}${img}`;
+  }
+
+  //Deja solo digitos en el campo indicado (barras de código / SKU númerico)
+  //Se usa con (input), cada tecla se filtra al instante
+  soloNumeros(field: 'sku' | 'barcode'){
+    this.form[field] = this.form[field].replace(/\D/g, '');
   }
 
 }

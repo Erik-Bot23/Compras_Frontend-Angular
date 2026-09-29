@@ -13,33 +13,32 @@
 
     <div class="main-grid">
       <!-- FORMULARIO -->
-    <div class="form-card" *ngIf="auth.hasPermission('CREAR_USUARIOS') || auth.hasPermission('EDITAR_USUARIOS')">
+    <form (ngSubmit)="save()" class="form-card" *ngIf="auth.hasPermission('CREAR_USUARIOS') || auth.hasPermission('EDITAR_USUARIOS')">
         <div class="field">
           <label>Nombre del usuario</label>
-          <input [(ngModel)]="form.name" />
+          <input name="form.name" [(ngModel)]="form.name" />
         </div>
 
         <div class="field">
           <label>Correo del usuario</label>
-          <input [(ngModel)]="form.email"/>
+          <input name="form.email" [(ngModel)]="form.email"/>
         </div>
 
         <div class="field">
           <label>Contraseña</label>
-          <input 
-            [(ngModel)]="form.password" type="password"/>
+          <input name="form.password" [(ngModel)]="form.password" type="password"/>
         </div>
 
         <div class="field">
           <label>Rol</label>
-          <select [(ngModel)]="form.roleId" class="custom-select">
+          <select name="form.roleId" [(ngModel)]="form.roleId" class="custom-select">
             <option *ngFor="let role of roles" [value]="role.id">
               {{ role.name }}
             </option> 
           </select>
         </div>
 
-        <button type="button" (click)="save()" [disabled]="isSaving">
+        <button type="submit" [disabled]="isSaving">
           <!--{{ isSaving ? 'Guardando...' : 'Guardar' }}-->
            {{ form.id ? 'Actualizar usuarios' : 'Guardar usuario' }}
         </button>
@@ -53,7 +52,7 @@
         <button type="button" *ngIf="editingUserId" class="cancel" (click)="cancelEdit()">
           Cancelar
         </button>
-      </div>
+      </form>
 
       <!-- LISTADO -->
       <div *ngIf="loading">

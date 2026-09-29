@@ -156,17 +156,6 @@ export class TicketService {
       doc.text(`${item.quantity} uds`, 42, y, { align: 'center' }); // Cantidad debajo del header CANTIDAD
       doc.text(`$${item.unitPrice.toFixed(2)}`, 68, y, { align: 'center' }); // Precio debajo del header PRECIO
       y += 4;
-
-      // Subtotal solo si hay más de 1 unidad (texto pequeño gris)
-      if (item.quantity > 1) {
-        doc.setFontSize(6);
-        doc.setTextColor(150, 150, 150);
-        doc.text(`(${item.quantity} x $${item.unitPrice.toFixed(2)} = $${item.subtotal.toFixed(2)})`, 10, y);
-        doc.setTextColor(50, 50, 50);
-        doc.setFontSize(7);
-        y += 3;
-      }
-
       y += 1;
     });
 

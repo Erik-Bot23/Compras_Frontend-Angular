@@ -21,15 +21,15 @@
     -->
     <div class="main-grid">
         <!--Formulario (crear o editar)-->
-        <div class="form-card" *ngIf="auth.hasPermission('CREAR_CATEGORIAS') || auth.hasPermission('EDITAR_CATEGORIAS')">
+        <form (ngSubmit)="saveCategory()" class="form-card" *ngIf="auth.hasPermission('CREAR_CATEGORIAS') || auth.hasPermission('EDITAR_CATEGORIAS')">
             <div class="field">
-                <label>{{ editingCategoryId ? 'Nombre de la categoría (edición)' : 'Nombre de la categoría' }}</label>
-                <input [(ngModel)]="categoryName">
+                <label>{{ editingCategoryId ? 'Nombre de la categoría' : 'Nombre de la categoría' }}</label>
+                <input name="categoryName" [(ngModel)]="categoryName">
             </div>
 
-            <button (click)="saveCategory()">{{ editingCategoryId ? 'Actualizar' : 'Guardar' }}</button>
-            <button *ngIf="editingCategoryId" class="cancel" (click)="cancelEdit()">Cancelar</button>
-        </div>
+            <button type="submit">{{ editingCategoryId ? 'Actualizar' : 'Guardar' }}</button>
+            <button *ngIf="editingCategoryId" class="cancel" type="button" (click)="cancelEdit()">Cancelar</button>
+        </form>
 
         <!-- Estructura de tabla responsive (clases compartidas en styles.css):
            .table-card  → tarjeta visual oscura con bordes redondeados.

@@ -280,4 +280,9 @@ export class Compras implements OnInit {
       error: (err) => alert(err.error?.message || 'No se pudo eliminar el proveedor'),
     });
   }
+
+  validarLinea(l: LineaCompra){
+    l.quantity = Math.max(1, Number(l.quantity) || 1);
+    l.unitCost = Math.max(0, Number(l.unitCost) || 0);
+  }
 }

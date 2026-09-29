@@ -2,7 +2,7 @@
   <div class="card" *ngIf="user">
 
     <div class="avatar">
-      👤
+      <!--<img src="assets/icons/user.png">--> 
     </div>
 
     <h2>
@@ -12,11 +12,6 @@
     <span class="role">
       {{user.role}}
     </span>
-
-    <p>
-      <strong>ID:</strong>
-      {{user.id}}
-    </p>
 
     <p>
       <strong>Email:</strong>
@@ -37,15 +32,14 @@
       </button>
     </div>
 
-    <div *ngIf="showPasswordForm" class="password-card">
-      <input type="password" placeholder="Contraseña actual" [(ngModel)]="currentPassword">
-      <input type="password" placeholder="Nueva contraseña" [(ngModel)]="newPassword">
-      <input type="password" placeholder="Confirmar contraseña" [(ngModel)]="confirmPassword">
+    <form (ngSubmit)="savePassword()" *ngIf="showPasswordForm" class="password-card">
+      <input type="password" name="currentPassword" placeholder="Contraseña actual" [(ngModel)]="currentPassword">
+      <input type="password" name="newPassword" placeholder="Nueva contraseña" [(ngModel)]="newPassword">
+      <input type="password" name="confirmPassword" placeholder="Confirmar contraseña" [(ngModel)]="confirmPassword">
 
-      <button class="save-btn" (click)="savePassword()">
+      <button class="save-btn" type="submit">
         Guardar contraseña
       </button>
-    </div>
-    
+    </form>
   </div>
 </div>

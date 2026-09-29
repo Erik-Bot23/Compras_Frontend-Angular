@@ -21,9 +21,8 @@
     0 5px 20px rgba(0,0,0,.3);
 }
 
-.avatar{
-  font-size:60px;
-  text-align:center;
+.avatar img{
+  object-fit: cover;
 }
 
 .role{

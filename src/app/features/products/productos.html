@@ -15,36 +15,40 @@
 
     <div class="main-grid">
       <!-- FORMULARIO -->
-      <div class="form-card" *ngIf="auth.hasPermission('CREAR_PRODUCTOS') || auth.hasPermission('EDITAR_PRODUCTOS')">
+      <form class="form-card" (ngSubmit)="save()" *ngIf="auth.hasPermission('CREAR_PRODUCTOS') || auth.hasPermission('EDITAR_PRODUCTOS')">
         <div class="field">
           <label>Nombre del producto</label>
-          <input [(ngModel)]="form.name" />
+          <input name="name" [(ngModel)]="form.name" />
         </div>
 
         <div class="field">
           <label>Precio</label>
-          <input 
+          <input
+            name="price"
             [(ngModel)]="form.price"
             min="1"
             (input)="validateNumber('price')"
             type="number"
+            appSelectOnFocus
           />
         </div>
 
         <div class="field">
           <label>Stock</label>
           <input 
+            name="stock"
             [(ngModel)]="form.stock"
             min="0"
             (input)="validateNumber('stock')"
             type="number"
+            appSelectOnFocus
           />
         </div>
 
         <div class="field">
           <label>Categoría</label>
           <div class="category-row">
-            <select [(ngModel)]="form.categoryId" class="custom-select">
+            <select name="categoryId" [(ngModel)]="form.categoryId" class="custom-select">
               <!--let c of: -->
               <option *ngFor="let c of categories" [value]="c.id"> <!--*ngFor: -->
                 {{ c.name }}
@@ -59,12 +63,20 @@
 
         <div class="field">
           <label>SKU</label>
-          <input [(ngModel)]="form.sku" />
+          <input name="sku" 
+          [(ngModel)]="form.sku" 
+          inputmode="numeric"
+          pattern="[0-9]" 
+          (input)="soloNumeros('sku')"/>
         </div>
 
         <div class="field">
           <label>Barcode</label>
-          <input [(ngModel)]="form.barcode" />
+          <input name="barcode" 
+          [(ngModel)]="form.barcode"
+          inputmode="numeric"
+          pattern="[0-9]"
+          (input)="soloNumeros('barcode')" />
         </div>
 
         <div class="field">
@@ -75,6 +87,7 @@
           <!--accept: -->
           <input 
             #fileInput 
+            name="image"
             type="file"
             accept="image/*"
             (change)="onFileSelected($event)"
@@ -82,7 +95,7 @@
           />
         </div>
 
-        <button type="button" (click)="save()" [disabled]="isSaving">
+        <button type="submit" [disabled]="isSaving">
           <!--{{ isSaving ? 'Guardando...' : 'Guardar' }}-->
            <!--?-->
            <!--:-->
@@ -97,7 +110,7 @@
         <button type="button" *ngIf="editingProductId" class="cancel" (click)="cancelEdit()">
           Cancelar
         </button>
-      </div>
+      </form>
 
       <!-- LISTADO -->
       <div *ngIf="loading">

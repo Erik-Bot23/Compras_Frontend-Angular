@@ -31,6 +31,7 @@ export class ResetPassword {
       return;
     }
 
+    //Validar contraseña
     if(this.password.length < 8){
       this.snack.open('Minimo 8 caracteres', '', {duration:2000});
       return;

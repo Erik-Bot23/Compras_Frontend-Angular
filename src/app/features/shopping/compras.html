@@ -123,27 +123,27 @@
          grid de 2 columnas: formulario a la izquierda y tabla a la derecha,
          homologado con productos/usuarios/categorias. -->
     <div *ngIf="activeTab === 'proveedores'" class="tab-panel proveedores-grid">
-      <div class="form-card" *ngIf="auth.hasPermission('CREAR_PROVEEDORES') || auth.hasPermission('EDITAR_PROVEEDORES')">
+      <form (ngSubmit)="guardarProveedor()" class="form-card" *ngIf="auth.hasPermission('CREAR_PROVEEDORES') || auth.hasPermission('EDITAR_PROVEEDORES')">
         <div class="field">
           <label>Nombre</label>
-          <input [(ngModel)]="formProvider.name" placeholder="Nombre del proveedor">
+          <input name="formProvider.name" [(ngModel)]="formProvider.name" placeholder="Nombre del proveedor">
         </div>
         <div class="field">
           <label>RFC</label>
-          <input [(ngModel)]="formProvider.rfc" placeholder="RFC o identificador fiscal">
+          <input name="formProvider.rfc" [(ngModel)]="formProvider.rfc" placeholder="RFC o identificador fiscal">
         </div>
         <div class="field">
           <label>Teléfono</label>
-          <input [(ngModel)]="formProvider.phone" placeholder="Opcional">
+          <input name="formProvider.phone" [(ngModel)]="formProvider.phone" placeholder="Opcional">
         </div>
         <div class="field">
           <label>Email</label>
-          <input [(ngModel)]="formProvider.email" placeholder="Opcional">
+          <input name="formProvider.email" [(ngModel)]="formProvider.email" placeholder="Opcional">
         </div>
 
-        <button (click)="guardarProveedor()">{{ editingProviderId ? 'Actualizar proveedor' : 'Guardar proveedor' }}</button>
-        <button *ngIf="editingProviderId" class="cancel" (click)="cancelarEdicionProveedor()">Cancelar</button>
-      </div>
+        <button type="submit">{{ editingProviderId ? 'Actualizar proveedor' : 'Guardar proveedor' }}</button>
+        <button type="button" *ngIf="editingProviderId" class="cancel" (click)="cancelarEdicionProveedor()">Cancelar</button>
+      </form>
 
       <div class="table-container fade-in">
         <div class="table-card">
@@ -278,8 +278,8 @@
           <option [ngValue]="null">Producto...</option>
           <option *ngFor="let prod of products" [ngValue]="prod.id">{{ prod.name }} (${{ prod.price }})</option>
         </select>
-        <input type="number" min="1" [(ngModel)]="l.quantity" title="Cantidad">
-        <input type="number" min="0" [(ngModel)]="l.unitCost" title="Costo unitario">
+        <input type="number" min="1" [(ngModel)]="l.quantity" (input)="validarLinea(l)" title="Cantidad">
+        <input type="number" min="0" [(ngModel)]="l.unitCost" (input)="validarLinea(l)" title="Costo unitario">
         <span class="linea-subtotal">${{ subtotal(l) }}</span>
         <button type="button" class="delete" (click)="quitarLinea(i)">×</button>
       </div>

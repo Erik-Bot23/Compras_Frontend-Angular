@@ -29,7 +29,7 @@
                 <input 
                     [(ngModel)]="sale.search"
                     (input)="sale.onSearch()"
-                    placeholder="Buscar por nombre, SKU o código de barras"
+                    placeholder="Buscar por nombre o SKU"
                 >
 
                 <div *ngIf="sale.searchResults.length" class="search-dropdown">
@@ -127,7 +127,8 @@
 
             <!--Modal para realizar el cobro-->
             <div class="modal-backdrop" *ngIf="sale.showPaymentModal">
-                <div class="modal payment-modal">
+                <!--Se actualizo a form para aceptar el Enter-->
+                <form (ngSubmit)="sale.confirmPayment()" class="modal payment-modal">
                     <h3>Cobrar venta</h3>
 
                     <!--Total-->
@@ -157,7 +158,7 @@
                             Efectivo recibido
                         </label>
 
-                        <input type="number" [(ngModel)]="sale.cashReceived" placeholder="Efectivo recibido" min="0">
+                        <input type="number" name="sale.cashReceived" [(ngModel)]="sale.cashReceived" placeholder="Efectivo recibido" min="0">
 
                         <div class="change-preview">
                             Cambio:
@@ -181,7 +182,7 @@
 
                     <!--Botones-->
                     <div class="modal-buttons">
-                        <button type="button" (click)="sale.confirmPayment()">
+                        <button type="submit">
                             Confirmar pago
                         </button>
 
@@ -189,26 +190,27 @@
                             Cancelar
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
 
             <!--Modal de pago con tarjeta-->
             <div class="modal-backdrop" *ngIf="sale.showCardModal">
-                <div class="modal card-modal">
+                <!--Se cambio a form para que acepte el Enter-->
+                <form (ngSubmit)="sale.confirmCardPayment()" class="modal card-modal">
                     <h3>Pago con tarjeta</h3>
 
                     <div class="card-payment-form">
                         <div class="form-group">
                             <label>Número de tarjeta</label>
 
-                            <input type="text" [(ngModel)]="sale.cardNumber"
+                            <input type="text" name="sale.cardNumber" [(ngModel)]="sale.cardNumber"
                                 (input)="sale.formatCardNumber($event)" placeholder="**** **** **** ****" maxlength="19"
                                 [disabled]="sale.cardProcessing" inputmode="numeric" pattern="[0-9 ]*">
                         </div>
 
                         <div class="form-group">
                             <label>PIN</label>
-                            <input type="password" [(ngModel)]="sale.cardPin" placeholder="Ingrese su pin" maxlength="4"
+                            <input type="password" name="sale.cardPin" [(ngModel)]="sale.cardPin" placeholder="Ingrese su pin" maxlength="4"
                             pattern="[0-9]*" [disabled]="sale.cardProcessing">
                         </div>
 
@@ -237,7 +239,7 @@
                             Reintentar pago
                         </button>
 
-                        <button type="button" (click)="sale.confirmCardPayment()" [disabled]="sale.cardProcessing" class="btn-pay">
+                        <button type="submit" [disabled]="sale.cardProcessing" class="btn-pay">
                             {{ sale.cardProcessing ? 'Procesando...' : 'Pagar' }}
                         </button>
 
@@ -245,7 +247,7 @@
                             Cancelar
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
 
             <!--Modal de espera-->
@@ -276,19 +278,21 @@
 
             <!--Modal de abrir caja-->
             <div class="modal-backdrop" *ngIf="cash.showOpenCashModal">
-                <div class="modal">
+                <!--Se actualizo a form para que reconozca el Enter-->
+                <form (ngSubmit)="cash.confirmOpenCashModal()" class="modal">
                     <h3>Abrir caja</h3>
 
-                    <input type="number" [(ngModel)]="cash.openingAmount" placeholder="Monto inicial">
+                    <input type="number" name="cash.openingAmount" [(ngModel)]="cash.openingAmount" placeholder="Monto inicial">
                     <div class="button-box">
-                        <button class="btn-confirm-open" (click)="cash.confirmOpenCashModal()">Abrir</button>
+                        <button class="btn-confirm-open" type="submit">Abrir</button>
                     </div>
-                </div>
+                </form>
             </div>
 
             <!--Modal de cerrar caja-->
             <div class="modal-backdrop" *ngIf="cash.showCloseCashModal">
-                <div class="modal cash-close-modal">
+                <!--Se actualizo a form para que reconozca el Enter-->
+                <form (ngSubmit)="cash.confirmCloseCashModal()" class="modal cash-close-modal">
                     <h3>Corte de caja</h3>
                     <div class="cash-summary">
                         <div class="cash-row">
@@ -333,10 +337,10 @@
                     </div>
 
                     <div class="button-box">
-                        <button class="btn-confirm-close" (click)="cash.confirmCloseCashModal()">Cerrar</button>
-                        <button class="btn-cancel" (click)="cash.showCloseCashModal = false">Cancelar</button>
+                        <button class="btn-confirm-close" type="submit">Cerrar</button>
+                        <button class="btn-cancel" type="button" (click)="cash.showCloseCashModal = false">Cancelar</button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     </main>

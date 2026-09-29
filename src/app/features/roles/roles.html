@@ -13,11 +13,11 @@
 
         <div class="roles-layout">
             <!--FORMULARIO-->
-            <div class="form-panel" *ngIf="auth.hasPermission('CREAR_ROLES') || auth.hasPermission('EDITAR_ROLES')">
+            <form (ngSubmit)="saveRole()" class="form-panel" *ngIf="auth.hasPermission('CREAR_ROLES') || auth.hasPermission('EDITAR_ROLES')">
                 <div class="form-card">
                     <div class="field">
                         <label>Nombre del rol</label>
-                        <input [(ngModel)]="roleName">
+                        <input name="roleName" [(ngModel)]="roleName">
                     </div>
 
                     <div class="permission-section">
@@ -35,7 +35,7 @@
                         </div>
                     </div>
 
-                    <button (click)="saveRole()">
+                    <button type="submit">
                         {{ editingRoleId ? 'Actualizar rol' : 'Guardar rol'}}
                     </button>
 
@@ -44,9 +44,9 @@
                       resetForm() limpia roleName, selectedPermissions y editingRoleId
                       → el formulario vuelve al estado "crear".
                     -->
-                    <button *ngIf="editingRoleId" class="cancel" (click)="resetForm()">Cancelar</button>
+                    <button type="button" *ngIf="editingRoleId" class="cancel" (click)="resetForm()">Cancelar</button>
                 </div>
-            </div>
+            </form>
 
             <!-- Panel de la tabla:
            .table-panel → area flexible que toma todo el ancho restante del flex
