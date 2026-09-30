@@ -15,10 +15,11 @@ import { SidebarService } from '../../core/service/sidebar-service/sidebar-servi
 import { PaginatePipe } from '../../core/pipes/paginate/paginate';
 import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
 import { SelectOnFocus } from '../../core/routes/directives/select-on-focus';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-productos',
-  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl, SelectOnFocus],
+  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl, SelectOnFocus, MatSnackBarModule],
   templateUrl: './productos.html',
   styleUrl: './productos.css',
 })
@@ -85,7 +86,8 @@ export class Productos implements OnInit {
     private router: Router,
     public auth: AuthService,
     // Inyectar servicio compartido del sidebar
-    public sidebar: SidebarService
+    public sidebar: SidebarService,
+    private snack: MatSnackBar
   ){}
 
   ngOnInit() {
@@ -171,6 +173,7 @@ export class Productos implements OnInit {
           this.resetForm();
         }, error: (err) => {
           this.isSaving = false;
+          this.snack.open(err.error?.message || 'No se pude actualizar el producto', 'Cerrar', {duration:4000});
           console.log('Error al actualizar', err);
         }
       });
@@ -184,6 +187,7 @@ export class Productos implements OnInit {
           console.log('Producto guardado');
         }, error: (err) => {
           this.isSaving = false;
+          this.snack.open(err.error?.message || 'No se pudo guardar el producto', 'Cerrar', {duration: 4000});
           console.log('Error al guardar', err);
         }
       });
