@@ -11,8 +11,8 @@ import { environment } from '../../../../environments/environment';
 //Esta clase se utliza en cobre-service
 export class CategoryService {
   //Ruta a la que tiene que responder ene l backend
-  private apiUrl = `${environment.api}/categories`;
-  //private apiUrl = 'http://localhost:8081/api/categories';
+  private apiUrl = `${environment.apiLocal}/categories`;
+  //private apiUrl = 'http://localhost:8081/api/local/categories';
 
   constructor(private http: HttpClient){}
 

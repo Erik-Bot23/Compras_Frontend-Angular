@@ -27,6 +27,11 @@ export interface PurchaseDTO {
   total: number;
   totalItems: number;
   items: PurchaseItemDTO[];
+//Estado del ciclo de vida de la compra (V3). false = PENDIENTE: todavia no
+  //toco el inventario y se puede cancelar. true = CONFIRMADA: el stock ya
+  //sumo y su costo ya es el vigente; no se puede cancelar (409).
+  confirmed: boolean;
+  confirmedAt: string | null;
 }
 
 //Item a enviar al crear una compra

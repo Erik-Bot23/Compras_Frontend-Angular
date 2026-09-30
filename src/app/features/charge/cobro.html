@@ -280,9 +280,14 @@
             <div class="modal-backdrop" *ngIf="cash.showOpenCashModal">
                 <!--Se actualizo a form para que reconozca el Enter-->
                 <form (ngSubmit)="cash.confirmOpenCashModal()" class="modal">
-                    <h3>Abrir caja</h3>
-
-                    <input type="number" name="cash.openingAmount" [(ngModel)]="cash.openingAmount" placeholder="Monto inicial">
+<h3>Abrir caja</h3>
+   
+   <!-- V3: numero de caja. Es OBLIGATORIO y unico: es lo que despues permite
+        "filtrar por caja" en Reportes y ver las ventas de cada corte. El backend
+        responde 400 si falta y 409 si ya existe. -->
+   <input type="text" name="cash.openingNumber" [(ngModel)]="cash.openingNumber"
+          placeholder="Numero de caja (ej: CAJA-1)" maxlength="50" required>
+   <input type="number" name="cash.openingAmount" [(ngModel)]="cash.openingAmount" placeholder="Monto inicial">
                     <div class="button-box">
                         <button class="btn-confirm-open" type="submit">Abrir</button>
                     </div>

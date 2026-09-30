@@ -211,13 +211,47 @@ export class Compras implements OnInit {
     });
   }
 
-  //Cancelar una compra (revierte el stock de sus productos)
-  cancelarCompra(id: number) {
-    if (!confirm('¿Cancelar esta compra? Se revertirá el stock de sus productos.')) return;
+  //Confirmar una compra: la mercancia entra al almacen, se suma el stock y se
+  //guarda el costo real de cada producto. Solo tiene sentido si sigue PENDIENTE.
+  confirmarCompra(compra: PurchaseDTO) {
+    const ok = confirm(
+      `¿Confirmar la compra #${compra.id}?\n\n` +
+        `La mercancía entrará al almacén: se sumará el stock de sus productos ` +
+        `y se guardará su costo real.\n` +
+        `Después de confirmar, la compra ya NO se podrá cancelar.`,
+    );
+    if (!ok) return;
 
-    this.purchaseService.cancelPurchase(id).subscribe({
+    this.purchaseService.confirmPurchase(compra.id).subscribe({
+      next: (actualizada) => {
+        //Se reemplaza por la respuesta del servidor (no estado local optimista):
+        //el confirmedAt lo pone el backend y es la evidencia de cuando ocurrio.
+        this.purchases = this.purchases.map((p) =>
+          p.id === actualizada.id ? actualizada : p,
+        );
+        this.loadMargins();
+        this.loadProducts();
+      },
+      error: (err) => alert(err.error?.message || 'No se pudo confirmar la compra'),
+    });
+  }
+
+  //Cancelar una compra PENDIENTE. Una CONFIRMADA da 409 y el mensaje del
+  //backend explica por que: su stock y su costo son hechos reales.
+  cancelarCompra(compra: PurchaseDTO) {
+    if (compra.confirmed) {
+      alert(
+        'Esta compra ya está confirmada: su mercancía entró al almacén y su ' +
+          'costo ya es el vigente. Una compra confirmada no se puede cancelar.',
+      );
+      return;
+    }
+
+    if (!confirm('¿Cancelar esta compra? Todavía no tiene efecto en el stock.')) return;
+
+    this.purchaseService.cancelPurchase(compra.id).subscribe({
       next: () => {
-        this.detalleAbiertaIds.delete(id);
+        this.detalleAbiertaIds.delete(compra.id);
         this.loadPurchases();
         this.loadMargins();
         this.loadProducts();

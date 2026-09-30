@@ -210,6 +210,32 @@
   background: linear-gradient(90deg, #ffb86b, #f97316);
 }
 
+/* V3: utilidad negativa en ROJO. Es el único acento rojo del reporte y
+   aparece solo cuando se perdió dinero en el periodo: por eso destaca. */
+.summary-card.accent-red::before {
+  background: linear-gradient(90deg, #ff6b6b, #dc2626);
+}
+
+/* Aviso de renglones sin costo: la utilidad mostrada no es exacta y el
+   usuario debe saberlo antes de tomar una decisión con ese número. */
+.aviso-costo {
+  border-left: 4px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Etiqueta de la caja seleccionada en el detalle */
+.cash-meta {
+  padding: 3px 9px;
+  border-radius: 9px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #34c98c, #16a34a);
+  color: #0f172a;
+}
+
 .summary-label {
   font-size: 0.72rem;
   opacity: 0.7;

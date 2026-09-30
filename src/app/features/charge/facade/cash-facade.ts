@@ -14,7 +14,8 @@ export class CashFacade  {
   cashSummary?: CashSummary;
   
   showOpenCashModal = false;
-  openingAmount = 0 ;
+  openingAmount = 0;
+  openingNumber = ''; //Número que escribe el vendedor (V3, obligatorio)
 
   showCloseCashModal = false;
   closingAmount = 0;
@@ -48,14 +49,23 @@ export class CashFacade  {
   confirmOpenCashModal(){
     this.showOpenCashModal = false;
 
-    this.cashService.openCash(this.openingAmount).subscribe({
+    //V3: el número es obligatorio y único. Se valida en el backend con 400/409.
+    const number = this.openingNumber.trim().toUpperCase();
+    if(!number){
+      alert('El número de caja es obligatorio para poder filtrar los reportes.');
+      this.showOpenCashModal = true;
+      return;
+    }
+
+    this.cashService.openCash(this.openingAmount, number).subscribe({
       next: res => {
         this.cashStatus = res;
         this.openingAmount = 0;
+        this.openingNumber = '';
         alert('Caja abierta');
       }, error: err => {
             this.showOpenCashModal = true;
-            alert(err.error.message);
+            alert(err.error?.message || 'No se pudo abrir la caja');
       }
     });
   }
@@ -122,5 +132,10 @@ export class CashFacade  {
   //Estatus de la caja
   get isOpen(): boolean {
     return !!this.cashStatus;
+  }
+
+  //Numero de la caja activa, para mostrarlo junto al estado.
+  get activeNumber(): string {
+    return this.cashStatus?.number || '';
   }
 }

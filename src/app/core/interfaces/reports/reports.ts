@@ -62,3 +62,56 @@ export interface ReportsSummaryDTO {
   averageTicket: number;
   paymentMethods: PaymentMethodDTO[];
 }
+
+//Utilidad del periodo (V3, GET /api/reports/profit)
+export interface ProfitDTO {
+  revenue: number;
+  costOfGoodsSold: number;
+  grossProfit: number;
+  marginPercent: number;
+  tickets: number;
+  itemsSold: number;
+  itemsWithoutCost: number;
+}
+
+//Detalle de una caja concreta (V3, GET /api/reports/cash/{cashId})
+export interface CashReportDTO {
+  cashId: number;
+  number: string;
+  openedAt: string;
+  closedAt: string | null;
+  openingAmount: number;
+  closingAmount: number | null;
+  expectedAmount: number;
+  difference: number;
+  cashSales: number;
+  debitSales: number;
+  creditSales: number;
+  totalSales: number;
+  totalTickets: number;
+  grossProfit: number;
+  active: boolean;
+  sales: SaleDetailHistoryResponse[];
+}
+
+//Renglón de venta en el historial (ya existe en la app, se reusa aquí)
+export interface SaleDetailHistoryResponse {
+  saleId: number;
+  saleDate: string;
+  total: number;
+  paymentMethod: PaymentMethod;
+  items: SaleDetailResponse[];
+  paymentStatus: string;
+  confirmed: boolean;
+  confirmedAt: string | null;
+  cancelled: boolean;
+  cancelledAt: string | null;
+}
+
+export interface SaleDetailResponse {
+  product: string;
+  quantity: number;
+  unitPrice: number;
+  unitCost: number;
+  subtotal: number;
+}

@@ -111,3 +111,119 @@
   font-weight: 700;
   color: #fbbf24;
 }
+
+/* ==========================================================================
+   Ciclo de vida de la venta: badge de ESTADO, botones y fila anulada (2026-09-30)
+   ========================================================================== */
+
+/* Badge de estado. Reutiliza la forma de pildora de .method-badge para que las
+   dos columnas de la tabla se lean como el mismo sistema visual, y cambia solo
+   el color segun el estado. */
+.state-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* Abierta: ámito tenue. Es el estado "en curso": se puede confirmar o anular.
+   El color ambiguo a propósito, porque no es un estado final. */
+.state-badge.state-open {
+  background: rgba(251, 191, 36, 0.14);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+/* Confirmada: azul. Estado TERMINAL y congelado: no se puede tocar más. */
+.state-badge.state-confirmed {
+  background: rgba(79, 140, 255, 0.16);
+  color: #4f8cff;
+  border: 1px solid rgba(79, 140, 255, 0.35);
+}
+
+/* Anulada: rojo. Estado terminal por la vía de la anulación: el stock volvió.
+   El selector es DOBLE clase a propósito (igual que state-open y
+   state-confirmed): con un `.state-badge` de una sola clase, su background
+   ganaría por orden de aparición y taparía el de los otros dos estados. Con
+   dos clases la especificidad (0,2,0) es la misma para los tres y gana el que
+   corresponde, sin depender del orden en el CSS. */
+.state-badge.state-cancelled {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* Fila de una venta anulada: se atenúa toda la fila (no solo la celda del
+   estado) para que se lea de un vistazo que esa venta "no cuenta", sin tener
+   que leer el badge. NO se oculta la fila: el historial debe seguir mostrando
+   el registro, porque la venta existió y se anuló. */
+.row-cancelled td {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+/* Los badges y los botones de una fila anulada NO deben verse tachados ni
+   atenuados: son la única referencia de qué pasó con esa venta. Por eso el
+   line-through y la opacity se neutralizan aquí. */
+.row-cancelled .state-badge {
+  opacity: 1;
+  text-decoration: none;
+}
+
+/* Contenedor de los botones de acción */
+.actions-cell {
+  white-space: nowrap;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Botones de acción: base común. El tamaño pequeño (padding 5px 10px, fuente
+   12px) es para que quepan dos botones en la última columna sin ensanchar la
+   tabla. */
+.btn-confirm,
+.btn-cancel {
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 150ms ease-in-out;
+}
+
+/* Confirmar: verde, la misma acento de "acción positiva" del resto de la app */
+.btn-confirm {
+  background: rgba(52, 201, 140, 0.16);
+  color: #34c98c;
+  border-color: rgba(52, 201, 140, 0.35);
+}
+
+/* Anular: rojo, pero SOLO cuando la acción es posible. Ver más abajo el
+   estilo deshabilitado, que es el que se ve casi siempre. */
+.btn-cancel {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* Botón deshabilitado: no se atenúa tanto que parezca roto ni tan poco que
+   parezca clicable. El `cursor: not-allowed` es la señal que el usuario
+   realmente lee; el `title` del botón explica el porqué (ver el template). */
+.btn-confirm:disabled,
+.btn-cancel:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* En desktop los botones se separan un poco al pasar el mouse. En pantallas
+   táctiles el hover no existe, así que la separación ya está en el gap. */
+@media (hover: hover) {
+  .btn-confirm:not(:disabled):hover,
+  .btn-cancel:not(:disabled):hover {
+    opacity: 0.8;
+  }
+}

@@ -22,14 +22,17 @@ import { SidebarService } from '../../core/service/sidebar-service/sidebar-servi
 import { ReportService, ReportGroup } from '../../core/service/report-service/report-service';
 import { CashService } from '../../core/service/cash-service/cash-service';
 import {
-  PeriodSalesDTO,
-  TopProductDTO,
-  PaymentMethodDTO,
+  CashReportDTO,
   CategoryPerformanceDTO,
   LowStockDTO,
+  MarginDTO,
+  PaymentMethodDTO,
+  PeriodSalesDTO,
+  ProfitDTO,
   ReportsSummaryDTO,
+  TopProductDTO,
 } from '../../core/interfaces/reports/reports';
-import { CashSummary } from '../../core/interfaces/cash-interface/cash-interface';
+import { CashRegister, CashSummary } from '../../core/interfaces/cash-interface/cash-interface';
 
 Chart.register(...registerables);
 
@@ -60,6 +63,18 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   lowStock: LowStockDTO[] = [];
   summary!: ReportsSummaryDTO;
   cashSummary!: CashSummary;
+  profit!: ProfitDTO;
+
+  //Historial de cajas para el selector. Es CashRegister[] (NO CashReportDTO):
+  //getHistory() devuelve la lista de cajas; el detalle con ventas y utilidad
+  //de UNA caja es CashReportDTO y llega aparte, al elegirla.
+  cashHistory: CashRegister[] = [];
+
+  //Id de la caja elegida en el filtro (null = todas)
+  selectedCashId: number | null = null;
+
+  //Detalle de la caja elegida: sus ventas y su utilidad
+  cashReport: CashReportDTO | null = null;
 
   // ------- Gráficas (solo navegador, SSR no soporta canvas) -------
   private trendChart?: Chart;
@@ -83,6 +98,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit() {
     this.applyFilters();
     this.loadCashSummary();
+    this.loadCashHistory();
   }
 
   ngAfterViewInit() {
@@ -117,6 +133,11 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
     this.reportService.getSummary(this.from, this.to).subscribe((data) => {
       this.summary = data;
       this.renderCharts();
+    });
+
+    //V3: utilidad (profit = ingresos - costo de lo vendido)
+    this.reportService.getProfit(this.from, this.to).subscribe((data) => {
+      this.profit = data;
     });
 
     this.reportService.getLowStock(this.threshold).subscribe((data) => {
@@ -367,5 +388,48 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
 
   private filenameDate(): string {
     return new Date().toISOString().slice(0, 10);
+  }
+
+  // ============================================================
+  //  V3: Historial de cajas y detalle por caja (filtro)
+  // ============================================================
+
+  /**
+   * Carga la lista de cajas para el selector "filtrar por caja".
+   *
+   * <p>El selector queda vacío sin romper la pantalla: si el usuario no tiene
+   * VER_CAJA, el backend responde 403 y los reportes de utilidad siguen
+   * funcionando. Por eso el error se traga en vez de avisar.
+   */
+  loadCashHistory() {
+    this.cashService.getHistory().subscribe({
+      next: (data) => (this.cashHistory = data),
+      error: () => (this.cashHistory = []),
+    });
+  }
+
+  /**
+   * Se dispara al elegir una caja en el filtro (o "todas").
+   *
+   * <p>Con null se limpia la selección y el reporte vuelve al periodo completo.
+   * Con un id se pide el detalle de ESA caja: sus ventas y su utilidad. Se usa
+   * un 404 tolerado porque una caja recién borrada no debe romper la pantalla.
+   */
+  onCashSelected(cashId: number | null) {
+    if (cashId === null || cashId === undefined) {
+      this.clearCashSelection();
+      return;
+    }
+
+    this.cashReport = null; //limpia el anterior mientras carga el nuevo
+    this.reportService.getCashReport(cashId).subscribe({
+      next: (data) => (this.cashReport = data),
+      error: () => (this.cashReport = null),
+    });
+  }
+
+  clearCashSelection() {
+    this.selectedCashId = null;
+    this.cashReport = null;
   }
 }

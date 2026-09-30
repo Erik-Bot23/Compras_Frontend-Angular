@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 
 export interface CashRegister {
   id: number;
+  number?: string;
   openedAt: string;
   closedAt: string;
   openingAmount: number;
@@ -23,6 +24,7 @@ export interface CashSummary{
 
 export interface OpenCashRequest{
   openingAmount: number;
+  number: string;
 }
 
 export interface ClosingCashRequest{

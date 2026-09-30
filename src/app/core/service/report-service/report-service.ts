@@ -3,11 +3,13 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  CashReportDTO,
   CategoryPerformanceDTO,
   LowStockDTO,
   MarginDTO,
   PaymentMethodDTO,
   PeriodSalesDTO,
+  ProfitDTO,
   ReportsSummaryDTO,
   TopProductDTO,
 } from '../../interfaces/reports/reports';
@@ -19,7 +21,7 @@ export type ReportGroup = 'DAY' | 'MONTH' | 'YEAR';
   providedIn: 'root',
 })
 export class ReportService {
-  private api = `${environment.api}/reports`;
+  private api = `${environment.apiLocal}/reports`;
 
   constructor(private http: HttpClient) {}
 
@@ -50,6 +52,16 @@ export class ReportService {
 
   getSummary(from?: string, to?: string): Observable<ReportsSummaryDTO> {
     return this.http.get<ReportsSummaryDTO>(`${this.api}/summary`, { params: buildParams({ from, to }) });
+  }
+
+  //V3: utilidad del periodo (ingresos - costo de lo vendido)
+  getProfit(from?: string, to?: string): Observable<ProfitDTO> {
+    return this.http.get<ProfitDTO>(`${this.api}/profit`, { params: buildParams({ from, to }) });
+  }
+
+  //V3: detalle de una caja por su ID
+  getCashReport(cashId: number): Observable<CashReportDTO> {
+    return this.http.get<CashReportDTO>(`${this.api}/cash/${cashId}`);
   }
 }
 

@@ -8,7 +8,7 @@ import { PermissionModel } from '../../models/role-model';
   providedIn: 'root',
 })
 export class PermissionService {
-  private apiUrl = `${environment.api}/permissions`;
+  private apiUrl = `${environment.apiLocal}/permissions`;
 
   constructor(private http: HttpClient){}
 

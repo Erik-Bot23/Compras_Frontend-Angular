@@ -391,6 +391,46 @@ tr.detalle-row td {
   color: white;
 }
 
+/* -------- Estado de la compra (V3) --------
+   Pendiente  = ámbar: registrada pero todavía sin efecto en el inventario.
+   Confirmada = verde: la mercancía ya entró al almacén y su costo es el
+                 vigente. El verde refuerza "esto ya es un hecho real". */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.badge-pendiente {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #0f172a;
+}
+
+.badge-confirmada {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: white;
+}
+
+/* Fecha de confirmación bajo el badge */
+td .sub {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin-top: 3px;
+}
+
+/* Fila de una compra confirmada: el pasado no se borra, se atenúa. */
+tr.confirmada td {
+  background: rgba(22, 163, 74, 0.06);
+}
+
+/* Botones de acción deshabilitados (una compra confirmada ya no se toca) */
+.table-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* -------- Avisos / estados vacios -------- */
 .aviso {
   background: #1e293b;

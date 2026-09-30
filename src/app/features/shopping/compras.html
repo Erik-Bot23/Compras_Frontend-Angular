@@ -42,6 +42,10 @@
                   <th>Proveedor</th>
                   <th>Artículos</th>
                   <th>Total</th>
+                  <!-- Estado (V3): una compra PENDIENTE todavia no toco el
+                       inventario; una CONFIRMADA ya sumo stock y su costo es el
+                       vigente, y por eso no se puede cancelar. -->
+                  <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -50,7 +54,7 @@
                 <!-- ng-container agrupa las dos <tr> (fila + detalle expandido) sin
                      inyectar nodos: Angular permite varios <tr> por cada item. -->
                 <ng-container *ngFor="let c of filteredPurchases | paginate: page : pageSize">
-                  <tr>
+                  <tr [class.confirmada]="c.confirmed">
                     <td>{{ c.purchaseDate | date: 'dd/MM/yyyy HH:mm' }}</td>
                     <td>{{ c.providerName }}</td>
                     <td>{{ c.totalItems }}</td>
@@ -58,11 +62,40 @@
                          | number:'1.2-2' formatea a 2 decimales (ej: 1500 → 1,500.00). -->
                     <td class="money">{{ c.total | number:'1.2-2' }}</td>
                     <td>
+                      <span class="badge" [class.badge-confirmada]="c.confirmed" [class.badge-pendiente]="!c.confirmed">
+                        {{ c.confirmed ? 'Confirmada' : 'Pendiente' }}
+                      </span>
+                      <div class="sub" *ngIf="c.confirmed && c.confirmedAt">
+                        {{ c.confirmedAt | date: 'dd/MM/yyyy HH:mm' }}
+                      </div>
+                    </td>
+                    <td>
                       <div class="table-actions">
                         <button type="button" class="view" (click)="toggleDetalle(c.id)">
                           {{ detalleAbiertaIds.has(c.id) ? 'Ocultar' : 'Detalle' }}
                         </button>
-                        <button *hasPermission="'CANCELAR_COMPRAS'" type="button" class="delete" (click)="cancelarCompra(c.id)">
+                        <!-- Confirmar: solo PENDIENTE y solo con CONFIRMAR_COMPRAS.
+                             Es el boton que hace que la mercancia entre al almacen. -->
+                        <button
+                          *hasPermission="'CONFIRMAR_COMPRAS'"
+                          type="button"
+                          class="primary"
+                          [disabled]="c.confirmed"
+                          (click)="confirmarCompra(c)"
+                          [title]="c.confirmed ? 'Esta compra ya esta confirmada' : 'Hacer entrar la mercancia al almacen'"
+                        >
+                          Confirmar
+                        </button>
+                        <!-- Cancelar: solo PENDIENTE. Una confirmada da 409 y el
+                             metodo ademas avisa antes de llamar al backend. -->
+                        <button
+                          *hasPermission="'CANCELAR_COMPRAS'"
+                          type="button"
+                          class="delete"
+                          [disabled]="c.confirmed"
+                          (click)="cancelarCompra(c)"
+                          [title]="c.confirmed ? 'Una compra confirmada no se puede cancelar' : 'Descartar esta compra pendiente'"
+                        >
                           Cancelar
                         </button>
                       </div>
@@ -72,7 +105,7 @@
                   <!-- Renglones de la compra: fila completa (colspan) bajo la compra,
                        con animacion fade-in. Ver compras.css .detalle. -->
                   <tr *ngIf="detalleAbiertaIds.has(c.id)" class="detalle-row">
-                    <td colspan="5">
+                    <td colspan="6">
                       <div class="detalle fade-in">
                         <div class="detalle-title">Artículos de la compra</div>
                         <table class="subtable">

@@ -12,7 +12,7 @@ import { environment } from '../../../../environments/environment';
 })
 //Módulo de compras atrás de /api/purchases
 export class PurchaseService {
-  private apiUrl = `${environment.api}/purchases`;
+  private apiUrl = `${environment.apiLocal}/purchases`;
 
   constructor(private http: HttpClient) {}
 
@@ -31,12 +31,20 @@ export class PurchaseService {
     return this.http.get<PurchaseDTO>(`${this.apiUrl}/${id}`);
   }
 
-  //Registrar una compra (suma stock y guarda el costo real del producto)
+  //Registrar una compra. Nace PENDIENTE: todavia NO suma stock ni guarda el
+  //costo real del producto. Eso pasa al confirmar.
   createPurchase(request: PurchaseRequest): Observable<PurchaseDTO> {
     return this.http.post<PurchaseDTO>(this.apiUrl, request);
   }
 
-  //Cancelar compra (revierte stock)
+  //Confirmar una compra: aqui si la mercaderia entra al almacen, se suma el
+  //stock y se guarda el costo real de cada producto. Es idempotente (llamarlo
+  //dos veces NO suma el stock dos veces).
+  confirmPurchase(id: number): Observable<PurchaseDTO> {
+    return this.http.patch<PurchaseDTO>(`${this.apiUrl}/${id}/confirm`, {});
+  }
+
+  //Cancelar una compra PENDIENTE (la borra; 409 si ya esta confirmada)
   cancelPurchase(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }

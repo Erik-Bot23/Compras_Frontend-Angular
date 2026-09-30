@@ -8,8 +8,8 @@ import { CreateRoleRequest, RoleModel, UpdateRoleRequest } from '../../models/ro
   providedIn: 'root',
 })
 export class RoleService {
-  private apiUrl = `${environment.api}/roles`;
-  //private apiUrl = 'http://localhost:8081/api/roles';
+  private apiUrl = `${environment.apiLocal}/roles`;
+  //private apiUrl = 'http://localhost:8081/api/local/roles';
 
   constructor(private http: HttpClient){}
 

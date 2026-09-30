@@ -9,7 +9,7 @@ import { environment } from '../../../../environments/environment';
 })
 //CRUD de proveedores atrás de /api/providers
 export class ProviderService {
-  private apiUrl = `${environment.api}/providers`;
+  private apiUrl = `${environment.apiLocal}/providers`;
 
   constructor(private http: HttpClient) {}
 

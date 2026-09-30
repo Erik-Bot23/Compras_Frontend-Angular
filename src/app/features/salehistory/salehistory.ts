@@ -5,6 +5,10 @@ import { Sidebar } from '../sidebar/sidebar';
 import { SaleService } from '../../core/service/sale-service/sale-service';
 import { SaleHistory } from '../../core/interfaces/sale/sale';
 import { PaymentMethod } from '../../core/enums/paymentMethod';
+//Directiva *hasPermission="'PERMISO'" usada en el template para pintar/ocultar
+//los botones de confirmar y anular según lo que el usuario tenga asignado.
+import { HasPermissionDirectives } from '../../core/routes/directives/has-permission-directives';
+import { AuthService } from '../../core/service/auth-service/auth-service';
 // Servicio compartido del sidebar
 import { SidebarService } from '../../core/service/sidebar-service/sidebar-service';
 // Paginacion reutilizable: pipe recorta la lista / control pinta el pie de tabla
@@ -13,7 +17,7 @@ import { PaginationControl } from '../../core/components/pagination-control/pagi
 
 @Component({
   selector: 'app-salehistory',
-  imports: [CommonModule, FormsModule, Sidebar, PaginatePipe, PaginationControl],
+  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl],
   templateUrl: './salehistory.html',
   styleUrl: './salehistory.css',
 })
@@ -71,7 +75,10 @@ export class Salehistory implements OnInit {
 
   constructor(
     private saleService: SaleService,
-    public sidebar: SidebarService
+    public sidebar: SidebarService,
+    //Público porque el template lo consulta con auth.hasPermission(...) para
+    //ajustar la barra de filtros y los badges, igual que en /compras.
+    public auth: AuthService
   ){}
 
   ngOnInit() {
@@ -100,5 +107,136 @@ export class Salehistory implements OnInit {
       case PaymentMethod.CREDIT: return 'Tarjeta crédito';
       default: return method;
     }
+  }
+
+  /*
+   * Número de columnas para los <td colspan> de las filas de mensaje
+   * ("Cargando...", "No hay ventas...").
+   *
+   * Son 7 columnas fijas + 1 de acciones, pero la de acciones SOLO existe si el
+   * usuario tiene CONFIRMAR_VENTAS o CANCELAR_VENTAS. Un colspan fijo dejaría
+   * las filas de mensaje desalineadas respecto al encabezado para los usuarios
+   * sin esos permisos (típicamente un ALMACENISTA que solo entra a consultar).
+   */
+  get colSpan(): number {
+    return 7 + (this.auth.hasPermission('CONFIRMAR_VENTAS') || this.auth.hasPermission('CANCELAR_VENTAS') ? 1 : 0);
+  }
+
+  // =========================================================================
+  //  Ciclo de vida: CONFIRMAR / ANULAR  (2026-09-30)
+  // =========================================================================
+
+  /*
+   * Los 3 estados que puede mostrar la columna "Estado". Se calculan en el
+   * componente con helpers en vez de repetir la condición en el HTML, para que
+   * el template quede legible y las reglas estén en un solo sitio.
+   */
+  isAnulada(sale: SaleHistory): boolean {
+    return sale.cancelled;
+  }
+
+  isConfirmada(sale: SaleHistory): boolean {
+    return sale.confirmed && !sale.cancelled;
+  }
+
+  isAbierta(sale: SaleHistory): boolean {
+    return !sale.confirmed && !sale.cancelled;
+  }
+
+  /*
+   * ¿Se puede anular esta venta desde la UI?
+   *
+   * Réplica de la regla del backend (SaleImpl.cancel) para NO ofrecer un botón
+   * que va a fallar con 409. Se replica para dar feedback inmediato, NO como
+   * sustituto de la validación: el backend sigue validando, porque el botón
+   * puede quedar desactualizado (otro cajero confirmó la venta un segundo antes)
+   * y porque un cliente puede llamar la API saltándose la UI.
+   *
+   * Solo efectivo: con tarjeta el pago quedó capturado y hace falta una reversa
+   * real en el módulo de pagos; el botón de "anular" no devolvría el dinero.
+   */
+  canCancel(sale: SaleHistory): boolean {
+    return this.isAbierta(sale) && sale.paymentMethod === PaymentMethod.CASH;
+  }
+
+  //Tooltips para explicar por qué un botón no está disponible
+  cancelBlockedReason(sale: SaleHistory): string {
+    if (this.isConfirmada(sale)) {
+      return 'La venta está confirmada: el pedido ya salió, no se puede anular.';
+    }
+    if (sale.cancelled) {
+      return 'La venta ya fue anulada y su stock devolvido.';
+    }
+    return 'Una venta con tarjeta necesita una reversa real del pago, no una anulación.';
+  }
+
+  /**
+   * Confirmar una venta.
+   *
+   * Se pide confirmación con `confirm()` del navegador porque la acción es
+   * irreversible: después de confirmar, esa venta ya no se puede anular ni
+   * borrar jamás. Un clic accidental de un cajero dejaría una venta mal
+   * contabilizada y sin forma de arreglarlo desde el POS.
+   *
+   * Tras el éxito NO se recarga la lista entera: se reemplaza solo la fila
+   * afectada con la respuesta del servidor. Motivos:
+   * - La respuesta ya trae el estado actualizado (`confirmed`, `confirmedAt`),
+   *   así que recargar sería tirar una request por lo que ya se tiene.
+   * - Recargar reinicia el array y puede hacer saltar la página actual de la
+   *   paginación si la lista cambió de tamaño.
+   */
+  confirmarVenta(sale: SaleHistory): void {
+    if (!confirm(`¿Confirmar la venta #${sale.id}?\n\nUna vez confirmada ya no se puede anular ni borrar.`)) {
+      return;
+    }
+
+    this.saleService.confirmSale(sale.id).subscribe({
+      next: (updated) => {
+        this.replaceSale(updated);
+      },
+      error: (err) => alert(err.error?.message || 'No se pudo confirmar la venta'),
+    });
+  }
+
+  /**
+   * Anular una venta (devuelve el stock al inventario).
+   *
+   * El `confirm()` es todavía más importante acá: la operación suma stock de
+   * vuelta al inventario, así que un clic accidental infla el almacén. Y el
+   * registro NO se borra: queda con `cancelled = true` para que siga siendo
+   * auditable.
+   */
+  anularVenta(sale: SaleHistory): void {
+    if (!confirm(`¿Anular la venta #${sale.id} de $${sale.total.toFixed(2)}?\n\nSe devolverá el stock al inventario. La venta quedará registrada como anulada.`)) {
+      return;
+    }
+
+    this.saleService.cancelSale(sale.id).subscribe({
+      next: (updated) => {
+        this.replaceSale(updated);
+      },
+      // El 409 es el caso esperado: venta confirmada, ya anulada, o con tarjeta.
+      // El backend manda el mensaje exacto y se muestra tal cual, que es mucho
+      // más útil que un "no se pudo anular" genérico.
+      error: (err) => alert(err.error?.message || 'No se pudo anular la venta'),
+    });
+  }
+
+  /**
+   * Reemplaza una venta en el array local por la versión actualizada.
+   *
+   * <p>Se busca por `id` y se sustituye el elemento (no se reordena) porque el
+   * backend no cambia la fecha de la venta, así que su posición en la lista
+   * sigue siendo la misma. Si no se encontrara el id, se recargaría todo como
+   * red de seguridad: un `find` sin resultado casi siempre significa que la
+   * lista quedó desalineada.
+   */
+  private replaceSale(updated: SaleHistory): void {
+    const index = this.sales.findIndex(s => s.id === updated.id);
+    if (index === -1) {
+      this.loadSales();
+      return;
+    }
+    this.sales = this.sales.map(s => (s.id === updated.id ? updated : s));
   }
 }

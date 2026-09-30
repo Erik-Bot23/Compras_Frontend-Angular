@@ -8,7 +8,7 @@ import { CardPaymentResponse } from '../../interfaces/payment/payment';
   providedIn: 'root',
 })
 export class PaymentService {
-  private apiUrl = `${environment.api}/payments`;
+  private apiUrl = `${environment.apiLocal}/payments`;
 
   constructor(private http: HttpClient){}
 

@@ -7,8 +7,8 @@ import { CashRegister, CashSummary } from '../../interfaces/cash-interface/cash-
   providedIn: 'root',
 })
 export class CashService {
-  private apiUrl = `${environment.api}/cash`;
-  //private apiUrl = 'http://localhost:8081/api/cash';
+  private apiUrl = `${environment.apiLocal}/cash`;
+  //private apiUrl = 'http://localhost:8081/api/local/cash';
 
   constructor(private http: HttpClient){}
 
@@ -16,15 +16,23 @@ export class CashService {
     return this.http.get<CashRegister>(`${this.apiUrl}/active`);
   }
 
-  openCash(openingAmount: number) {
-    return this.http.post<CashRegister>(`${this.apiUrl}/open`, {openingAmount});
-  }  
-
-  closeCash(closingAmount: number) {
-    return this.http.post<CashRegister>(`${this.apiUrl}/close`, {closingAmount});
+  openCash(openingAmount: number, number: string) {
+    return this.http.post<CashRegister>(`${this.apiUrl}/open`, { openingAmount, number });
   }
 
-  getSummary(){
+  closeCash(closingAmount: number) {
+    return this.http.post<CashRegister>(`${this.apiUrl}/close`, { closingAmount });
+  }
+
+  getSummary() {
     return this.http.get<CashSummary>(`${this.apiUrl}/summary`)
+  }
+
+  getHistory() {
+    return this.http.get<CashRegister[]>(`${this.apiUrl}/history`);
+  }
+
+  getByNumber(number: string) {
+    return this.http.get<CashRegister>(`${this.apiUrl}/number/${encodeURIComponent(number)}`);
   }
 }

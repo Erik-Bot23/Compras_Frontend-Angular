@@ -50,9 +50,15 @@ src/app/
 
 ## Backend conectado
 
-- Backend: `Ventas-Backend` (carpeta hermana), Spring Boot en **`http://localhost:8081/api`**
-- `environment.ts` (dev): `api: 'http://localhost:8081/api'` · `environment-prod.ts`: `https://TU-APP.up.railway.app/api` (placeholder a reemplazar)
-- Peticiones directas (sin proxy). CORS del backend solo permite `http://localhost:4200`.
+- Backend: **`Compras-Backend`** (carpeta hermana), Spring Boot en **`http://localhost:8081/api`**.
+- ⚠️ **Prefijo obligatorio: `/api/local`**. El backend dividió sus rutas en dos dominios (ver `docs/PLAN.md` en el backend):
+  - `/api/local/**` → POS y gestión del **empleado**. **Es lo que consume ESTA app.**
+  - `/api/tienda/**` → storefront del **cliente** (Next.js, `Compras-Frontend-Cliente`). Nace en la Fase 3. No la uses aquí.
+- Por eso `environment.ts` expone **`apiLocal`** (= `${api}/local`) y los 12 servicios HTTP usan `${environment.apiLocal}/...`.
+  `environment.api` sigue exportado solo como raíz (de él saldrán `${api}/tienda/...` y `${api}/uploads`).
+  👉 **Regla: en un servicio nuevo usa `${environment.apiLocal}`, NUNCA `${environment.api}` directo.**
+- `environment.ts` (dev): `api: 'http://localhost:8081/api'` (y `apiLocal` derivado) · `environment-prod.ts`: `https://compras-backend-production-c115.up.railway.app/api` (ya reemplazado el placeholder).
+- Peticiones directas (sin proxy). CORS del backend permite `http://localhost:4200` (esta app) y `http://localhost:3000` (Next.js).
 - JWT: interceptor funcional `AuthInterceptor` agrega `Authorization: Bearer <token>` a cada request. Token y usuario en `localStorage`.
 
 ## Módulos clave
@@ -89,14 +95,43 @@ src/app/
 
 ## Registro de cambios / decisiones
 
-### 2026-09-28 — 📋 PLAN (NO IMPLEMENTADO): Enter en botones, validación de inputs, ticket sin multiplicación, SKU duplicado
+### 2026-09-30 — FASE 1: los 12 servicios pasan a `${environment.apiLocal}` (`/api/local`)
 
-> **Estado: solo es un plan**, resultado de una auditoría del código. No se escribió
-> nada. Documentado para retomarlo en otra máquina. Contraparte backend:
-> `Compras-Backend/AGENTS.md` (misma fecha, misma sección) para el punto 4.
+> Contraparte del backend: `Compras-Backend/AGENTS.md`, sesión 2026-09-30
+> (paquete `ventas`→`compras` + prefijo `/api/local`).
+
+1. **`environment.ts` / `environment-prod.ts`**: se derivó un campo nuevo
+   `apiLocal: \`${api}/local\`` a partir del `api` base. Antes había que cambiar la
+   URL en 12 servicios al cambiar de host; ahora se cambia en **un** lugar.
+2. **Los 12 servicios HTTP** migrados de `${environment.api}/X` a
+   `${environment.apiLocal}/X`: `auth`, `cash`, `category`, `payment`,
+   `permission`, `product`, `provider`, `purchase`, `report`, `role`, `sale`,
+   `user`. Los URLs hardcodeados comentados también se actualizaron a `/api/local`.
+3. `environment.api` **se conserva** (es la raíz de la que saldrán
+   `${api}/tienda/...` para el storefront y `${api}/uploads`).
+4. **No se tocó** ningún componente, template, interface ni spec. `ng build` verde.
+5. ⚠️ `ng test` no encuentra archivos: el path del repo tiene paréntesis
+   (`Sistema de ventas (comida)`) que rompen el glob de vitest. Es un problema del
+   entorno, no del código.
+
+### 2026-09-28 — ✅ YA IMPLEMENTADO (no es plan): Enter en botones, validación de inputs, ticket sin multiplicación, SKU duplicado
+
+> **Estado: los 4 puntos están implementados** en los commits `bfcdb43` y `1aa72b3`
+> (`1aa72b3` es el HEAD de `compras-frontend/local`). La versión anterior de este
+> archivo lo dejaba como plan; ya no aplica.
+> Contraparte backend: `Compras-Backend/AGENTS.md` 2026-09-28 → el 409 por SKU/
+> barcode duplicado **también ya está implementado** (commit `1444d87`).
 >
-> - Origen: reporte de QA — "al hacer clic en un textbox se queda el 0; escribo 56 y
-> queda 056". Solución: `(focus)` → seleccionar todo, o `null` en vez de `0`.
+> **Lo que quedó PENDIENTE de este plan** (ver "Pendientes / issues" más abajo):
+> - `appSelectOnFocus` solo se aplicó en `productos.html`; falta en `cobro.html` y `compras.html`.
+> - Arreglos null-safe: `price.toString()` (`TypeError`) y `changePreview` (`$NaN`).
+> - Chequeo client-side optimista de SKU duplicado (hoy depende del 409 del backend).
+>
+> - Origen del reporte: "al hacer clic en un textbox se queda el 0; escribo 56 y
+>   queda 056". Solución: `(focus)` → seleccionar todo, o `null` en vez de `0`.
+
+<details>
+<summary>Auditoría original (contexto histórico, ya resuelta)</summary>
 
 **Contexto heredado de la auditoría (importante para no re-descubrirlo):**
 
@@ -322,6 +357,8 @@ escribir `56` en Precio (debe quedar `56`, no `056`); `Enter` en login; crear 2 
 con el mismo SKU (debe salir el aviso); POS con 2 unidades del mismo producto (el PDF no
 debe mostrar `(2 x $X = $Y)`).
 
+</details>
+
 ### 2026-09-17 (2) — Vistas de "Dados de baja" (productos + usuarios)
 
 > Frontend del borrado lógico de **productos** (el backend ya exponía `GET /products/inactive`, `PATCH /products/{id}/deactivate` y `PATCH /products/{id}/active`, con los permisos `DESACTIVAR_PRODUCTOS`/`ACTIVAR_PRODUCTOS`) + reutilización del soft-delete ya existente de **usuarios**. Todas las vistas de baja son simétricas: solo tabla + botón "Dar de alta" + menú sándwich.
@@ -519,10 +556,15 @@ debe mostrar `(2 x $X = $Y)`).
 
 ## Pendientes / issues conocidos
 
-- 🔜 **Plan de 4 mejoras de UX listo para implementar** (Enter en botones, validación de inputs / que el `0` desaparezca al hacer clic, quitar la multiplicación del ticket, aviso de SKU duplicado) → ver la sesión **2026-09-28** completa arriba con los snippets. Requiere tocar el backend en paralelo (punto 4).
-- ⚠️ **`productos.ts:171-174` y `:184-187` se tragan los errores del backend** con `console.log` — el usuario no ve nada si falla un guardado. Es el punto 4 del plan de 2026-09-28.
-- ⚠️ **Latente**: `productos.ts:151-152` hace `price.toString()` — si un `type="number"` queda vacío (`null`), **lanza `TypeError`**. Pasa al hacer el arreglo null-safe del plan 2026-09-28.
-- ⚠️ **Latente**: `sale-facade.ts:495-496` (`changePreview`) pinta **`$NaN`** si el campo "Efectivo recibido" (`cobro.html:160`) se vacía, porque `null - total = NaN`.
+- 🔜 **Fases 2-8 de `docs/PLAN.md`** (backend). La Fase 2 agrega features nuevas acá: `insumos/` (CRUD + alerta de stock bajo) y `pedidos-online/` (panel con STOMP), y renombra `productos` → `platillos`. Antes de escribir código, leer la entrada 2026-09-30 de `Compras-Backend/AGENTS.md`.
+- ✅ **Plan de 4 mejoras de UX (2026-09-28)**: ya implementado en `bfcdb43`/`1aa72b3` (Enter en forms, inputs numéricos, ticket sin multiplicación, snackbar de SKU duplicado). Queda pendiente solo el punto 4.5 de abajo.
+- ✅ **409 por SKU/barcode duplicado**: el backend ya lo devuelve (`1444d87`); el `MatSnackBar` muestra `err.error?.message`. Ya no se traga el error.
+- ⚠️ **Latente**: `productos.ts:151-152` hace `price.toString()` — si un `type="number"` queda vacío (`null`), **lanza `TypeError`**. Arreglar con `?? 0`.
+- ⚠️ **Latente**: `sale-facade.ts:495-496` (`changePreview`) pinta **`$NaN`** si el campo "Efectivo recibido" (`cobro.html:160`) se vacía, porque `null - total = NaN`. Arreglar con `?? 0` o un early-return.
+- ⚠️ **Latente**: la directiva `appSelectOnFocus` (seleccionar el contenido al hacer clic) solo está aplicada en `productos.html`; falta en `cobro.html` (efectivo recibido, monto inicial, dinero contado) y `compras.html` (cantidad, costo).
+- ⚠️ **`ng test` no encuentra specs** en esta máquina: el path del repo tiene paréntesis (`Sistema de ventas (comida)`) que rompen el glob de vitest → "No test files found". No es un defecto del código.
+- ⚠️ **Autorización server-side**: `auth.hasPermission()` lee el usuario de `localStorage`, que es manipulable. El backend sí valida con `@PreAuthorize`, pero la UI se puede mostrar de más.
+- ⚠️ **`environment-prod.ts`** apunta a `https://compras-backend-production-c115.up.railway.app/api`. Al desplegar en Netlify hay que confirmar ese dominio y que el CORS del backend incluya el de Netlify.
 - ✅ **Tests**: 19/19 en verde (2026-09-15). Si al clonar falta `chart.js`/`xlsx` en `node_modules`, basta `npm install` (ocurrió 2026-09-15: el `npm test` fallaba con `TS2307`).
 - ⚠️ **`retryPayment` y `reversePayment`**: `reversePayment` sigue sin uso en componentes (el retry sí se usa en el POS).
 - **Placeholders eliminados (2026-09-17)**: Caja, Ventas, Clientes, Facturas (archivos + rutas borradas).

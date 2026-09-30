@@ -46,6 +46,18 @@
         <label>Stock máximo</label>
         <input type="number" min="0" [(ngModel)]="threshold" />
       </div>
+      <!-- V3: filtro por caja. El select muestra el número que escribió el
+           vendedor (NO el id), porque "CAJA 1" es lo que el usuario reconoce.
+           value = id porque es la clave real que pide /reports/cash/{cashId}. -->
+      <div class="filter">
+        <label>Caja</label>
+        <select [(ngModel)]="selectedCashId" (ngModelChange)="onCashSelected($event)">
+          <option [ngValue]="null">Todas las cajas</option>
+          <option *ngFor="let c of cashHistory" [ngValue]="c.id">
+            {{ c.number || ('Caja #' + c.id) }}{{ c.active ? ' (abierta)' : '' }}
+          </option>
+        </select>
+      </div>
       <!-- Acciones de filtros: Aplicar (azul) y Restablecer (verde), juntos -->
       <div class="filters-actions">
         <button class="btn btn-primary" (click)="applyFilters()" [disabled]="loading">
@@ -76,6 +88,86 @@
         <span class="summary-label">{{ m.label }}</span>
         <span class="summary-value">${{ m.total | number:'1.2-2' }}</span>
         <span class="summary-sub">{{ m.count }} tickets</span>
+      </div>
+    </div>
+
+    <!-- V3: UTILIDAD (ingresos − costo de lo vendido).
+         Es el bloque que responde "¿estoy ganando?". El costo sale del costo
+         CONGELADO en cada renglón de venta, no del total de compras del
+         periodo: ese dinero no se perdió, quedó en el almacén. -->
+    <div class="summary-grid fade-in" *ngIf="profit">
+      <div class="card summary-card accent-blue">
+        <span class="summary-label">Ingresos</span>
+        <span class="summary-value">${{ profit.revenue | number:'1.2-2' }}</span>
+        <span class="summary-sub">{{ profit.tickets }} tickets válidos</span>
+      </div>
+      <div class="card summary-card accent-orange">
+        <span class="summary-label">Costo de lo vendido</span>
+        <span class="summary-value">${{ profit.costOfGoodsSold | number:'1.2-2' }}</span>
+        <span class="summary-sub">lo que se llevaron los clientes</span>
+      </div>
+      <div class="card summary-card" [class.accent-green]="profit.grossProfit >= 0" [class.accent-red]="profit.grossProfit < 0">
+        <span class="summary-label">Utilidad</span>
+        <span class="summary-value">${{ profit.grossProfit | number:'1.2-2' }}</span>
+        <span class="summary-sub">{{ profit.marginPercent | number:'1.1-1' }}% sobre venta</span>
+      </div>
+    </div>
+
+    <!-- Aviso de datos incompletos (V3): si hay renglones sin costo congelado,
+         la utilidad está sobrestimada. Decirlo es mejor que mostrar un número
+         inflado sin que nadie entienda por qué. -->
+    <div class="card fade-in aviso-costo" *ngIf="profit && profit.itemsWithoutCost > 0">
+      <strong>Atención:</strong>
+      {{ profit.itemsWithoutCost }} renglón(es) vendido(s) no tienen costo registrado,
+      así que la utilidad está sobrestimada. Registra y confirma las compras
+      para que el costo real de cada producto quede guardado.
+    </div>
+
+    <!-- V3: detalle de la caja elegida (sus ventas y su utilidad) -->
+    <div class="table-container fade-in" *ngIf="cashReport">
+      <div class="table-card">
+        <div class="table-title">
+          <h3>Caja {{ cashReport.number || ('#' + cashReport.cashId) }}</h3>
+          <span class="cash-meta" *ngIf="cashReport.active">ABIERTA</span>
+        </div>
+
+        <div class="corte-body">
+          <div class="corte-row"><span>Abierta</span><strong>{{ cashReport.openedAt | date:'dd/MM/yyyy HH:mm' }}</strong></div>
+          <div class="corte-row" *ngIf="cashReport.closedAt"><span>Cerrada</span><strong>{{ cashReport.closedAt | date:'dd/MM/yyyy HH:mm' }}</strong></div>
+          <div class="corte-row"><span>Fondo inicial</span><strong>${{ cashReport.openingAmount | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Ventas efectivo</span><strong>${{ cashReport.cashSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Ventas débito</span><strong>${{ cashReport.debitSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Ventas crédito</span><strong>${{ cashReport.creditSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row total"><span>Total ventas</span><strong>${{ cashReport.totalSales | number:'1.2-2' }}</strong></div>
+          <div class="corte-row total"><span>Utilidad de la caja</span><strong>${{ cashReport.grossProfit | number:'1.2-2' }}</strong></div>
+          <div class="corte-row"><span>Tickets</span><strong>{{ cashReport.totalTickets }}</strong></div>
+        </div>
+
+        <div class="table-scroll" *ngIf="cashReport.sales.length">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Ticket</th>
+                <th>Método</th>
+                <th>Artículos</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of cashReport.sales">
+                <td>{{ s.saleDate | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>#{{ s.saleId }}</td>
+                <td>{{ s.paymentMethod }}</td>
+                <td>{{ s.items.length }}</td>
+                <td class="money">${{ s.total | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="empty-row" *ngIf="!cashReport.sales.length">
+          Esta caja no tiene ventas registradas.
+        </div>
       </div>
     </div>
 

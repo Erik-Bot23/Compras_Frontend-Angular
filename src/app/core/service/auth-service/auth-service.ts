@@ -11,8 +11,8 @@ import { safeGetItem, safeRemoveItem, safeSetItem } from '../../utils/storage-ut
 //Esta clase es para el LOGIN en features/login/login.ts
 export class AuthService {
   //La ruta a la que va a responder en el backend
-  private api = `${environment.api}/auth`;
-  //private api = 'http://localhost:8081/api/auth';
+  private api = `${environment.apiLocal}/auth`;
+  //private api = 'http://localhost:8081/api/local/auth';
   
   constructor(private http: HttpClient){}
 

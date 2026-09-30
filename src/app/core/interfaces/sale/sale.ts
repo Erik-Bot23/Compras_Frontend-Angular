@@ -35,4 +35,20 @@ export interface SaleHistory {
   paymentMethod: PaymentMethod;
   cashReceived: number | null;
   changeAmount: number | null;
+
+  // ===== Ciclo de vida de la venta (2026-09-30) =====
+  // El backend expone las DOS banderas y no un 'estado' derivado. Se replica
+  // el contrato tal cual, a propósito: si aquí se derivara un string 'ABIERTA'
+  // / 'CONFIRMADA' / 'ANULADA', estaríamos reimplementando la máquina de
+  // estados del servidor en el cliente, y en cuanto el backend agregara un
+  // estado nuevo el frontend mostraría algo equivocado sin avisar.
+  //
+  // Los 3 estados válidos y qué botón habilita cada uno:
+  //   confirmed=false, cancelled=false -> abierta: se puede confirmar o anular
+  //   confirmed=true                    -> congelada: ningún botón
+  //   cancelled=true                    -> anulada: el stock ya volvió
+  confirmed: boolean;
+  confirmedAt: string | null;
+  cancelled: boolean;
+  cancelledAt: string | null;
 }
