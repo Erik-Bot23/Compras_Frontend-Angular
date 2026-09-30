@@ -151,6 +151,76 @@
   border-radius: 6px;
 }
 
+/* =========================================================================
+   PUNTO 1 DEL ENCARGO: estilos de la imagen de producto
+   =========================================================================
+   Los 40x40 base se veían bien en la tabla, pero la foto quedaba "pegada" al
+   texto de la fila: sin borde ni sombra, con un fondo blanco y una foto clara
+   el producto parecía una celda vacía.
+
+   Se agrega un marco y una sombra suave para recortar el contorno, sin hacer la
+   imagen más grande: la columna de imagen no debe competir con el nombre del
+   producto, que es el dato que se lee.
+
+   - border + border-radius: el marco sigue la esquina redondeada, no queda un
+     cuadrado alrededor de una imagen circular.
+   - box-shadow: da profundidad sin oscurocer la foto.
+   - fondo gris: si la imagen falla en cargar, no sale un ícono roto sobre blanco. */
+.img {
+  height: 40px;
+  width: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+  background-color: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+}
+
+/* Amplía un poco la foto al pasar el cursor: da la sensación de que se puede
+   ver mejor, sin necesidad de un modal de vista previa. */
+td .img:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+  border-color: #4f8cff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+/* =========================================================================
+   PUNTO 1 DEL ENCARGO: estilos de "Eliminar" y "Dar de baja"
+   =========================================================================
+   Son dos acciones de riesgo distinto y antes se veían igual:
+     - "Eliminar" borra la fila de la base de datos. Irreversible.
+     - "Dar de baja" solo la esconde del catálogo; el histórico se conserva.
+   Se diferencian por color e icono para que el usuario no borre por accidente
+   una ficha que tenía ventas. El botón de eliminar es el más cargado visualmente
+   porque es el que no tiene vuelta atrás. */
+.delete {
+  /*Rojo sólido: es la acción irreversible del módulo */
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: 1px solid #b91c1c;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(185, 28, 28, 0.3);
+}
+
+.delete:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  box-shadow: 0 4px 10px rgba(185, 28, 28, 0.45);
+  transform: translateY(-1px);
+}
+
+/* Ámbar: se ve que es una acción seria pero reversible */
+.deactivate {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: 1px solid #b45309;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.deactivate:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  color: #ffffff;
+}
+
 /*La tabla de productos*/
 .product-table {
   /* min-width > al ancho del area disponible fuerza el scroll horizontal
@@ -254,4 +324,25 @@
 .add-category:hover {
   background: #16a34a;
   transform: scale(1.05);
+}
+/* =========================================================================
+   Mensajes de error de validaci�n (V3, punto 7)
+   =========================================================================
+   Se muestran debajo del input que fall�. El color rojo y el texto expl�cito
+   sustituyen al antiguo comportamiento de "corregir el valor en silencio": antes,
+   escribir 1.875 en el stock se convert�a en 1 sin explicaci�n, y el usuario no
+   sab�a si el sistema lo hab�a arreglado o si se estaba equivocando. */
+.error-msg {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: #f87171;
+}
+
+/* El input con error se marca en rojo para que se note sin leer el mensaje.
+   Se aplica con [class.input-error] desde el template cuando hay error. */
+.input-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
 }

@@ -22,19 +22,31 @@
   <!--Navegación-->
   <nav class="nav">
     <!--Esta es la página de cobro (inicio)-->
-    <a (click)="inicio()">
+    <!--
+      PUNTO 6 DEL ENCARGO: la sección activa se marca con la clase .active.
+
+      La comparación es exacta con `router.url`, no con `includes`: con includes,
+      "/sales" también matchearía "/sales-history" y marcaría las dos secciones a
+      la vez. Se acepta que sobre el query string (ej. "/reportes?from=...") no
+      marque, porque el menú se navega con rutas limpias.
+    -->
+    <a (click)="inicio()" [class.active]="esActiva(inicioRoute)">
       <img src="assets/icons/hogar.png" alt="Inicio" class="menu-icon">
       <span class="text">Inicio</span>
     </a>
 
     <ng-container *ngFor="let item of menuItems">
-      <!-- 
+      <!--
         auth.hasPermission(item.permission) usa la directiva *hasPermission
         que muestra/oculta el enlace segun los permisos del usuario logueado.
         El icono sale del array (item.icon) con [src]; *ngIf evita pintar un
         <img> roto cuando la seccion no tiene icono en assets/icons.
       -->
-      <a *ngIf="auth.hasPermission(item.permission)" (click)="go(item.route)">
+      <a
+        *ngIf="auth.hasPermission(item.permission)"
+        (click)="go(item.route)"
+        [class.active]="esActiva(item.route)"
+      >
         <img *ngIf="item.icon" [src]="item.icon" [alt]="item.label" class="menu-icon">
         <span class="text">
           {{ item.label }}

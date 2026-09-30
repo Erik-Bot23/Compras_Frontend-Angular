@@ -431,6 +431,119 @@ tr.confirmada td {
   cursor: not-allowed;
 }
 
+/* =========================================================================
+   Bot√≥n CONFIRMAR (V3)
+   =========================================================================
+   Es la acci√≥n m√°s importante de la pantalla: es la que hace que la mercanc√≠a
+   entre al almac√©n. Por eso NO comparte estilo con el resto: tiene fondo verde
+   s√≥lido, es m√°s alto que sus compa√±eros y tiene una sombra. El objetivo es que
+   el usuario lo encuentre sin leer, porque si no lo encuentra la compra se queda
+   pendiente y el stock nunca suma. */
+.table-actions .confirmar-compra {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+  color: #ffffff;
+  font-weight: 700;
+  border: 1px solid #14532d;
+  border-radius: 8px;
+  padding: 9px 16px;
+  min-height: 36px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(21, 128, 61, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.table-actions .confirmar-compra:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow: 0 4px 12px rgba(21, 128, 61, 0.45);
+  transform: translateY(-1px);
+}
+
+.table-actions .confirmar-compra:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(21, 128, 61, 0.35);
+}
+
+/* Cuando la compra ya est√° confirmada el bot√≥n se apaga por completo */
+.table-actions .confirmar-compra:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  border-color: #94a3b8;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================================================================
+   Cabecera de los renglones de la compra (V3)
+   =========================================================================
+   Seaggregate porque los inputs de una compra no se entienden solos: "cantidad,
+   costo, precio" sin t√≠tulo se confunden entre s√≠, y confundir el costo de
+   compra con el precio de venta cuesta dinero. */
+.linea-cabecera {
+  display: grid;
+  grid-template-columns: 2.2fr 0.8fr 1fr 1fr 0.9fr 0.5fr;
+  gap: 8px;
+  padding: 0 2px 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+}
+
+.linea-cabecera span:not(:first-child) {
+  text-align: center;
+}
+
+/* =========================================================================
+   Bot√≥n eliminar rengl√≥n
+   =========================================================================
+   Clase propia (.delete-linea) para poder darle tama√±o y color sin tocar los
+   .delete de toda la app. Es una acci√≥n destructiva pero menor: quita una l√≠nea
+   del formulario, no borra nada de la base, as√≠ que va en rojo suave y no en el
+   rojo fuerte de "eliminar producto". */
+.linea .delete-linea {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+}
+
+.linea .delete-linea img {
+  width: 16px;
+  height: 16px;
+  /* El icono viene en negro; se ti√±e rojo para que se lea como "peligro" y no
+     como una acci√≥n m√°s. filter es la √∫nica forma de recolorear un PNG sin
+     tener otra versi√≥n del archivo. */
+  filter: invert(24%) sepia(95%) saturate(2000%) hue-rotate(355deg) brightness(95%) contrast(90%);
+  opacity: 0.75;
+  transition: opacity 0.12s ease;
+}
+
+.linea .delete-linea:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.6);
+  transform: scale(1.06);
+}
+
+.linea .delete-linea:hover img {
+  opacity: 1;
+}
+
+/* Margen negativo en el detalle: vender m√°s barato de lo que se compr√≥ */
+.margen-negativo {
+  color: #dc2626;
+  font-weight: 700;
+}
+
 /* -------- Avisos / estados vacios -------- */
 .aviso {
   background: #1e293b;
@@ -569,4 +682,58 @@ tr.confirmada td {
   .linea-subtotal, .linea button {
     grid-column: span 1;
   }
+}
+/* =========================================================================
+   Mensajes de error de validaciÛn (V3, punto 7)
+   =========================================================================
+   Aparecen debajo del input que fallÛ, en rojo. Antes el formulario corregÌa el
+   valor en silencio (ponÌa 0 si el stock venÌa con 1.6, o 1 si el precio venÌa
+   vacÌo) y el usuario no tenÌa forma de saber que el sistema le habÌa cambiado
+   lo que escribiÛ. Ahora se dice quÈ est· mal y en quÈ campo. */
+.error-msg {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: #f87171;
+}
+
+.input-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* =========================================================================
+   Bloque de explicaciÛn de los M¡RGENES (punto 4 del encargo)
+   =========================================================================
+   Mismo criterio que en Reportes: el usuario necesita saber de dÛnde sale
+   "margen = precio - costo" y, sobre todo, que esto NO es la utilidad. La
+   confusiÛn entre las dos dos cosas lleva a decisiones equivocadas. */
+.aviso-explicacion {
+  border-left: 4px solid #4f8cff;
+  background: rgba(79, 140, 255, 0.07);
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.aviso-explicacion p {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #cbd5e1;
+}
+
+.aviso-explicacion p:last-child {
+  margin-bottom: 0;
+}
+
+.aviso-explicacion strong {
+  color: #f1f5f9;
+}
+
+.explicacion-alerta {
+  border-left: 3px solid #f59e0b;
+  padding-left: 12px;
+  color: #fde68a !important;
 }

@@ -17,7 +17,7 @@ import { PaginationControl } from '../../core/components/pagination-control/pagi
 
 @Component({
   selector: 'app-salehistory',
-  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl],
+  imports: [CommonModule, FormsModule, Sidebar, PaginatePipe, PaginationControl],
   templateUrl: './salehistory.html',
   styleUrl: './salehistory.css',
 })
@@ -113,13 +113,15 @@ export class Salehistory implements OnInit {
    * Número de columnas para los <td colspan> de las filas de mensaje
    * ("Cargando...", "No hay ventas...").
    *
-   * Son 7 columnas fijas + 1 de acciones, pero la de acciones SOLO existe si el
-   * usuario tiene CONFIRMAR_VENTAS o CANCELAR_VENTAS. Un colspan fijo dejaría
-   * las filas de mensaje desalineadas respecto al encabezado para los usuarios
-   * sin esos permisos (típicamente un ALMACENISTA que solo entra a consultar).
+   * <b>Son 6 columnas fijas (V3, punto 2 del encargo).</b> Antes eran 7 más una
+   * de acciones que solo existía si el usuario tenía CONFIRMAR_VENTAS o
+   * CANCELAR_VENTAS, y por eso este getter era dinámico. Al quitar las columnas
+   * "Estado" y "Acciones" del historial, el colspan se volvió fijo y este getter
+   * ya no depende de permisos: se deja como getter por claridad, y para que
+   * cambiar el número de columnas siga siendo un cambio de un solo sitio.
    */
   get colSpan(): number {
-    return 7 + (this.auth.hasPermission('CONFIRMAR_VENTAS') || this.auth.hasPermission('CANCELAR_VENTAS') ? 1 : 0);
+    return 6;
   }
 
   // =========================================================================

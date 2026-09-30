@@ -22,27 +22,46 @@
         </div>
 
         <div class="field">
+          <!-- PRECIO (punto 7.1, 7.3, 7.6).
+               (keydown) bloquea la 'e'/'E': el <input type="number"> del navegador
+               las acepta y produce 1e5, que es un error de dedo que se guarda
+               como cien mil. step=0.01 porque la columna es numeric(38,2) y
+               "1.875" se redondearía a 1.88 EN SILENCIO. -->
           <label>Precio</label>
           <input
             name="price"
             [(ngModel)]="form.price"
-            min="1"
-            (input)="validateNumber('price')"
+            min="0"
+            step="0.01"
+            (keydown)="soloDigitosYPunto($event)"
+            (paste)="onPastePrecio($event, 'price')"
+            [class.input-error]="errores['price']"
+            (input)="validarCampo('price')"
             type="number"
             appSelectOnFocus
           />
+          <span class="error-msg" *ngIf="errores['price']">{{ errores['price'] }}</span>
         </div>
 
         <div class="field">
+          <!-- STOCK (punto 7.5 y 7.6): solo enteros.
+               No hay 1.6 de jabón, así que step=1 y el keydown bloquea el punto.
+               El backend también lo rechaza, pero avisar aquí evita mandar un
+               request que va a volver con 400. -->
           <label>Stock</label>
           <input 
             name="stock"
             [(ngModel)]="form.stock"
             min="0"
-            (input)="validateNumber('stock')"
+            step="1"
+            (keydown)="soloDigitos($event)"
+            (paste)="onPasteEntero($event, 'stock')"
+            [class.input-error]="errores['stock']"
+            (input)="validarCampo('stock')"
             type="number"
             appSelectOnFocus
           />
+          <span class="error-msg" *ngIf="errores['stock']">{{ errores['stock'] }}</span>
         </div>
 
         <div class="field">
@@ -62,21 +81,47 @@
         </div>
 
         <div class="field">
+          <!-- SKU (punto 7.2 y 7.4).
+               CORREGIDO: antes tenía pattern="[0-9]" y un saneado que solo dejaba
+               dígitos, lo que PROHIBÍA las letras. Pero un SKU sí puede tener
+               letras: "CHOC-500" es un SKU válido, y obligar a que sea numérico
+               obliga a inventarse códigos que no signifiquen nada.
+
+               Ahora acepta letras, números y los separadores - _ . /, pasa a
+               MAYÚSCULAS al escribir (para que "choc-500" y "CHOC-500" no sean dos
+               SKUs distintos) y tiene límite de 50 caracteres.
+
+               El `pattern` se quitó porque sin un <form> nativo Angular no lo
+               valida: nunca se aplicó. -->
           <label>SKU</label>
           <input name="sku" 
           [(ngModel)]="form.sku" 
-          inputmode="numeric"
-          pattern="[0-9]" 
-          (input)="soloNumeros('sku')"/>
+          (input)="aMayusculas($event)"
+          [class.input-error]="errores['sku']"
+          (paste)="onPasteSku($event)"
+          placeholder="CHOC-500 (opcional)"
+          maxlength="50"
+          autocomplete="off"/>
+          <span class="error-msg" *ngIf="errores['sku']">{{ errores['sku'] }}</span>
         </div>
 
         <div class="field">
-          <label>Barcode</label>
+          <!-- BARCODE (punto 7.2): solo dígitos, máximo 20.
+               Sigue siendo un campo de TEXTO a propósito: se guarda como
+               identificador para no perder los ceros a la izquierda
+               (0001234567895), que si fuera número se volvería 1234567895 y el
+               lector dejaría de encontrar el producto. -->
+          <label>Código de barras</label>
           <input name="barcode" 
           [(ngModel)]="form.barcode"
           inputmode="numeric"
-          pattern="[0-9]"
-          (input)="soloNumeros('barcode')" />
+          (keydown)="soloDigitos($event)"
+          (paste)="onPasteBarcode($event)"
+          [class.input-error]="errores['barcode']"
+          (input)="validarCampo('barcode')"
+          maxlength="20"
+          autocomplete="off"/>
+          <span class="error-msg" *ngIf="errores['barcode']">{{ errores['barcode'] }}</span>
         </div>
 
         <div class="field">

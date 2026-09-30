@@ -55,11 +55,29 @@
                             Abierta
                         </div>
 
+                        <!-- Punto 5.4: se muestra "Caja: 1". El número es lo que el
+                             cajero reconoce de su caja física, y a simple vista
+                             evita tener que abrir Reportes para saber cuál es. -->
+                        <div class="cash-data" *ngIf="cash.activeNumber">
+                            <span>Caja:</span>
+                            <strong>{{ cash.activeNumber }}</strong>
+                        </div>
+
                         <div class="cash-data">
                             <span>Fondo inicial:</span>
-                            <strong>${{ cash.cashStatus.openingAmount }}</strong> 
+                            <strong>${{ cash.cashStatus.openingAmount | number:'1.2-2' }}</strong> 
                         </div>
-                        
+
+                        <!-- Punto 5.5: CONTADOR EN VIVO. Muestra el efectivo que
+                             debería haber en el cajón ahora mismo (fondo + ventas en
+                             efectivo), que es lo que el cajero quiere ver mientras
+                             vende. Se recalcula solo porque el getter depende del
+                             resumen que el facade refresca. -->
+                        <div class="cash-data cash-contador">
+                            <span>Efectivo en caja:</span>
+                            <strong>${{ cash.efectivoAcumulado | number:'1.2-2' }}</strong>
+                        </div>
+
                         <button *hasPermission="'CERRAR_CAJA'" class="btn-cash close" (click)="cash.closeCashModal()">
                             Cerrar caja
                         </button>
@@ -71,9 +89,17 @@
                             Caja cerrada
                         </div>
 
-                        <button *hasPermission="'ABRIR_CAJA'" class="btn-cash open" (click)="cash.openCashModal()">
-                            Abrir caja
-                        </button>
+                        <!-- Punto 5.3: "Crear caja" es una acción separada de
+                             "Abrir". Registrar la caja física una sola vez y luego
+                             abrir la que toque. -->
+                        <div class="cash-acciones">
+                            <button *hasPermission="'ABRIR_CAJA'" class="btn-cash create" (click)="cash.openCreateCashModal()">
+                                Crear caja
+                            </button>
+                            <button *hasPermission="'ABRIR_CAJA'" class="btn-cash open" (click)="cash.openCashModal()">
+                                Abrir caja
+                            </button>
+                        </div>
                 </ng-container>
             </div>
        </div>
@@ -276,25 +302,98 @@
                 </div>
             </div>
 
-            <!--Modal de abrir caja-->
-            <div class="modal-backdrop" *ngIf="cash.showOpenCashModal">
-                <!--Se actualizo a form para que reconozca el Enter-->
-                <form (ngSubmit)="cash.confirmOpenCashModal()" class="modal">
-<h3>Abrir caja</h3>
-   
-   <!-- V3: numero de caja. Es OBLIGATORIO y unico: es lo que despues permite
-        "filtrar por caja" en Reportes y ver las ventas de cada corte. El backend
-        responde 400 si falta y 409 si ya existe. -->
-   <input type="text" name="cash.openingNumber" [(ngModel)]="cash.openingNumber"
-          placeholder="Numero de caja (ej: CAJA-1)" maxlength="50" required>
-   <input type="number" name="cash.openingAmount" [(ngModel)]="cash.openingAmount" placeholder="Monto inicial">
+            <!-- ============================================================
+                 Modal de CREAR CAJA (V3, punto 5.3)
+                 Registra la caja física con su número. Queda sin abrir: después
+                 se abre eligiéndola. Se separa de "Abrir" porque el número tiene
+                 que existir antes para poder elegirlo de una lista.
+                 ============================================================ -->
+            <div class="modal-backdrop" *ngIf="cash.showCreateCashModal">
+                <form (ngSubmit)="cash.confirmCreateCash()" class="modal">
+                    <h3>Crear caja</h3>
+
+                    <p class="modal-ayuda">
+                        Registra la caja antes de abrirla. El número identifica el
+                        corte en los reportes, así que no se puede repetir.
+                    </p>
+
+                    <!-- El número llega precargado con la sugerencia del backend
+                         ("CAJA 7") para no tener que contar cuántas hay. Se pasa a
+                         mayúsculas al escribir porque "caja 1" y "CAJA 1" son la
+                         misma caja y el UNIQUE de la base las trataría como dos. -->
+                    <input
+                        type="text"
+                        name="newCashNumber"
+                        [(ngModel)]="cash.newCashNumber"
+                        (input)="aMayusculas($event)"
+                        placeholder="CAJA 1"
+                        maxlength="50"
+                        required
+                        appSelectOnFocus
+                    >
+
                     <div class="button-box">
-                        <button class="btn-confirm-open" type="submit">Abrir</button>
+                        <button class="btn-confirm-open" type="submit">Crear</button>
+                        <button class="btn-cancel" type="button" (click)="cash.closeCreateCashModal()">
+                            Cancelar
+                        </button>
                     </div>
                 </form>
             </div>
 
-            <!--Modal de cerrar caja-->
+            <!-- ============================================================
+                 Modal de ABRIR caja (V3, punto 5.3)
+                 Ahora se ELIGE una caja ya registrada en vez de crearla.
+                 ============================================================ -->
+            <div class="modal-backdrop" *ngIf="cash.showOpenCashModal">
+                <form (ngSubmit)="cash.confirmOpenCashModal()" class="modal">
+                    <h3>Abrir caja</h3>
+
+                    <!-- Selector de caja. Solo trae las que NUNCA se abrieron
+                         (GET /cash/available): una caja es un turno, y reabrir
+                         "CAJA 1" mezclaría dos cortes distintos en el mismo
+                         reporte. -->
+                    <label class="modal-label">Caja a abrir</label>
+                    <select name="selectedCashNumber" [(ngModel)]="cash.selectedCashNumber" class="modal-select">
+                        <option [ngValue]="null">Selecciona una caja...</option>
+                        <option *ngFor="let c of cash.availableCash" [ngValue]="c.number">
+                            {{ c.number }}
+                        </option>
+                    </select>
+
+                    <p class="modal-ayuda" *ngIf="cash.availableCash.length === 0">
+                        No hay cajas disponibles. Crea una primero con "Crear caja".
+                    </p>
+
+                    <!-- Fondo inicial. Mínimo $100: una caja con menos no alcanza
+                         ni para una venta y casi siempre es un forget del campo. -->
+                    <label class="modal-label">Monto inicial (mínimo $100)</label>
+                    <input
+                        type="number"
+                        name="openingAmount"
+                        [(ngModel)]="cash.openingAmount"
+                        (keydown)="soloDigitosYPunto($event)"
+                        min="100"
+                        step="0.01"
+                        placeholder="100.00"
+                        appSelectOnFocus
+                    >
+
+                    <div class="button-box">
+                        <button class="btn-confirm-open" type="submit">Abrir</button>
+                        <button class="btn-cancel" type="button" (click)="cash.showOpenCashModal = false">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ============================================================
+                 Modal de CERRAR caja (V3, punto 5.1)
+                 El cierre EXIGE que el efectivo contado coincida con el esperado.
+                 Si no cuadra, aparece el campo de motivo: es la salida de
+                 emergencia, y el descuadre queda registrado.
+                 ============================================================ -->
             <div class="modal-backdrop" *ngIf="cash.showCloseCashModal">
                 <!--Se actualizo a form para que reconozca el Enter-->
                 <form (ngSubmit)="cash.confirmCloseCashModal()" class="modal cash-close-modal">
@@ -302,48 +401,81 @@
                     <div class="cash-summary">
                         <div class="cash-row">
                             <span>Fondo inicial</span>
-                            <strong>${{ cash.cashSummary?.openingAmount }}</strong>
+                            <strong>${{ cash.cashSummary?.openingAmount | number:'1.2-2' }}</strong>
                         </div>
                         <div class="cash-row">
                             <span>Ventas en efectivo</span>
-                            <strong>${{ cash.cashSummary?.cashSales }}</strong>
+                            <strong>${{ cash.cashSummary?.cashSales | number:'1.2-2' }}</strong>
                         </div>
                         <div class="cash-row">
                             <span>Ventas débito</span>
-                            <strong>${{ cash.cashSummary?.debitSales }}</strong>
+                            <strong>${{ cash.cashSummary?.debitSales | number:'1.2-2' }}</strong>
                         </div>
                         <div class="cash-row">
                             <span>Ventas crédito</span>
-                            <strong>${{ cash.cashSummary?.creditSales }}</strong>
+                            <strong>${{ cash.cashSummary?.creditSales | number:'1.2-2' }}</strong>
                         </div>
                         <div class="cash-row">
                             <span>Total vendido</span>
-                            <strong>${{ cash.cashSummary?.totalSales }}</strong>
+                            <strong>${{ cash.cashSummary?.totalSales | number:'1.2-2' }}</strong>
                         </div>
                         <div class="cash-row">
                             <span>Tickets</span>
                             <strong>{{ cash.cashSummary?.totalTickets }}</strong>
                         </div>
-                        <div class="cash-row">
+                        <div class="cash-row total">
                             <span>Monto esperado</span>
-                            <strong>${{ cash.cashSummary?.expectedAmount }}</strong>
+                            <strong>${{ cash.cashSummary?.expectedAmount | number:'1.2-2' }}</strong>
                         </div>
                     </div>
 
-                    <input type="number" [(ngModel)]="cash.closingAmount" placeholder="Dinero contado">
+                    <label class="modal-label">Dinero contado en el cajón</label>
+                    <input
+                        type="number"
+                        [(ngModel)]="cash.closingAmount"
+                        (keydown)="soloDigitosYPunto($event)"
+                        step="0.01"
+                        placeholder="0.00"
+                        appSelectOnFocus
+                    >
 
-                    <div class="difference-preview" *ngIf="cash.closingAmount">
-                        Diferencia: 
-                        <strong
-                                [class.positive]="cash.differencePreview >= 0"
-                                [class.negative]="cash.differencePreview < 0">
-                            ${{ cash.differencePreview }}
-                        </strong>
+                    <!-- Diferencia en vivo. Verde si cuadra, rojo si no. -->
+                    <div class="difference-preview" *ngIf="cash.closingAmount > 0">
+                        <ng-container *ngIf="cash.cashCuadra; else hayDiferencia">
+                            <span class="cuadra-ok">El dinero cuadra exactamente.</span>
+                        </ng-container>
+                        <ng-template #hayDiferencia>
+                            Diferencia:
+                            <strong [class.positive]="cash.differencePreview > 0" [class.negative]="cash.differencePreview < 0">
+                                {{ cash.differencePreview > 0 ? '+' : '' }}${{ cash.differencePreview | number:'1.2-2' }}
+                            </strong>
+                        </ng-template>
+                    </div>
+
+                    <!-- Punto 5.1: salida de emergencia. Solo aparece si NO cuadra,
+                         y sin motivo el backend rechaza el cierre con 409. -->
+                    <div class="diferencia-ayuda" *ngIf="cash.closingAmount > 0 && !cash.cashCuadra">
+                        <p class="diferencia-warn">
+                            <strong>El dinero no cuadra.</strong>
+                            Revisa el conteo. Si estás seguro de que el monto es correcto,
+                            escribe el motivo y se cerrará igual, dejando el descuadre registrado.
+                        </p>
+
+                        <label class="modal-label">Motivo del descuadre</label>
+                        <input
+                            type="text"
+                            name="differenceReason"
+                            [(ngModel)]="cash.differenceReason"
+                            placeholder="Ej: se me pasó un billete de 50 al contar"
+                            maxlength="255"
+                        >
                     </div>
 
                     <div class="button-box">
                         <button class="btn-confirm-close" type="submit">Cerrar</button>
-                        <button class="btn-cancel" type="button" (click)="cash.showCloseCashModal = false">Cancelar</button>
+                        <button class="btn-cancel" type="button" (click)="cash.showCloseCashModal = false">
+                            Cancelar
+                        </button>
                     </div>
                 </form>
             </div>

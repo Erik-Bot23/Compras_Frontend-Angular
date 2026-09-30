@@ -15,6 +15,9 @@ export interface PurchaseItemDTO {
   productName: string;
   quantity: number;
   unitCost: number;
+  //Precio de VENTA que se aplicó al producto al confirmar (V3). null = la
+  //compra no cambió el precio de venta del producto.
+  unitPrice: number | null;
   subtotal: number;
 }
 
@@ -38,7 +41,11 @@ export interface PurchaseDTO {
 export interface PurchaseItemRequest {
   productId: number;
   quantity: number;
+  //Lo que se le PAGA al proveedor
   unitCost: number;
+  //Precio de VENTA del producto en este renglón (V3). Opcional: si no se manda,
+  //el backend conserva el precio de venta que ya tiene el producto.
+  unitPrice?: number | null;
 }
 
 //Petición de POST /api/purchases

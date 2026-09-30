@@ -4,7 +4,8 @@ import { AuthService } from '../../core/service/auth-service/auth-service';
 // Importar el servicio compartido que maneja el estado del menu
 import { SidebarService } from '../../core/service/sidebar-service/sidebar-service';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+  import { FormsModule } from '@angular/forms';
+
 
 @Component({
   selector: 'app-sidebar',
@@ -12,7 +13,19 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
-export class Sidebar {
+  export class Sidebar {
+
+    /**
+     * Ruta de la sección "Inicio" del menú.
+     *
+     * <p>Se declara como campo de la clase y no como constante del módulo para
+     * que el template pueda compararla en `esActiva(inicioRoute)`. Se centraliza
+     * porque la usan tres sitios: el template, `inicio()` y el marcado del
+     * enlace activo. Escribiendo "/cobro" a mano en cada uno, cualquier cambio de
+     * ruta desincronizaría el "estoy aquí" del menú.
+     */
+    readonly inicioRoute = '/cobro';
+
   constructor(
     private router: Router,
     private cd: ChangeDetectorRef,
@@ -107,11 +120,30 @@ export class Sidebar {
     this.router.navigate([route]);
   }
 
-  perfil(){
-    this.router.navigate(['/perfil']);
+perfil(){
+   this.router.navigate(['/perfil']);
   }
 
   inicio(){
-    this.router.navigate(['/cobro']);
+   this.router.navigate([this.inicioRoute]);
+  }
+
+  /**
+   * ¿La ruta dada es la sección donde el usuario está ahora? (PUNTO 6)
+   *
+   * <p>Marca el enlace activo del menú con la clase `.active`, que el CSS
+   * sombrea. Sin esto, en un menú de nueve secciones el usuario no tiene idea de
+   * dónde está parado: el menú se ve igual en todas las pantallas.
+   *
+   * <p><b>Por qué se compara exacta y no con `includes`.</b> Con `includes`,
+   * "/sales" matchearía también "/sales-history" y se marcarían las dos
+   * secciones a la vez. La comparación exacta evita eso.
+   *
+   * <p>También se ignora la barra final.
+   */
+  esActiva(route: string): boolean {
+   const actual = this.router.url.split('?')[0].split('#')[0].replace(/\/$/, '');
+   const objetivo = route.split('?')[0].replace(/\/$/, '');
+   return actual === objetivo;
   }
 }

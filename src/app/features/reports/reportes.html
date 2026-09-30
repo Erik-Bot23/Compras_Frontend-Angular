@@ -113,6 +113,51 @@
       </div>
     </div>
 
+    <!--
+      EXPLICACIÓN DE LAS TARJETAS DE UTILIDAD (punto 4 del encargo)
+
+      Las tres tarjetas salen de UNA consulta cada una, y es importante saber de
+      dónde, porque dos de ellas parecen obvias y la tercera es la que confunde.
+
+      1) INGRESOS — suma de los totales de las ventas válidas del periodo. "Válida"
+         significa con pago aprobado y NO anulada. Si una venta se anuló, su
+         dinero no entró y no cuenta: por eso el filtro de anuladas.
+
+      2) COSTO DE LO VENDIDO — aquí está la clave de todo el reporte. NO es el
+         total de las compras del periodo, porque ese dinero no se perdió: quedó
+         en el almacén. Es lo que costó específicamente lo que los clientes ya se
+         llevaron, y sale de multiplicar cantidad × costo unitario de cada renglón
+         de venta, usando el costo CONGELADO en el momento de la venta.
+
+         ¿Por qué congelado? Porque si se usara el costo actual del producto,
+         comprar algo más barato mañana reescribiría la utilidad de ayer. Al
+         vender se guarda una copia del costo, y esa copia es la que se usa aquí.
+
+      3) UTILIDAD = ingresos − costo de lo vendido. Es la ganancia real del
+         periodo: lo que entró menos lo que costó lo que salió. El % es sobre
+         venta (ingresos), que es como mide el markup un comercio.
+
+      Lo que NO es: restar las compras del periodo. Un mes en que repones
+      mercadería vería una "pérdida" enorme aunque el dinero siga en el cajón o
+      en la bodega, y la utilidad parecería un desastre cuando el negocio está
+      ganando.
+    -->
+    <div class="aviso-explicacion" *ngIf="profit">
+      <p>
+        <strong>Ingresos:</strong> total de las ventas válidas del periodo (pago
+        aprobado y venta no anulada).
+      </p>
+      <p>
+        <strong>Costo de lo vendido:</strong> lo que costó específicamente lo que los
+        clientes se llevaron, con el costo congelado en cada venta. No es el total
+        de compras: esa mercadería que sigue en el almacén todavía no es gasto.
+      </p>
+      <p>
+        <strong>Utilidad:</strong> ingresos − costo de lo vendido. El porcentaje va
+        sobre venta.
+      </p>
+    </div>
+
     <!-- Aviso de datos incompletos (V3): si hay renglones sin costo congelado,
          la utilidad está sobrestimada. Decirlo es mejor que mostrar un número
          inflado sin que nadie entienda por qué. -->

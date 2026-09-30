@@ -59,13 +59,22 @@
                 <th>Efectivo</th>
                 <th>Cambio</th>
                 <th>Total</th>
-                <th>Estado</th>
-                <!-- Columna de acciones: se oculta entera si el usuario no
-                     tiene NINGUNO de los dos permisos. Un encabezado vacío en
-                     una tabla sin acciones queda desalineado. -->
-                <th *ngIf="auth.hasPermission('CONFIRMAR_VENTAS') || auth.hasPermission('CANCELAR_VENTAS')">
-                  Acciones
-                </th>
+                <!--
+                  PUNTO 2 DEL ENCARGO: se quitaron las columnas "Estado" y
+                  "Acciones" (2026-09-30).
+
+                  Razón: el historial es una consulta, no una mesa de trabajo. El
+                  cajero está mirando ventas ya cerradas, y un botón de
+                  "Confirmar" ahí no hace falta porque la venta se confirma en el
+                  momento del cobro. Lo que sí importa ver es QUÉ se vendió, cuánto
+                  y cuándo, y las dos columnas robaban espacio de los datos útiles.
+
+                  El ciclo de vida NO se perdió: la venta anulada sigue
+                  identificándose por la fila tachada (.row-cancelled) y por el
+                  hecho de NO estar en los totales del reporte. Y los endpoints
+                  PATCH /sales/{id}/confirm y /cancel siguen existiendo en el
+                  backend, que es la capa que protege el inventario.
+                -->
               </tr>
             </thead>
 
@@ -93,59 +102,6 @@
                 <!-- .money alinea a la derecha; .total añade amarillo semibold (salehistory.css) -->
                 <td class="money total">{{ sale.total | number:'1.2-2' }}</td>
 
-                <!-- ESTADO: badge con los 3 estados del ciclo de vida.
-                     El texto de venta anulada se muestra tachado con
-                     .row-cancelled (opacity) para que se note sin leer. -->
-                <td>
-                  <span class="state-badge state-cancelled"
-                        *ngIf="isAnulada(sale)"
-                        [title]="sale.cancelledAt ? ('Anulada el ' + (sale.cancelledAt | date:'dd/MM/yyyy HH:mm')) : 'Anulada'">
-                    Anulada
-                  </span>
-
-                  <span class="state-badge state-confirmed"
-                        *ngIf="isConfirmada(sale)"
-                        [title]="sale.confirmedAt ? ('Confirmada el ' + (sale.confirmedAt | date:'dd/MM/yyyy HH:mm')) : 'Confirmada'">
-                    Confirmada
-                  </span>
-
-                  <span class="state-badge state-open" *ngIf="isAbierta(sale)">
-                    Abierta
-                  </span>
-                </td>
-
-                <!-- ACCIONES.
-                     *ngIf por permiso (directiva *hasPermission) Y por estado de
-                     la venta (canCancel / isAbierta). Son dos filtros
-                     distintos:
-                       - el permiso decide si el usuario PUEDE;
-                       - el estado decide si la operación APLICA ahora.
-                     Ninguno reemplaza al backend, que sigue validando y
-                     devuelve 409 si algo cambió entre la carga de la lista y
-                     el clic. -->
-                <td class="actions-cell"
-                    *ngIf="auth.hasPermission('CONFIRMAR_VENTAS') || auth.hasPermission('CANCELAR_VENTAS')">
-
-                  <button type="button" class="btn-confirm"
-                          *hasPermission="'CONFIRMAR_VENTAS'"
-                          [disabled]="!isAbierta(sale)"
-                          [title]="isAbierta(sale)
-                            ? 'Cerrar la venta: ya no se podrá anular'
-                            : (isConfirmada(sale) ? 'La venta ya está confirmada' : 'La venta fue anulada')"
-                          (click)="confirmarVenta(sale)">
-                    Confirmar
-                  </button>
-
-                  <button type="button" class="btn-cancel"
-                          *hasPermission="'CANCELAR_VENTAS'"
-                          [disabled]="!canCancel(sale)"
-                          [title]="canCancel(sale)
-                            ? 'Anular la venta y devolver el stock'
-                            : cancelBlockedReason(sale)"
-                          (click)="anularVenta(sale)">
-                    Anular
-                  </button>
-                </td>
               </tr>
 
               <tr *ngIf="!loading && sales.length === 0">

@@ -15,7 +15,21 @@ import { SidebarService } from '../../core/service/sidebar-service/sidebar-servi
 import { PaginatePipe } from '../../core/pipes/paginate/paginate';
 import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
 import { SelectOnFocus } from '../../core/routes/directives/select-on-focus';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+  import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+  import {
+    MAX_SKU_LENGTH,
+    aMayusculas,
+    sanearDigitos,
+    sanearPrecio,
+    soloDigitos,
+    soloDigitosYPunto,
+    validarBarcode,
+    validarEntero,
+    validarPrecio,
+    validarRfc,
+    validarSku,
+  } from '../../core/utils/validadores';
+
 
 @Component({
   selector: 'app-productos',
@@ -145,6 +159,15 @@ export class Productos implements OnInit {
     }
 
     if(this.isSaving) return;
+
+    // ===== Validación ANTES de mandar nada (V3) =====
+    // Se valida aquí y no solo en el backend por dos razones: no se hace un
+    // request que ya se sabe que va a fallar con 400, y el mensaje aparece
+    // debajo del campo que está mal en vez de un aviso genérico arriba.
+    if(!this.formularioValido()){
+      this.snack.open('Revisa los campos marcados en rojo', 'Cerrar', { duration: 4000 });
+      return;
+    }
 
     this.isSaving = true;
 
@@ -302,8 +325,146 @@ export class Productos implements OnInit {
     }
   }
 
+// =========================================================================
+//  VALIDACIONES DEL FORMULARIO (V3, punto 7 del encargo)
+// =========================================================================
+//  Ahora cada campo valida con las reglas de `core/utils/validadores` y el error
+//  se MUESTRA debajo del input, en vez de solo acotar el valor en silencio.
+//
+//  La diferencia con la versión anterior es que se explains qué está mal. El
+//  código viejo hacía `if (price < 1) price = 1` y `sku.replace(/\D/g,'')`:
+//  corregía el valor pero el usuario no sabía POR QUÉ le cambiaron lo que
+//  escribió. Con 1.875 en el stock aparecía un 1 silencioso, y con "CHOC-500" en
+//  el SKU se quedaba en "500", que es otro producto distinto.
+
+  /**
+   * Mensajes de error por campo. El template los muestra con `*ngIf="errores.x"`
+   * debajo de cada input. Vacío = sin error.
+   */
+  errores: Record<string, string> = {};
+
+  /**
+   * Acceso tipado a un campo del formulario.
+   *
+   * <p>Se evita `this.form[campo]` directo porque TypeScript no permite indexar
+   * un objeto con un tipo sin índice. Este getter devuelve el valor ya con el
+   * tipo que el validador espera, sin casts inseguros.
+   */
+  private valorDe(campo: 'price' | 'stock' | 'sku' | 'barcode' | 'rfc'): string | number | null {
+    switch (campo) {
+      case 'price':
+        return this.form.price;
+      case 'stock':
+        return this.form.stock;
+      case 'sku':
+        return this.form.sku;
+      case 'barcode':
+        return this.form.barcode;
+      default:
+        return '';
+    }
+  }
+
+  /** Escribe en un campo del formulario con el mismo criterio tipado. */
+  private escribirEn(campo: 'price' | 'stock', valor: number) {
+    if (campo === 'price') {
+      this.form.price = valor;
+    } else {
+      this.form.stock = valor;
+    }
+  }
+
+  /** Valida un campo y guarda (o limpia) su mensaje de error. */
+  validarCampo(campo: 'price' | 'stock' | 'sku' | 'barcode' | 'rfc') {
+    const valor = this.valorDe(campo);
+
+    let resultado;
+    switch (campo) {
+      case 'price':
+        resultado = validarPrecio(valor, 'precio');
+        break;
+      case 'stock':
+        resultado = validarEntero(valor, 'stock');
+        break;
+      case 'sku':
+        resultado = validarSku(String(valor ?? ''));
+        break;
+      case 'barcode':
+        resultado = validarBarcode(String(valor ?? ''));
+        break;
+      default:
+        resultado = validarRfc(String(valor ?? ''));
+    }
+
+    if (resultado.ok) {
+      delete this.errores[campo];
+    } else {
+      this.errores[campo] = resultado.error;
+    }
+  }
+
+  /** Valida todo el formulario. Devuelve false si algo está mal. */
+  formularioValido(): boolean {
+    (['price', 'stock', 'sku', 'barcode'] as const).forEach((c) => this.validarCampo(c));
+    return Object.keys(this.errores).length === 0;
+  }
+
+  // ===== Filtros de teclado y pegado =====
+  // Se delegan a los validadores compartidos: las reglas son las mismas en todos
+  // los formularios y no se duplican.
+
+  soloDigitos = soloDigitos;
+  soloDigitosYPunto = soloDigitosYPunto;
+  aMayusculas = aMayusculas;
+
+  /**
+   * Pega en el precio: quita letras y la notación científica.
+   *
+   * <p>Necesario aparte del keydown porque PEGAR no dispara `keydown`. Si no,
+   * el usuario podría pegar "1e5" y saltarse el filtro de teclas.
+   */
+  onPastePrecio(event: ClipboardEvent, campo: 'price') {
+    const texto = event.clipboardData?.getData('text') ?? '';
+    this.escribirEn(campo, Number(sanearPrecio(texto)) || 0);
+    event.preventDefault();
+    this.validarCampo(campo);
+  }
+
+  /** Pega en stock o barcode: solo dígitos, sin notación científica. */
+  onPasteEntero(event: ClipboardEvent, campo: 'stock' | 'barcode') {
+    const texto = event.clipboardData?.getData('text') ?? '';
+    const digitos = sanearDigitos(texto);
+
+    if (campo === 'stock') {
+      this.form.stock = Number(digitos) || 0;
+    } else {
+      this.form.barcode = digitos;
+    }
+    event.preventDefault();
+    this.validarCampo(campo);
+  }
+
+  /** Pega en barcode: solo dígitos, y se conservan los ceros a la izquierda. */
+  onPasteBarcode(event: ClipboardEvent) {
+    const texto = event.clipboardData?.getData('text') ?? '';
+    this.form.barcode = sanearDigitos(texto);
+    event.preventDefault();
+    this.validarCampo('barcode');
+  }
+
+  /**
+   * Pega en el SKU: se permite texto (letras, números y - _ . /) y se pasa a
+   * mayúsculas, que es donde "choc-500" y "CHOC-500" se vuelven el mismo SKU.
+   */
+  onPasteSku(event: ClipboardEvent) {
+    const texto = event.clipboardData?.getData('text') ?? '';
+    this.form.sku = texto.trim().toUpperCase().slice(0, MAX_SKU_LENGTH);
+    event.preventDefault();
+    this.validarCampo('sku');
+  }
+
   categorias(){
-    this.router.navigate(['/categorias'])
+   this.router.navigate(['/categorias'])
   }
 
   //Arma la URL de la imagen del producto.

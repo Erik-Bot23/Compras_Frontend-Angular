@@ -79,10 +79,10 @@
                         <button
                           *hasPermission="'CONFIRMAR_COMPRAS'"
                           type="button"
-                          class="primary"
+                          class="confirmar-compra"
                           [disabled]="c.confirmed"
                           (click)="confirmarCompra(c)"
-                          [title]="c.confirmed ? 'Esta compra ya esta confirmada' : 'Hacer entrar la mercancia al almacen'"
+                          [title]="c.confirmed ? 'Esta compra ya está confirmada' : 'Hacer entrar la mercancía al almacén'"
                         >
                           Confirmar
                         </button>
@@ -114,6 +114,8 @@
                               <th>Producto</th>
                               <th>Cant.</th>
                               <th>Costo unit.</th>
+                              <th>Precio venta</th>
+                              <th>Margen</th>
                               <th>Subtotal</th>
                             </tr>
                           </thead>
@@ -122,6 +124,17 @@
                               <td>{{ item.productName }}</td>
                               <td>{{ item.quantity }}</td>
                               <td class="money">${{ item.unitCost | number:'1.2-2' }}</td>
+                              <!-- Precio de venta aplicado al confirmar (V3). "—" cuando
+                                   la compra no cambió el precio del producto. -->
+                              <td class="money">
+                                {{ item.unitPrice !== null ? ('$' + (item.unitPrice | number:'1.2-2')) : '—' }}
+                              </td>
+                              <!-- Margen del renglón: venta menos compra. En rojo si es
+                                   negativo, porque vender más barato de lo que se compró
+                                   es pérdida directa. -->
+                              <td class="money" [class.margen-negativo]="item.unitPrice !== null && item.unitPrice < item.unitCost">
+                                {{ item.unitPrice !== null ? ('$' + (item.unitPrice - item.unitCost | number:'1.2-2')) : '—' }}
+                              </td>
                               <td class="money">${{ item.subtotal | number:'1.2-2' }}</td>
                             </tr>
                           </tbody>
@@ -157,14 +170,43 @@
          homologado con productos/usuarios/categorias. -->
     <div *ngIf="activeTab === 'proveedores'" class="tab-panel proveedores-grid">
       <form (ngSubmit)="guardarProveedor()" class="form-card" *ngIf="auth.hasPermission('CREAR_PROVEEDORES') || auth.hasPermission('EDITAR_PROVEEDORES')">
-        <div class="field">
-          <label>Nombre</label>
-          <input name="formProvider.name" [(ngModel)]="formProvider.name" placeholder="Nombre del proveedor">
-        </div>
-        <div class="field">
-          <label>RFC</label>
-          <input name="formProvider.rfc" [(ngModel)]="formProvider.rfc" placeholder="RFC o identificador fiscal">
-        </div>
+          <div class="field">
+            <!-- Nombre del proveedor: el campo original se sustituyó por el de
+                 mayúsculas que está más abajo, junto con el RFC. Este bloque
+                 duplicaba el input y el segundo sobrescribía al primero. -->
+          </div>
+          <div class="field">
+            <!-- RFC (punto 7.2 y 7.4): solo letras y números, máximo 13 (que es lo
+                 que mide un RFC mexicano) y en MAYÚSCULAS al escribir.
+                 Se pone en mayúsculas porque un RFC se escribe con mayúsculas y
+                 compararlo en minúsculas crearía duplicados falsos: "gode..." y
+                 "GODE..." pasarían los dos como un RFC distinto. -->
+            <label>RFC</label>
+            <input
+              name="formProvider.rfc"
+              [(ngModel)]="formProvider.rfc"
+              (input)="aMayusculas($event)"
+              (paste)="onPasteRfc($event)"
+              (input)="validarCampo('rfc')"
+              placeholder="GODE561231GR8"
+              maxlength="13"
+              autocomplete="off"
+            />
+            <span class="error-msg" *ngIf="errores['rfc']">{{ errores['rfc'] }}</span>
+          </div>
+          <div class="field">
+            <!-- Nombre del proveedor: MAYÚSCULAS (punto 7.4). Es un dato corto,
+                 casi siempre razón social, y en mayúsculas se ve uniforme y
+                 "Dairy Queen" / "DAIRY QUEEN" no se guardan como dos. -->
+            <label>Nombre</label>
+            <input
+              name="formProvider.name"
+              [(ngModel)]="formProvider.name"
+              (input)="aMayusculas($event)"
+              placeholder="DAIRY QUEEN"
+              autocomplete="off"
+            />
+          </div>
         <div class="field">
           <label>Teléfono</label>
           <input name="formProvider.phone" [(ngModel)]="formProvider.phone" placeholder="Opcional">
@@ -237,6 +279,50 @@
         Los primeros son los más urgentes de renegociar con el proveedor.
       </div>
 
+      <!--
+        EXPLICACIÓN DE LA SECCIÓN DE MÁRGENES (punto 4 del encargo)
+
+        Qué es: el margen responde "¿cuánto gano por vender esto?", y sale de restar
+        el COSTO al PRECIO. Son dos columnas distintas y confundirlas es el error
+        clásico:
+
+          costo  = lo que le PAGO al proveedor. Lo escribe CONFIRMAR una compra.
+          precio = lo que le COBRO al cliente. Lo escribe el CRUD de productos
+                   y, desde V3, también el precio de venta del renglón de compra.
+          margen = precio - costo. Lo que me queda antes de pagar wages, renta y luz.
+
+        De dónde sale cada dato (V3, decisión del dueño):
+          - Al registrar una compra NO se toca el producto: la compra nace
+            pendiente. Solo CONFIRMAR suma el stock y escribe el costo y el
+            precio de venta del renglón.
+          - Por eso esta tabla refleja el ÚLTIMO costo y precio confirmados.
+
+        El % es sobre el precio de venta (markup), no sobre el costo: mide qué
+        parte del precio es ganancia. Se ordena de menor a mayor porque los
+        primeros productos son los que conviene renegociar.
+
+        OJO, no confundir con la UTILIDAD de Reportes: el margen de un producto es
+        una estimación con los costos actuales, y la utilidad mide lo que de
+        verdad se ganó en un periodo, usando el costo congelado en cada venta.
+      -->
+      <div class="aviso-explicacion" *ngIf="margins.length > 0">
+        <p>
+          <strong>Cómo se calcula el margen:</strong>
+          margen = precio de venta − costo de compra, y el % es ese margen dividido
+          entre el precio de venta.
+        </p>
+        <p>
+          Ambos valores son los <strong>últimos confirmados</strong>: registrar una
+          compra no cambia el producto hasta que la confirmas. Por eso un producto
+          recién comprado todavía aparece con su costo anterior.
+        </p>
+        <p class="explicacion-alerta">
+          Esto <em>no</em> es la utilidad. La utilidad (pestaña Reportes) resta el
+          costo de lo que ya se <em>vendió</em>, no el costo de lo que tienes
+          guardado.
+        </p>
+      </div>
+
       <div class="table-container fade-in">
         <div class="table-card">
           <div class="table-scroll">
@@ -304,17 +390,71 @@
       <input type="date" [(ngModel)]="modalFecha">
     </div>
 
-    <!-- Renglones de la compra -->
+    <!-- Renglones de la compra (V3).
+         Tres columnas numéricas con título explícito, porque son cosas distintas y
+         confundirlas cuesta dinero:
+           Cantidad      → cuántas unidades entran al almacén
+           Costo compra  → lo que se le PAGA al proveedor (unit_cost)
+           Precio venta  → a cuánto se va a VENDER (unit_price, escribe product.price
+                           al confirmar; vacío = se conserva el precio actual) -->
     <div class="lineas">
+      <div class="linea-cabecera">
+        <span>Producto</span>
+        <span>Cantidad</span>
+        <span>Costo de compra</span>
+        <span>Precio de venta</span>
+        <span>Subtotal</span>
+        <span></span>
+      </div>
+
       <div class="linea" *ngFor="let l of lineas; let i = index">
         <select class="custom-select" [(ngModel)]="l.productId" (ngModelChange)="onProductoSeleccionado(l)">
           <option [ngValue]="null">Producto...</option>
           <option *ngFor="let prod of products" [ngValue]="prod.id">{{ prod.name }} (${{ prod.price }})</option>
         </select>
-        <input type="number" min="1" [(ngModel)]="l.quantity" (input)="validarLinea(l)" title="Cantidad">
-        <input type="number" min="0" [(ngModel)]="l.unitCost" (input)="validarLinea(l)" title="Costo unitario">
+
+        <!-- Cantidad: enteros. (keydown) bloquea la 'e' y el '.', que en un
+             <input type="number"> producirían 1e5 o 1.5. -->
+        <input
+          type="number" min="1" step="1"
+          [(ngModel)]="l.quantity"
+          (keydown)="soloDigitos($event)"
+          (paste)="onPasteCantidad($event, l)"
+          (input)="validarLinea(l)"
+          placeholder="0"
+          title="Cantidad de unidades (entero, sin decimales)"
+        />
+
+        <!-- Costo de compra: hasta 2 decimales -->
+        <input
+          type="number" min="0" step="0.01"
+          [(ngModel)]="l.unitCost"
+          (keydown)="soloDigitosYPunto($event)"
+          (paste)="onPastePrecio($event, l, 'unitCost')"
+          (input)="validarLinea(l)"
+          placeholder="0.00"
+          title="Lo que se le paga al proveedor por unidad"
+        />
+
+        <!-- Precio de venta: hasta 2 decimales. Se autocompleta con el precio
+             actual del producto, pero el usuario puede cambiarlo. -->
+        <input
+          type="number" min="0" step="0.01"
+          [(ngModel)]="l.unitPrice"
+          (keydown)="soloDigitosYPunto($event)"
+          (paste)="onPastePrecio($event, l, 'unitPrice')"
+          (input)="validarLinea(l)"
+          placeholder="0.00"
+          title="A cuánto se va a vender. Vacío = se conserva el precio actual"
+        />
+
         <span class="linea-subtotal">${{ subtotal(l) }}</span>
-        <button type="button" class="delete" (click)="quitarLinea(i)">×</button>
+
+        <!-- Botón de eliminar renglón. Se le da clase propia para poder darle
+             estilo sin afectar a los "delete" de toda la app. -->
+        <button type="button" class="delete delete-linea" (click)="quitarLinea(i)" title="Quitar este producto de la compra">
+          <img src="assets/icons/eliminar.png" alt="Eliminar producto">
+        </button>
       </div>
     </div>
 

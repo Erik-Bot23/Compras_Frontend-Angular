@@ -440,3 +440,44 @@
     padding: 6px 4px;
   }
 }
+/* =========================================================================
+   Bloque de explicaci�n (punto 4 del encargo)
+   =========================================================================
+   Los reportes Financiales se leen mal si no se sabe de d�nde sale cada n�mero.
+   Este bloque se despliega debajo de las tarjetas de utilidad y de la secci�n de
+   m�rgenes, con el texto exacto de por qu� se calcula as� y, sobre todo, por qu�
+     NO se restan las compras del periodo.
+   Se deja SIEMPRE visible en vez de plegable: la confusión entre margen,
+   utilidad y gasto es la más común y es la que lleva a cambiar de proveedor
+   por un número mal entendido. Ocultarlo en un desplegable significaría que
+   casi nadie lo leería. */
+.aviso-explicacion {
+  background: rgba(79, 140, 255, 0.07);
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.aviso-explicacion p {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #cbd5e1;
+}
+
+.aviso-explicacion p:last-child {
+  margin-bottom: 0;
+}
+
+.aviso-explicacion strong {
+  color: #f1f5f9;
+}
+
+/* La advertencia final ("esto no es la utilidad") se destaca en �mbar porque es
+   la confusi�n m�s cara: hace que el due�o cambie de proveedor o baje precios
+   por un n�mero mal entendido. */
+.explicacion-alerta {
+  border-left: 3px solid #f59e0b;
+  padding-left: 12px;
+  color: #fde68a !important;
+}
