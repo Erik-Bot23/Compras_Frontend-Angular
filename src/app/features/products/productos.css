@@ -325,13 +325,21 @@ td .img:hover {
   background: #16a34a;
   transform: scale(1.05);
 }
+
+.add-category img{
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
 /* =========================================================================
-   Mensajes de error de validación (V3, punto 7)
+   Mensajes de error de validaciï¿½n (V3, punto 7)
    =========================================================================
-   Se muestran debajo del input que falló. El color rojo y el texto explícito
+   Se muestran debajo del input que fallï¿½. El color rojo y el texto explï¿½cito
    sustituyen al antiguo comportamiento de "corregir el valor en silencio": antes,
-   escribir 1.875 en el stock se convertía en 1 sin explicación, y el usuario no
-   sabía si el sistema lo había arreglado o si se estaba equivocando. */
+   escribir 1.875 en el stock se convertï¿½a en 1 sin explicaciï¿½n, y el usuario no
+   sabï¿½a si el sistema lo habï¿½a arreglado o si se estaba equivocando. */
 .error-msg {
   display: block;
   margin-top: 4px;

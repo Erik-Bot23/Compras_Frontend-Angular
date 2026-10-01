@@ -192,6 +192,13 @@
   flex-shrink: 0;
 }
 
+.add-linea img{
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 /* -------- Formulario de proveedores -------- */
 .form-card {
   background: #1e293b;

@@ -12,6 +12,7 @@ import { SidebarService } from '../../core/service/sidebar-service/sidebar-servi
 // Paginacion reutilizable: pipe recorta la lista / control pinta el pie de tabla
 import { PaginatePipe } from '../../core/pipes/paginate/paginate';
 import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
+import { aMayusculas, validarTexto } from '../../core/utils/validadores';
 
 @Component({
   selector: 'app-categorias',
@@ -31,6 +32,10 @@ export class Categorias implements OnInit {
 
   // Para el modo edición (0 = no se está editando)
   editingCategoryId: number | null = null;
+
+  //Helpers
+  aMayusculas = aMayusculas;
+  errores: Record<string,string> = {};
 
   constructor(
     private categoryService: CategoryService,
@@ -103,5 +108,12 @@ export class Categorias implements OnInit {
         alert(err.error?.message || 'No se pudo eliminar la categoría');
       }
     });
+  }
+
+  //Validar el nombre
+  validarNombre(){
+    const r = validarTexto(this.categoryName, 'nombre de la categoría', 50);
+    if(r.ok) delete this.errores['name'];
+    else this.errores['name'] = r.error;
   }
 }

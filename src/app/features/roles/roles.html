@@ -17,7 +17,8 @@
                 <div class="form-card">
                     <div class="field">
                         <label>Nombre del rol</label>
-                        <input name="roleName" [(ngModel)]="roleName">
+                        <input name="roleName" [(ngModel)]="roleName" (input)="aMayusculas($event)" (blur)="validarNombre()" maxlength="30" placeholder="CAJERO">
+                        <span class="error-msg" *ngIf="errores['name']">{{ errores['name'] }}</span>
                     </div>
 
                     <div class="permission-section">

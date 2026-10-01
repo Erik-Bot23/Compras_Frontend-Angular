@@ -1,3 +1,19 @@
+/*Bloquea el scroll del fondo mientras haya un modal abierta.
+scrollbar-gutter: stable reserva el espacio de la barra para que el contenido
+no salte horizontalmente al abrir y cerrar el modal. Sin esto, la página se
+desplaza unos píxeles a la derecha cada vez que aparece un modal, y se nota mucho
+*/
+body.modal-open{
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+html.modal-open,
+body.modal-open{
+  overflow: hidden;
+  height: 100%;
+}
+
 /* MAIN */
 .content {
   flex: 1;
@@ -538,6 +554,10 @@ tbody tr:hover {
 }
 
 /*Modal de confirmación*/
+/**
+align-items: flex-start + padding vertical evita que el modal se corte arriba
+cuando es más alto que la pantalla.
+*/
 .modal-backdrop{
     position: fixed;
     top: 0;
@@ -547,28 +567,42 @@ tbody tr:hover {
     background: rgba(0,0,0,.5);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding: 24px 16px; /*respiero arriba/abajo*/
+    overflow-y: auto; /*scroll del backdrop si hace falta*/
     z-index: 1000;
+    box-sizing: border-box;
 }
 
+/*En el modal limitamos su altura y le damos un scroll interno*/
 .modal{
+    max-height: calc(100vh - 48px);
+    overflow: hidden;
     background: #0f172a;
     width: 400px;
-    max-width: 90%;
-    padding: 25px;
+    max-width: 92%;
+    padding: 18px;
     border-radius: 12px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     border: 1px solid #1e293b;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 15px;
+    gap: 10px;
+}
+
+.modal-body{
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-right: 4px; /*para que el scrollbar no pegue al borde*/
+  min-height: 0; /*Sin esto e felx no deja scrollear*/
 }
 
 .modal h3{
     margin: 0;
     text-align: center;
     color:#f8fafc;
+    flex: 0 0 auto;
+    margin-bottom: 12px;
 }
 
 .modal input{
@@ -576,12 +610,33 @@ tbody tr:hover {
     border: 1px solid #334155;
     border-radius: 8px;
     font-size: 16px;
-    justify-content: center;
     background:#0f172a;
     color:white;
 }
 
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus{
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.25);
+}
+
+.modal input[name="closingAmount"]{
+  display: block; /*lo convierte en bloque: base para poder centrar*/
+  width: 200px; /*ancho que se deseea*/
+  margin: 0 auto; /*centra horizontalmente en un contenedor bloque*/
+  text-align: center; /*y el número dentro, también centrado */
+}
+
 /*Botones del modal de confirmar venta*/
+.modal > .button-box{
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding-top: 12px;
+  border-top: 1px solid #1e293b; /*Separador visual*/
+}
+
 .modal-buttons{
     display: flex;
     justify-content: flex-end;
@@ -608,34 +663,37 @@ tbody tr:hover {
 
 /*Corte de caja*/
 .cash-close-modal{
-  width: 520;
+  width: 520px;
 }
 
 /*==Resumen del corte de caja==*/
 .cash-summary{
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 14px;
 }
 
 .cash-row{
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 10p 0;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
   border-bottom: 1px solid #1e293b;
+  font-size: 0.88rem;
 }
 
 .cash-row span{
-  color: #94a3b8
+  opacity: 0.75;
 }
 
 .cash-row strong{
   color: #f8fafc
 }
 
+/*La fila monto esperado ocupa las 2 columnas porque es el dato clave*/
 .cash-row.total{
-  font-size: 16px;
+  grid-column: 1 / -1;
   font-weight: 700;
 }
 

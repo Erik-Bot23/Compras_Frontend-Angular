@@ -1,35 +1,35 @@
 /**
  * Validadores de entrada para los formularios (V3, 2026-09-30).
  *
- * <p>Es el espejo de `InputValidator.java` del backend. Está duplicado a
+ * Es el espejo de `InputValidator.java` del backend. Está duplicado a
  * propósito, y no por descuido: son dos capas con trabajos distintos.
  *
- * <ul>
- *   <li>El backend valida porque es <b>la frontera de confianza</b>. Aunque el
- *       frontend se equivoque, nada enters mal en la base de datos.</li>
- *   <li>El frontend valida porque es <b>la experiência del usuario</b>. Nadie
- *       quiere enviar un formulario y que le salte un error del servidor tres
- *       segundos después. Aquí el error se muestra mientras escribe.</li>
- * </ul>
+ * El backend valida porque es la frontera de confianza. Aunque el
+ * frontend se equivoque, nada entra mal en la base de datos.
+ * El frontend valida porque es la experiência del usuario. Nadie
+ * quiere enviar un formulario y que le salte un error del servidor tres
+ * segundos después. Aquí el error se muestra mientras escribe.
  *
- * <p>Que estén los dos es una defensa en profundidad: si alguien llama al
+ * Que estén los dos es una defensa en profundidad: si alguien llama al
  * backend con un script, sigue habiendo validación. Y si alguien se saltara el
  * backend, el formulario no dejaría escribir el error.
  *
- * <p><b>El detalle técnico que importa:</b> se valida el TEXTO, no el número ya
+ * El detalle técnico que importa: se valida el TEXTO, no el número ya
  * convertido. Al pasar a `number`, `"000.2"` se vuelve `0.2` y `"1.875"` se
  * vuelve `1.875`: los ceros a la izquierda y el tercer decimal ya se perdieron,
  * y no hay forma de detectarlos después. Por eso cada función mira la cadena.
  */
 
+import { text } from "stream/consumers";
+
 /** Máximo de caracteres del SKU. */
-export const MAX_SKU_LENGTH = 50;
+export const MAX_SKU_LENGTH = 10;
 
 /** Un RFC mexicano tiene 13 (física) o 12 (moral). */
 export const MAX_RFC_LENGTH = 13;
 
 /** Los códigos de barras más largos que se usan en la práctica no pasan de 20. */
-export const MAX_BARCODE_LENGTH = 20;
+export const MAX_BARCODE_LENGTH = 12;
 
 /** Resultado de una validación: `ok` o el mensaje de error ya redactado. */
 export interface ValidationResult {
@@ -58,7 +58,7 @@ function tieneExponente(valor: string): boolean {
 /**
  * SKU: letras, números y los separadores de uso común (- _ . /).
  *
- * <p>Admite letras a propósito: un SKU no es un número, "CHOC-500" es un SKU
+ * Admite letras a propósito: un SKU no es un número, "CHOC-500" es un SKU
  * perfectamente válido. Es la razón por la que el SKU y el código de barras
  * tienen reglas distintas.
  */
@@ -98,8 +98,8 @@ export function validarRfc(valor: string): ValidationResult {
 /**
  * Código de barras: solo dígitos.
  *
- * <p>Se conserva como texto a propósito. El código de barras es un
- * <i>identificador</i>: si se guardara como número, `0001234567895` perdería los
+ * Se conserva como texto a propósito. El código de barras es un
+ * identificador: si se guardara como número, `0001234567895` perdería los
  * ceros de la izquierda y el lector dejaría de encontrar el producto.
  */
 export function validarBarcode(valor: string): ValidationResult {
@@ -162,8 +162,8 @@ export function validarEntero(valor: string | number | null | undefined, campo =
 /**
  * Precio: no negativo y con máximo 2 decimales.
  *
- * <p>El límite de 2 decimales no es arbitrario: la columna es `numeric(38,2)`,
- * así que `1.875` se redondearía a `1.88` <b>en silencio</b>. El usuario
+ * El límite de 2 decimales no es arbitrario: la columna es `numeric(38,2)`,
+ * así que `1.875` se redondearía a `1.88` en silencio. El usuario
  * escribiría 1.875, el sistema cobraría 1.88 y nadie vería el redondeo.
  */
 export function validarPrecio(valor: string | number | null | undefined, campo = 'precio'): ValidationResult {
@@ -210,12 +210,12 @@ export function validarPrecio(valor: string | number | null | undefined, campo =
 /**
  * Filtro para `(keydown)` de campos que solo aceptan dígitos.
  *
- * <p><b>Por qué bloquear la 'e' y la 'E' aquí.</b> El `<input type="number">`
+ * Por qué bloquear la 'e' y la 'E' aquí. El `<input type="number">`
  * del navegador las acepta y produce valores como `1e5`. Ese es el hueco clásico:
  * el navegador dice que "es un número válido" y el usuario termina escribiendo
  * cien mil. Con este filtro la tecla ni siquiera entra al campo.
  *
- * <p>También bloquea `e`, `E`, `+`, `-`, `.` y `,` en campos enteros: son teclas
+ * También bloquea `e`, `E`, `+`, `-`, `.` y `,` en campos enteros: son teclas
  * que solo sirven para escribir negativos o decimales, que ya se rechazan.
  */
 export function soloDigitos(event: KeyboardEvent): void {
@@ -235,7 +235,7 @@ export function soloDigitosYPunto(event: KeyboardEvent): void {
 /**
  * Sanea lo que se PEGA en un campo de solo dígitos.
  *
- * <p>Necesario aparte del filtro de teclas porque pegar NO dispara `keydown`: si
+ * Necesario aparte del filtro de teclas porque pegar NO dispara `keydown`: si
  * no, el usuario podría pegar "1e5" o "12a" saltándose la validación.
  */
 export function sanearDigitos(texto: string): string {
@@ -273,4 +273,104 @@ function cerosIniciales(entero: string): string | null {
     return entero.replace(/^0+(?=\d)/, '');
   }
   return null;
+}
+
+// ===========================================================================
+//  Textos, correos y contraseñas (punto 5 del encargo)
+// ===========================================================================
+
+/**Email: forma básica. No valida todo el RFC 5322 porque eso es inútil en la práctica. */
+export function validarEmail(valor: string): ValidationResult {
+  const correo = (valor || '').trim().toLowerCase();
+
+  if(!correo) return ok(); //Vacío se valida en "obligatorio", no aquí
+
+  if(correo.length > 120){
+    return fail('El correo no puede tener más de 120 caracteres.');
+  }
+
+  if(!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(correo)){
+    return fail('El correo no es válido. Ejemplo: usuario@gmail.com');
+  }
+
+  return ok();
+}
+
+/**
+ * Texto libre con límite de caracteres: nombres de categoría, rol y proveedor.
+ * 
+ * No se permiten saltos de línea ni caracteres de control, porque en una tabla
+ * un "Bebidas\nRicas" descoloca la fila y un tabulador invesible rompe el layout
+ */
+export function validarTexto(valor: string, campo: string, max: number): ValidationResult{
+  const texto = (valor || '').trim();
+
+  if(!texto) return ok();
+
+  if(text.length > max){
+    return fail(`El ${campo} no puede tener más de ${max} caracteres (lleva ${texto.length}).`);
+  }
+
+  if(/[\n\r\t]/.test(texto)){
+    return fail(`El ${campo} no puede tener saltos de línea ni tabuladores.`);
+  }
+
+  return ok();
+}
+
+/**
+ * Teléfono: solo dígitos, espacios, guiones y paréntesis.
+ * Es deliberadamente lao porque cada país lo escribe distinto
+ */
+export function validarTelefono(valor: string): ValidationResult{
+  const tel = (valor || '').trim();
+
+  if(!tel) return ok();
+
+  if(!/^[0-9\s()+-]+$/.test(tel)){
+    return fail(`El teléfono solo admite números, espacios, guiones y paréntesis.`);
+  }
+
+  if(tel.replace(/\D/g, '').length > 12){
+    return fail('El teléfono es demasiado largo.');
+  }
+
+  return ok();
+}
+
+/**
+ * Contraseña: entre 8 y 10 caracteres)
+ */
+export function validarPassword(valor: string, min = 8, max =10): ValidationResult{
+  const pw = valor ?? '';
+
+  if(!pw) return ok(); //vacío = no se cambia (solo al crear es obligatorio)
+
+  const largo = pw.trim().length;
+  if(largo < min){
+    return fail(`La contraseña debe tener mínimo ${min} caracteres (lleva ${largo}).`);
+  }
+
+  if(largo > max){
+    return fail(`La contraseña debe tener máximo ${max} caracteres (lleva ${largo}).`);
+  }
+
+  return ok();
+}
+
+/**
+ * Minúsculas para correos: son una clave, no un texto
+ */
+export function aMinusculas(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  const inicio = input.selectionStart;
+  input.value = input.value.toLowerCase();
+  if(inicio !== null) input.setSelectionRange(inicio, inicio);
+}
+
+/**
+ * Aceptar solo digitos en el campo de telefono
+ */
+export function soloDigitosTelefono(event: KeyboardEvent): void{
+  if(['e', 'E', '+'].includes(event.key)) event.preventDefault();
 }

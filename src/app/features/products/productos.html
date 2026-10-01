@@ -75,7 +75,7 @@
             </select>
 
             <button type="button" class="add-category" (click)="categorias()">
-              +
+              <img src="assets/icons/anadir.png" alt="">
             </button>
           </div>
         </div>
@@ -100,7 +100,7 @@
           [class.input-error]="errores['sku']"
           (paste)="onPasteSku($event)"
           placeholder="CHOC-500 (opcional)"
-          maxlength="50"
+          maxlength="10"
           autocomplete="off"/>
           <span class="error-msg" *ngIf="errores['sku']">{{ errores['sku'] }}</span>
         </div>
@@ -119,7 +119,7 @@
           (paste)="onPasteBarcode($event)"
           [class.input-error]="errores['barcode']"
           (input)="validarCampo('barcode')"
-          maxlength="20"
+          maxlength="12"
           autocomplete="off"/>
           <span class="error-msg" *ngIf="errores['barcode']">{{ errores['barcode'] }}</span>
         </div>

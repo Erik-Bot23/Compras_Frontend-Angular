@@ -13,6 +13,7 @@ import { SidebarService } from '../../core/service/sidebar-service/sidebar-servi
 // Paginacion reutilizable: pipe recorta la lista / control pinta el pie de tabla
 import { PaginatePipe } from '../../core/pipes/paginate/paginate';
 import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
+import { aMayusculas, validarTexto } from '../../core/utils/validadores';
 
 @Component({
   selector: 'app-roles',
@@ -36,6 +37,10 @@ export class Roles implements OnInit {
   
 
   editingRoleId: number | null = null;
+
+  //Helpers
+  aMayusculas = aMayusculas;
+  errores: Record<string,string> = {};
 
   // ANTES: toggleMenu() controlaba menuOpen local.
   // AHORA: el sidebar maneja el estado via servicio compartido
@@ -164,5 +169,12 @@ export class Roles implements OnInit {
     this.roleName ='';
     this.selectedPermissions = [];
     this.editingRoleId = null;
+  }
+
+  //Validar nombre
+  validarNombre(){
+    const r = validarTexto(this.roleName, 'nombre de la categoría', 50);
+    if(r.ok) delete this.errores['name'];
+    else this.errores['name'] = r.error;
   }
 }

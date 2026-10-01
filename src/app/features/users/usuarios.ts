@@ -13,6 +13,7 @@ import { SidebarService } from '../../core/service/sidebar-service/sidebar-servi
 // Paginacion reutilizable: pipe recorta la lista / control pinta el pie de tabla
 import { PaginatePipe } from '../../core/pipes/paginate/paginate';
 import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
+import { aMayusculas, aMinusculas, validarEmail, validarTexto } from '../../core/utils/validadores';
 
 @Component({
   selector: 'app-usuarios',
@@ -69,12 +70,18 @@ export class Usuarios implements OnInit {
   /**
    * Minimo de caracteres de la contraseña al crear un usuario.
    *
-   * <p>Es el mismo minimo que ya se exigia al cambiar la propia contraseña desde
+   * Es el mismo minimo que ya se exigia al cambiar la propia contraseña desde
    * Perfil (perfil.ts), y el mismo que aplica el backend. Se valida aqui, antes
    * del request, para no crear un usuario que al primer inicio de sesión se
    * encuentre con que su contraseña no cumple la regla.
    */
   readonly MIN_PASSWORD_LENGTH = 8;
+  readonly MAX_PASSWORD_LENGTH = 16;
+
+  aMayusculas = aMayusculas;
+  aMinusculas = aMinusculas;
+
+  errores: Record<string, string> = {};
 
   constructor(
     private userservice: UserService,
@@ -108,6 +115,31 @@ export class Usuarios implements OnInit {
       this.users = data;
       this.loading = false;
     });
+  }
+
+  //Validar el largo de la contraseña
+  validarPassword(){
+    const pw = this.form.password ?? '';
+    if(!pw){
+      delete this.errores['password']; //vacío es válida al editar(no se cambia)
+      return;
+    }
+
+    const largo = pw.trim().length;
+    if(largo < this.MIN_PASSWORD_LENGTH){
+      this.errores['password'] = `Mínimo ${this.MIN_PASSWORD_LENGTH} caracteres (llevas ${largo}).`;
+    } else if(largo > this.MAX_PASSWORD_LENGTH){
+      this.errores['password'] = `Máximo ${this.MAX_PASSWORD_LENGTH} caracteres (llevas ${largo}).`;
+    } else {
+      delete this.errores['password'];
+    }
+  }
+
+  //Validar los nombres en los campos
+  validarCampo(campo: 'name' | 'email'){
+    const r = campo === 'name' ? validarTexto(this.form.name, 'name', 80) : validarEmail(this.form.email ?? '');
+    if(r.ok) delete this.errores[campo];
+    else this.errores[campo] = r.error;
   }
 
   save(){

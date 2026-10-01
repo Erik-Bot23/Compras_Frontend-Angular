@@ -15,8 +15,8 @@ import { SidebarService } from '../../core/service/sidebar-service/sidebar-servi
 import { PaginatePipe } from '../../core/pipes/paginate/paginate';
 import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
 import { SelectOnFocus } from '../../core/routes/directives/select-on-focus';
-  import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-  import {
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import {
     MAX_SKU_LENGTH,
     aMayusculas,
     sanearDigitos,
@@ -346,11 +346,11 @@ export class Productos implements OnInit {
   /**
    * Acceso tipado a un campo del formulario.
    *
-   * <p>Se evita `this.form[campo]` directo porque TypeScript no permite indexar
+   * Se evita `this.form[campo]` directo porque TypeScript no permite indexar
    * un objeto con un tipo sin índice. Este getter devuelve el valor ya con el
    * tipo que el validador espera, sin casts inseguros.
    */
-  private valorDe(campo: 'price' | 'stock' | 'sku' | 'barcode' | 'rfc'): string | number | null {
+  private valorDe(campo: 'price' | 'stock' | 'sku' | 'barcode'): string | number | null {
     switch (campo) {
       case 'price':
         return this.form.price;
@@ -375,7 +375,7 @@ export class Productos implements OnInit {
   }
 
   /** Valida un campo y guarda (o limpia) su mensaje de error. */
-  validarCampo(campo: 'price' | 'stock' | 'sku' | 'barcode' | 'rfc') {
+  validarCampo(campo: 'price' | 'stock' | 'sku' | 'barcode') {
     const valor = this.valorDe(campo);
 
     let resultado;
@@ -420,7 +420,7 @@ export class Productos implements OnInit {
   /**
    * Pega en el precio: quita letras y la notación científica.
    *
-   * <p>Necesario aparte del keydown porque PEGAR no dispara `keydown`. Si no,
+   * Necesario aparte del keydown porque PEGAR no dispara `keydown`. Si no,
    * el usuario podría pegar "1e5" y saltarse el filtro de teclas.
    */
   onPastePrecio(event: ClipboardEvent, campo: 'price') {

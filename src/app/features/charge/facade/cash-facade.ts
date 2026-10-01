@@ -10,15 +10,14 @@ import { validarPrecio } from '../../../core/utils/validadores';
 /**
  * Estado y acciones de la caja registradora.
  *
- * <p><b>V3: la caja se crea antes de abrirse.</b> El flujo del usuario ahora son
+ * V3: la caja se crea antes de abrirse. El flujo del usuario ahora son
  * tres pasos y no dos:
- * <ol>
- *   <li><b>Crear caja</b> (opcional): registra la caja física con su número.</li>
- *   <li><b>Abrir caja</b>: se elige una de las registradas y se indica el fondo.</li>
- *   <li><b>Cerrar caja</b>: se cuenta el efectivo y el backend exige que cuadre.</li>
- * </ol>
+ * 
+ *  Crear caja (opcional): registra la caja física con su número.
+ *  Abrir caja: se elige una de las registradas y se indica el fondo.
+ *  Cerrar caja: se cuenta el efectivo y el backend exige que cuadre.
  *
- * <p>El paso 1 es opcional en el día a día porque la caja se crea una vez y se
+ * El paso 1 es opcional en el día a día porque la caja se crea una vez y se
  * usa una vez. Sirve para tener cajas rotuladas disponibles, como en un negocio
  * real donde hay varias cajas y se abre la que toca.
  */
@@ -65,7 +64,7 @@ export class CashFacade {
   /**
    * Efectivo acumulado: fondo inicial + ventas en efectivo, cuando se conoce.
    *
-   * <p>Es el número que el cajero quiere ver mientras vende: cuánto hay que
+   * Es el número que el cajero quiere ver mientras vende: cuánto hay que
    * should've del cajón ahora mismo. Se devuelve en 0 mientras no haya resumen,
    * para que la plantilla no muestre "null" ni tenga que comprobarlo en cada uso.
    */
@@ -82,12 +81,16 @@ export class CashFacade {
     if (!this.cashSummary) {
       return 0;
     }
-    return (this.closingAmount || 0) - (this.cashSummary.expectedAmount || 0);
+
+    const contado = Number(this.closingAmount) || 0;
+    const esperado = Number(this.cashSummary.expectedAmount) || 0;
+
+    return +(contado - esperado).toFixed(2);
   }
 
   /** ¿El dinero que se ha escrito coincide con el esperado? */
   get cashCuadra(): boolean {
-    return this.differencePreview === 0;
+    return Math.abs(this.differencePreview) < 0.005;
   }
 
   constructor(
@@ -113,7 +116,7 @@ export class CashFacade {
   /**
    * Abre el modal de crear caja con el número ya sugerido.
    *
-   * <p>Se pide la sugerencia al backend para que el usuario no tenga que contar
+   * Se pide la sugerencia al backend para que el usuario no tenga que contar
    * cuántas cajas hay. Si el request falla, se cae a "CAJA 1" y el usuario
    * escribe lo que quiera: el modal nunca se queda vacío.
    */
@@ -137,7 +140,7 @@ export class CashFacade {
   /**
    * Crea la caja con el número escrito.
    *
-   * <p>Si el backend responde 409 (número repetido) el modal NO se cierra y se
+   * Si el backend responde 409 (número repetido) el modal NO se cierra y se
    * muestra el mensaje, para que el usuario corrija el número sin perder lo que
    * llevaba escrito.
    */
@@ -247,7 +250,7 @@ export class CashFacade {
   /**
    * Cierra la caja.
    *
-   * <p><b>El cuadre.</b> Si el efectivo contado no coincide con el esperado, el
+   * El cuadre. Si el efectivo contado no coincide con el esperado, el
    * backend responde 409 y no cierra. Acá se detecta antes: si no cuadra y no se
    * escribió un motivo, se explica y no se manda nada. Si se escribió un motivo,
    * se manda y el cierre procede (salida de emergencia).

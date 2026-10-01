@@ -23,6 +23,9 @@ import {
   soloDigitosYPunto,
   validarRfc,
   aMayusculas,
+  validarTelefono,
+  validarEmail,
+  soloDigitosTelefono,
 } from '../../core/utils/validadores';
 
 //Renglón en edición dentro del modal "Nueva compra"
@@ -158,7 +161,7 @@ export class Compras implements OnInit {
   /**
    * Renglón vacío.
    *
-   * <p>`unitPrice` arranca en `null` y NO en el precio del producto: el precio de
+   * `unitPrice` arranca en `null` y NO en el precio del producto: el precio de
    * venta se autocompleta al elegir el producto, no antes, porque sin producto no
    * hay de dónde sacarlo. `null` además es lo que el backend interpreta como
    * "esta compra no opina sobre el precio de venta".
@@ -179,7 +182,7 @@ export class Compras implements OnInit {
   /**
    * Al elegir un producto se precargan sus dos precios.
    *
-   * <p>V3: además del nombre, se autocompleta el <b>precio de venta</b> con el que
+   * V3: además del nombre, se autocompleta el precio de venta con el que
    * ya tiene el producto. Es una sugerencia, no un imposed: el usuario puede
    * cambiarlo, y si lo deja vacío se conserva el precio actual. Se autocompleta
    * para que la operación más común (reponer con el mismo precio) sea un clic y
@@ -218,7 +221,7 @@ export class Compras implements OnInit {
   /**
    * Margen del renglón en edición: precio de venta menos costo de compra.
    *
-   * <p>Se muestra en vivo porque es la pregunta que el usuario se está haciendo
+   * Se muestra en vivo porque es la pregunta que el usuario se está haciendo
    * al escribir los dos precios: "¿voy a vender esto más caro de lo que lo compré?"
    * Si sale negativo, el renglón se avisa en rojo: está vendiendo más barato de
    * lo que compra, y eso es pérdida directa.
@@ -242,7 +245,7 @@ export class Compras implements OnInit {
   /**
    * Registra la compra. La compra NACE PENDIENTE: todavía no toca el inventario.
    *
-   * <p>Se manda `unitPrice` por renglón (V3). Si viene `null`, el backend no
+   * Se manda `unitPrice` por renglón (V3). Si viene `null`, el backend no
    * cambia el precio de venta del producto; si viene un número, ese queda como
    * precio vigente al CONFIRMAR.
    */
@@ -383,7 +386,7 @@ export class Compras implements OnInit {
   /**
    * Sanea un renglón mientras se escribe.
    *
-   * <p>Redondea la cantidad a entero y acota los importes a 2 decimales. Es la
+   * Redondea la cantidad a entero y acota los importes a 2 decimales. Es la
    * segunda mitad de la defensa: los `keydown` bloquean las teclas incómodas, pero
    * un pegado o un valor previo de la base pueden colarse. Se sanitiza igual
    * porque el backend también valida y no se quiere depender de una sola capa.
@@ -408,11 +411,12 @@ export class Compras implements OnInit {
 
   soloDigitos = soloDigitos;
   soloDigitosYPunto = soloDigitosYPunto;
+  soloDigitosTelefono = soloDigitosTelefono;
 
   /**
    * Mayúsculas para los campos de código (punto 7.4).
    *
-   * <p>Se aplica solo a RFC y nombre de proveedor, NO al nombre de los productos
+   * Se aplica solo a RFC y nombre de proveedor, NO al nombre de los productos
    * ni a las descripciones: "Tacos de chicharrón" en mayúsculas se lee peor, y la
    * búsqueda ya es insensible a mayúsculas. Lo que sí importa es que "Dairy Queen"
    * y "DAIRY QUEEN" no se guarden como dos proveedores distintos.
@@ -424,7 +428,7 @@ export class Compras implements OnInit {
   errores: Record<string, string> = {};
 
   /** Valida el RFC del proveedor: letras y números, máximo 13. */
-  validarCampo(campo: 'rfc') {
+  validarCampoRfc(campo: 'rfc') {
     const resultado = validarRfc(this.formProvider.rfc || '');
 
     if (resultado.ok) {
@@ -434,11 +438,22 @@ export class Compras implements OnInit {
     }
   }
 
+  //Validar los campos
+  validarCampo(campo: 'rfc' | 'phone' | 'email'){
+    let r;
+    if(campo === 'rfc') r = validarRfc(this.formProvider.rfc || '');
+    else if (campo === 'phone') r = validarTelefono(this.formProvider.phone || '');
+    else r = validarEmail(this.formProvider.email || '');
+
+    if (r.ok) delete this.errores[campo];
+    else this.errores[campo] = r.error;
+  }
+
   /**
    * Pega en el RFC: se quita todo lo que no sea letra o número, se pasa a
    * mayúsculas y se corta a 13.
    *
-   * <p>El pegado se sanean aparte del keydown porque pegar no dispara `keydown`:
+   * El pegado se sanean aparte del keydown porque pegar no dispara `keydown`:
    * sin esto, copiar un RFC de un PDF con guiones y espacios lo saltaría.
    */
   onPasteRfc(event: ClipboardEvent) {
@@ -448,7 +463,7 @@ export class Compras implements OnInit {
       .toUpperCase()
       .slice(0, 13);
     event.preventDefault();
-    this.validarCampo('rfc');
+    this.validarCampoRfc('rfc');
   }
 
   /** Pega en "cantidad": solo dígitos, y se descarta la notación científica. */

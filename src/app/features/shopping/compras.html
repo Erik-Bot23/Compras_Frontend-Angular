@@ -211,7 +211,8 @@
           </div>
         <div class="field">
           <label>Teléfono</label>
-          <input name="formProvider.phone" [(ngModel)]="formProvider.phone" placeholder="Opcional">
+          <input name="formProvider.phone" [(ngModel)]="formProvider.phone" (keydown)="soloDigitosTelefono($event)" (blur)="validarCampo('phone')" maxlength="12" placeholder="951 123 4567">
+          <span class="error-msg" *ngIf="errores['phone']">{{ errores['phone'] }}</span>
         </div>
         <div class="field">
           <label>Email</label>
@@ -460,7 +461,7 @@
       </div>
     </div>
 
-    <button type="button" class="add-linea" (click)="agregarLinea()">+ Agregar producto</button>
+    <button type="button" class="add-linea" (click)="agregarLinea()"><img src="assets/icons/anadir.png" alt=""> Agregar producto</button>
 
     <div class="modal-total">
       <!-- Total en vivo: getter totalCompra = suma de subtotales de cada renglon -->

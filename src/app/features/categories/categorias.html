@@ -24,7 +24,8 @@
         <form (ngSubmit)="saveCategory()" class="form-card" *ngIf="auth.hasPermission('CREAR_CATEGORIAS') || auth.hasPermission('EDITAR_CATEGORIAS')">
             <div class="field">
                 <label>{{ editingCategoryId ? 'Nombre de la categoría' : 'Nombre de la categoría' }}</label>
-                <input name="categoryName" [(ngModel)]="categoryName">
+                <input name="categoryName" [(ngModel)]="categoryName" (input)="aMayusculas($event)" (blur)="validarNombre()" maxlength="30" placeholder="BEBIDAS">
+                <span class="error-msg" *ngIf="errores['name']">{{ errores['name'] }}</span>
             </div>
 
             <button type="submit">{{ editingCategoryId ? 'Actualizar' : 'Guardar' }}</button>

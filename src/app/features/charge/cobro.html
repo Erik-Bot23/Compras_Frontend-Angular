@@ -398,77 +398,81 @@
                 <!--Se actualizo a form para que reconozca el Enter-->
                 <form (ngSubmit)="cash.confirmCloseCashModal()" class="modal cash-close-modal">
                     <h3>Corte de caja</h3>
-                    <div class="cash-summary">
-                        <div class="cash-row">
-                            <span>Fondo inicial</span>
-                            <strong>${{ cash.cashSummary?.openingAmount | number:'1.2-2' }}</strong>
-                        </div>
-                        <div class="cash-row">
-                            <span>Ventas en efectivo</span>
-                            <strong>${{ cash.cashSummary?.cashSales | number:'1.2-2' }}</strong>
-                        </div>
-                        <div class="cash-row">
-                            <span>Ventas débito</span>
-                            <strong>${{ cash.cashSummary?.debitSales | number:'1.2-2' }}</strong>
-                        </div>
-                        <div class="cash-row">
-                            <span>Ventas crédito</span>
-                            <strong>${{ cash.cashSummary?.creditSales | number:'1.2-2' }}</strong>
-                        </div>
-                        <div class="cash-row">
-                            <span>Total vendido</span>
-                            <strong>${{ cash.cashSummary?.totalSales | number:'1.2-2' }}</strong>
-                        </div>
-                        <div class="cash-row">
-                            <span>Tickets</span>
-                            <strong>{{ cash.cashSummary?.totalTickets }}</strong>
-                        </div>
-                        <div class="cash-row total">
-                            <span>Monto esperado</span>
-                            <strong>${{ cash.cashSummary?.expectedAmount | number:'1.2-2' }}</strong>
-                        </div>
-                    </div>
 
-                    <label class="modal-label">Dinero contado en el cajón</label>
-                    <input
-                        type="number"
-                        [(ngModel)]="cash.closingAmount"
-                        (keydown)="soloDigitosYPunto($event)"
-                        step="0.01"
-                        placeholder="0.00"
-                        appSelectOnFocus
-                    >
+                    <div class="modal-body">
+                        <div class="cash-summary">
+                            <div class="cash-row">
+                                <span>Fondo inicial</span>
+                                <strong>${{ cash.cashSummary?.openingAmount | number:'1.2-2' }}</strong>
+                            </div>
+                            <div class="cash-row">
+                                <span>Ventas en efectivo</span>
+                                <strong>${{ cash.cashSummary?.cashSales | number:'1.2-2' }}</strong>
+                            </div>
+                            <div class="cash-row">
+                                <span>Ventas débito</span>
+                                <strong>${{ cash.cashSummary?.debitSales | number:'1.2-2' }}</strong>
+                            </div>
+                            <div class="cash-row">
+                                <span>Ventas crédito</span>
+                                <strong>${{ cash.cashSummary?.creditSales | number:'1.2-2' }}</strong>
+                            </div>
+                            <div class="cash-row">
+                                <span>Total vendido</span>
+                                <strong>${{ cash.cashSummary?.totalSales | number:'1.2-2' }}</strong>
+                            </div>
+                            <div class="cash-row">
+                                <span>Tickets</span>
+                                <strong>{{ cash.cashSummary?.totalTickets }}</strong>
+                            </div>
+                            <div class="cash-row total">
+                                <span>Monto esperado</span>
+                                <strong>${{ cash.cashSummary?.expectedAmount | number:'1.2-2' }}</strong>
+                            </div>
+                        </div>
 
-                    <!-- Diferencia en vivo. Verde si cuadra, rojo si no. -->
-                    <div class="difference-preview" *ngIf="cash.closingAmount > 0">
-                        <ng-container *ngIf="cash.cashCuadra; else hayDiferencia">
-                            <span class="cuadra-ok">El dinero cuadra exactamente.</span>
-                        </ng-container>
-                        <ng-template #hayDiferencia>
-                            Diferencia:
-                            <strong [class.positive]="cash.differencePreview > 0" [class.negative]="cash.differencePreview < 0">
-                                {{ cash.differencePreview > 0 ? '+' : '' }}${{ cash.differencePreview | number:'1.2-2' }}
-                            </strong>
-                        </ng-template>
-                    </div>
-
-                    <!-- Punto 5.1: salida de emergencia. Solo aparece si NO cuadra,
-                         y sin motivo el backend rechaza el cierre con 409. -->
-                    <div class="diferencia-ayuda" *ngIf="cash.closingAmount > 0 && !cash.cashCuadra">
-                        <p class="diferencia-warn">
-                            <strong>El dinero no cuadra.</strong>
-                            Revisa el conteo. Si estás seguro de que el monto es correcto,
-                            escribe el motivo y se cerrará igual, dejando el descuadre registrado.
-                        </p>
-
-                        <label class="modal-label">Motivo del descuadre</label>
+                        <label class="modal-label">Dinero contado en el cajón</label>
                         <input
-                            type="text"
-                            name="differenceReason"
-                            [(ngModel)]="cash.differenceReason"
-                            placeholder="Ej: se me pasó un billete de 50 al contar"
-                            maxlength="255"
+                            type="number"
+                            name="closingAmount"
+                            [(ngModel)]="cash.closingAmount"
+                            (keydown)="soloDigitosYPunto($event)"
+                            step="0.01"
+                            placeholder="0.00"
+                            appSelectOnFocus
                         >
+
+                        <!-- Diferencia en vivo. Verde si cuadra, rojo si no. -->
+                        <div class="difference-preview" *ngIf="cash.closingAmount !== null && cash.closingAmount !== undefined">
+                            <ng-container *ngIf="cash.cashCuadra; else hayDiferencia">
+                                <span class="cuadra-ok">El dinero cuadra exactamente.</span>
+                            </ng-container>
+                            <ng-template #hayDiferencia>
+                                Diferencia:
+                                <strong [class.positive]="cash.differencePreview > 0" [class.negative]="cash.differencePreview < 0">
+                                    {{ cash.differencePreview > 0 ? '+' : '' }}${{ cash.differencePreview | number:'1.2-2' }}
+                                </strong>
+                            </ng-template>
+                        </div>
+
+                        <!-- Punto 5.1: salida de emergencia. Solo aparece si NO cuadra,
+                            y sin motivo el backend rechaza el cierre con 409. -->
+                        <div class="diferencia-ayuda" *ngIf="cash.closingAmount > 0 && !cash.cashCuadra">
+                            <p class="diferencia-warn">
+                                <strong>El dinero no cuadra.</strong>
+                                Revisa el conteo. Si estás seguro de que el monto es correcto,
+                                escribe el motivo y se cerrará igual, dejando el descuadre registrado.
+                            </p>
+
+                            <label class="modal-label">Motivo del descuadre</label>
+                            <input
+                                type="text"
+                                name="differenceReason"
+                                [(ngModel)]="cash.differenceReason"
+                                placeholder="Ej: se me pasó un billete de 50 al contar"
+                                maxlength="255"
+                            >
+                        </div>
                     </div>
 
                     <div class="button-box">
