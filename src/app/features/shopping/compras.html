@@ -20,7 +20,9 @@
     <!-- .tab-panel: llena el alto restante y permite scroll interno de la tabla -->
     <div *ngIf="activeTab === 'compras'" class="tab-panel">
       <div class="toolbar">
-        <button *hasPermission="'CREAR_COMPRAS'" class="primary" (click)="abrirModal()">+ Nueva compra</button>
+        <!-- El icono (anadir.png) mide 512x512: sin el .toolbar .primary img de
+             compras.css se veria gigante dentro del boton. -->
+        <button *hasPermission="'CREAR_COMPRAS'" class="primary" (click)="abrirModal()"><img src="assets/icons/anadir.png" alt=""> Nueva compra</button>
 
         <!-- Filtro por proveedor -->
         <div class="table-filter-field toolbar-filter">

@@ -19,10 +19,34 @@
 
   box-shadow:
     0 5px 20px rgba(0,0,0,.3);
+
+  /* Todo el bloque centrado: avatar, nombre, rol y correo leen como una ficha
+     de usuario y no como texto pegado a la izquierda. El formulario de
+     contraseña vuelve a alinearse a la izquierda (abajo). */
+  text-align:center;
+}
+
+/* Avatar del usuario.
+   El PNG (assets/icons/user.png) mide 512x512. Antes esta regla solo decia
+   `object-fit: cover`, sin dimensiones: el <img> se renderizaba a su tamaño
+   natural (512px) y se comía la tarjeta entera, empujando nombre, correo y
+   botones fuera de la pantalla.
+   96px en círculo, con borde y sombra para separarlo del fondo oscuro. */
+.avatar{
+  display:flex;
+  justify-content:center;
+  margin-bottom:14px;
 }
 
 .avatar img{
-  object-fit: cover;
+  width:96px;
+  height:96px;
+  border-radius:50%;
+  /* cover: recorta centrado en vez de deformar si la imagen no es cuadrada */
+  object-fit:cover;
+  border:3px solid #3b82f6;
+  box-shadow:0 0 0 4px rgba(59,130,246,.15);
+  background:#0f172a;
 }
 
 .role{
@@ -31,10 +55,23 @@
   color:#60a5fa;
 }
 
+.card h2{
+  margin:0 0 6px;
+  font-size:22px;
+}
+
+.card p{
+  color:#cbd5e1;
+}
+
 .actions{
   display:flex;
   gap:10px;
   margin-top:20px;
+  /* Con tres botones en 450px de ancho no cabían en una línea y el último
+     se partía a media palabra. */
+  flex-wrap:wrap;
+  justify-content:center;
 }
 
 .change-btn{
@@ -72,6 +109,8 @@
   flex-direction:column;
   gap:10px;
   margin-top:20px;
+  /* Vuelve a la izquierda: los inputs y el botón se leen mejor alineados. */
+  text-align:left;
 }
 
 .password-card input{

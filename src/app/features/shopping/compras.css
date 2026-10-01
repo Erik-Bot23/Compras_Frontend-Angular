@@ -166,11 +166,31 @@
   border-radius: 10px;
   cursor: pointer;
   transition: 0.3s;
+  /* inline-flex + gap: el <img> y el texto quedan en una fila centrada vertical
+     en vez de sentados en la linea base del texto. */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .toolbar .primary:hover {
   background: #1d4ed8;
   transform: translateY(-2px);
+}
+
+/* Icono del boton (assets/icons/anadir.png):
+   El PNG fuente mide 512x512. Sin dimension explicita se renderizaba a 512px
+   y reventaba el boton por dentro (y el texto "Nueva compra" quedaba
+   aplastado en una esquina). 18px es el tamano de los demas iconos de la app
+   (.menu-icon en sidebar.css). El filter es el mismo truco que usan los iconos
+   del sidebar: apagar el color ylo invertir deja el PNG blanco sobre el azul,
+   sin necesidad de tener otra version del archivo. */
+.toolbar .primary img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
 }
 
 /* -------- Formulario de proveedores -------- */
@@ -479,20 +499,44 @@ tr.confirmada td {
 /* =========================================================================
    Cabecera de los renglones de la compra (V3)
    =========================================================================
-   Seaggregate porque los inputs de una compra no se entienden solos: "cantidad,
+   Se aggregate porque los inputs de una compra no se entienden solos: "cantidad,
    costo, precio" sin tÃ­tulo se confunden entre sÃ­, y confundir el costo de
-   compra con el precio de venta cuesta dinero. */
+   compra con el precio de venta cuesta dinero.
+
+   LAS COLUMNAS SON LAS MISMAS QUE LAS DE .linea (--cols-renglon, definida en
+   .lineas). Antes cada bloque declaraba las suyas y no coincidÃ­an:
+     .linea-cabecera â†’ 2.2fr 0.8fr 1fr 1fr 0.9fr 0.5fr  (6 columnas)
+     .linea          â†’ 2fr 80px 120px 90px 36px          (5 columnas)
+   .linea tiene SEIS hijos (select, 3 inputs, subtotal y botÃ³n eliminar) para
+   cinco columnas, asÃ­ que el botÃ³n caÃ­a en una fila implÃ­cita por debajo de los
+   inputs: por eso se veÃ­a "mal puesto". Y los tÃ­tulos quedaban corridos
+   respecto a los campos porque sus anchos no coincidÃ­an con nada. */
 .linea-cabecera {
   display: grid;
-  grid-template-columns: 2.2fr 0.8fr 1fr 1fr 0.9fr 0.5fr;
+  grid-template-columns: var(--cols-renglon);
   gap: 8px;
   padding: 0 2px 6px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  /* Los tÃ­tulos son cortos y las columnas estrechas: se les da alto para que
+     "Costo de compra" pueda partirse en dos lÃ­neas sin cortar la fila. */
+  line-height: 1.25;
   opacity: 0.7;
 }
+
+.linea-cabecera span:not(:first-child) {
+  text-align: center;
+}
+
+/* El subtotal es la Ãºnica columna con texto (no un input): se alinea a la
+   derecha igual que .linea-subtotal para que el nÃºmero caiga bajo su tÃ­tulo. */
+.linea-cabecera span:nth-child(5) {
+  text-align: right;
+  padding-right: 4px;
+}
+
 
 .linea-cabecera span:not(:first-child) {
   text-align: center;
@@ -591,6 +635,13 @@ tr.confirmada td {
 
 /* Lista de renglones: cada uno es una fila en grid */
 .lineas {
+  /* DefiniciÃ³n ÃšNICA de las columnas del renglÃ³n. La usan tal cual la cabecera
+     (.linea-cabecera) y cada fila (.linea), y esa es la Ãºnica forma de que un
+     tÃ­tulo caiga exactamente sobre su campo: si uno de los dos bloques declara
+     su propio grid-template-columns, se desalinean solos.
+     minmax(0,1fr) en el producto (no 1fr) para que el <select> pueda encogerse
+     por debajo de su contenido en vez de empujar a las demÃ¡s columnas. */
+  --cols-renglon: minmax(0, 1fr) 72px 110px 110px 84px 36px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -598,7 +649,7 @@ tr.confirmada td {
 
 .linea {
   display: grid;
-  grid-template-columns: 2fr 80px 120px 90px 36px;
+  grid-template-columns: var(--cols-renglon);
   gap: 8px;
   align-items: center;
 }
@@ -673,6 +724,12 @@ tr.confirmada td {
 
 /* Responsive: en pantallas angostas el grid del renglon se simplifica */
 @media (max-width: 640px) {
+  /* La cabecera se oculta porque sus tÃ­tulos ya no corresponden a las columnas
+     del renglon (que se acomoda en 2). Dejarla puesta serÃ­a peor que no
+     tenerla: tÃ­tulos desalineados. */
+  .linea-cabecera {
+    display: none;
+  }
   .linea {
     grid-template-columns: 1fr 1fr;
   }
@@ -684,12 +741,12 @@ tr.confirmada td {
   }
 }
 /* =========================================================================
-   Mensajes de error de validación (V3, punto 7)
+   Mensajes de error de validaciï¿½n (V3, punto 7)
    =========================================================================
-   Aparecen debajo del input que falló, en rojo. Antes el formulario corregía el
-   valor en silencio (ponía 0 si el stock venía con 1.6, o 1 si el precio venía
-   vacío) y el usuario no tenía forma de saber que el sistema le había cambiado
-   lo que escribió. Ahora se dice qué está mal y en qué campo. */
+   Aparecen debajo del input que fallï¿½, en rojo. Antes el formulario corregï¿½a el
+   valor en silencio (ponï¿½a 0 si el stock venï¿½a con 1.6, o 1 si el precio venï¿½a
+   vacï¿½o) y el usuario no tenï¿½a forma de saber que el sistema le habï¿½a cambiado
+   lo que escribiï¿½. Ahora se dice quï¿½ estï¿½ mal y en quï¿½ campo. */
 .error-msg {
   display: block;
   margin-top: 4px;
@@ -704,11 +761,11 @@ tr.confirmada td {
 }
 
 /* =========================================================================
-   Bloque de explicación de los MÁRGENES (punto 4 del encargo)
+   Bloque de explicaciï¿½n de los Mï¿½RGENES (punto 4 del encargo)
    =========================================================================
-   Mismo criterio que en Reportes: el usuario necesita saber de dónde sale
+   Mismo criterio que en Reportes: el usuario necesita saber de dï¿½nde sale
    "margen = precio - costo" y, sobre todo, que esto NO es la utilidad. La
-   confusión entre las dos dos cosas lleva a decisiones equivocadas. */
+   confusiï¿½n entre las dos dos cosas lleva a decisiones equivocadas. */
 .aviso-explicacion {
   border-left: 4px solid #4f8cff;
   background: rgba(79, 140, 255, 0.07);

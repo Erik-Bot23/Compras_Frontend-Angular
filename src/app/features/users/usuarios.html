@@ -26,7 +26,14 @@
 
         <div class="field">
           <label>Contraseña</label>
-          <input name="form.password" [(ngModel)]="form.password" type="password"/>
+          <!-- minlength documenta la regla en el propio campo; el bloqueo real
+               lo hace save() en usuarios.ts (MIN_PASSWORD_LENGTH), que ademas
+               avisa cuantos caracteres lleva. -->
+          <input name="form.password" [(ngModel)]="form.password" type="password" minlength="8" autocomplete="new-password"/>
+          <!-- El texto cambia segun el modo: al crear es obligatoria, al editar
+               no se toca (updateUser no manda la contraseña). -->
+          <small class="hint" *ngIf="!form.id">Mínimo 8 caracteres</small>
+          <small class="hint" *ngIf="form.id">Déjala vacía: al editar no se cambia la contraseña</small>
         </div>
 
         <div class="field">

@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { User, UserRole } from '../../core/interfaces/user/user';
 import { UserService } from '../../core/service/user-service/user-service';
 import { Sidebar } from '../sidebar/sidebar';
@@ -15,7 +16,7 @@ import { PaginationControl } from '../../core/components/pagination-control/pagi
 
 @Component({
   selector: 'app-usuarios',
-  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl],
+  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, PaginatePipe, PaginationControl, MatSnackBarModule],
   templateUrl: './usuarios.html',
   styleUrl: './usuarios.css',
 })
@@ -65,10 +66,21 @@ export class Usuarios implements OnInit {
     roleId: 1
   };
 
+  /**
+   * Minimo de caracteres de la contraseña al crear un usuario.
+   *
+   * <p>Es el mismo minimo que ya se exigia al cambiar la propia contraseña desde
+   * Perfil (perfil.ts), y el mismo que aplica el backend. Se valida aqui, antes
+   * del request, para no crear un usuario que al primer inicio de sesión se
+   * encuentre con que su contraseña no cumple la regla.
+   */
+  readonly MIN_PASSWORD_LENGTH = 8;
+
   constructor(
     private userservice: UserService,
     private router: Router,
     public auth: AuthService,
+    private snack: MatSnackBar,
     // Servicio compartido del sidebar
     public sidebar: SidebarService
   ){}
@@ -101,6 +113,23 @@ export class Usuarios implements OnInit {
   save(){
     if(this.isSaving) return;
 
+    // ===== Validaciones antes de llamar al backend =====
+    //La contraseña SOLO es obligatoria al crear. Al editar, updateUser no manda
+    //el campo password (ver la rama de abajo), asi que exigirla dejaria
+    //imposible guardar cualquier edicion.
+    if(!this.form.id){
+      const password = this.form.password ?? '';
+
+      if(password.trim().length < this.MIN_PASSWORD_LENGTH){
+        this.snack.open(
+          `La contraseña debe tener mínimo ${this.MIN_PASSWORD_LENGTH} caracteres (lleva ${password.trim().length}).`,
+          'Cerrar',
+          { duration: 4000 }
+        );
+        return;
+      }
+    }
+
     this.isSaving = true;
 
     if(this.form.id){
@@ -110,15 +139,16 @@ export class Usuarios implements OnInit {
           email: this.form.email,
           roleId: this.form.roleId
         }
-          ).subscribe({
+            ).subscribe({
             next: () => {
               this.loadUsers();
               this.resetForm();
             }, error: err => {
               this.isSaving = false;
-              console.log('Error al actualizar', err);
+              this.snack.open(err.error?.message || 'No se pudo actualizar el usuario', 'Cerrar', { duration: 4000 });
             }
           });
+
     } else {
         this.userservice.createUser(
           {
@@ -131,10 +161,9 @@ export class Usuarios implements OnInit {
               next: () => {
                 this.loadUsers();
                 this.resetForm();
-                console.log('Usuario guardado');
               }, error: err => {
                 this.isSaving = false;
-                console.log('Error al guardar', err);
+                this.snack.open(err.error?.message || 'No se pudo guardar el usuario', 'Cerrar', { duration: 4000 });
               }
             });
     }
