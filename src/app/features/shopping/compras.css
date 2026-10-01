@@ -748,12 +748,12 @@ tr.confirmada td {
   }
 }
 /* =========================================================================
-   Mensajes de error de validaci�n (V3, punto 7)
+   Mensajes de error de validación (V3, punto 7)
    =========================================================================
-   Aparecen debajo del input que fall�, en rojo. Antes el formulario correg�a el
-   valor en silencio (pon�a 0 si el stock ven�a con 1.6, o 1 si el precio ven�a
-   vac�o) y el usuario no ten�a forma de saber que el sistema le hab�a cambiado
-   lo que escribi�. Ahora se dice qu� est� mal y en qu� campo. */
+   Aparecen debajo del input que falla, en rojo. Antes el formulario corregira el
+   valor en silencio (ponga 0 si el stock venga con 1.6, o 1 si el precio venga
+   vacío) y el usuario no tenga forma de saber que el sistema le habra cambiado
+   lo que escribió. Ahora se dice qué esté mal y en qué campo. */
 .error-msg {
   display: block;
   margin-top: 4px;
@@ -768,11 +768,11 @@ tr.confirmada td {
 }
 
 /* =========================================================================
-   Bloque de explicaci�n de los M�RGENES (punto 4 del encargo)
+   Bloque de explicación de los MARGENES (punto 4 del encargo)
    =========================================================================
-   Mismo criterio que en Reportes: el usuario necesita saber de d�nde sale
+   Mismo criterio que en Reportes: el usuario necesita saber de donde sale
    "margen = precio - costo" y, sobre todo, que esto NO es la utilidad. La
-   confusi�n entre las dos dos cosas lleva a decisiones equivocadas. */
+   confusión entre las dos dos cosas lleva a decisiones equivocadas. */
 .aviso-explicacion {
   border-left: 4px solid #4f8cff;
   background: rgba(79, 140, 255, 0.07);

@@ -113,7 +113,7 @@ export class Salehistory implements OnInit {
    * Número de columnas para los <td colspan> de las filas de mensaje
    * ("Cargando...", "No hay ventas...").
    *
-   * <b>Son 6 columnas fijas (V3, punto 2 del encargo).</b> Antes eran 7 más una
+   * Son 6 columnas fijas (V3, punto 2 del encargo). Antes eran 7 más una
    * de acciones que solo existía si el usuario tenía CONFIRMAR_VENTAS o
    * CANCELAR_VENTAS, y por eso este getter era dinámico. Al quitar las columnas
    * "Estado" y "Acciones" del historial, el colspan se volvió fijo y este getter
@@ -227,7 +227,7 @@ export class Salehistory implements OnInit {
   /**
    * Reemplaza una venta en el array local por la versión actualizada.
    *
-   * <p>Se busca por `id` y se sustituye el elemento (no se reordena) porque el
+   * Se busca por `id` y se sustituye el elemento (no se reordena) porque el
    * backend no cambia la fecha de la venta, así que su posición en la lista
    * sigue siendo la misma. Si no se encontrara el id, se recargaría todo como
    * red de seguridad: un `find` sin resultado casi siempre significa que la

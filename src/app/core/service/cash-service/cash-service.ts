@@ -14,13 +14,13 @@ import {
 /**
  * Cliente HTTP del módulo de caja.
  *
- * <p><b>V3: la caja se crea antes de abrirse.</b> Antes solo existía `openCash`,
+ * V3: la caja se crea antes de abrirse. Antes solo existía `openCash`,
  * que creaba la caja y le ponía el número en el mismo request. Ahora hay dos
  * pasos: `createCash` registra la caja física y `openCash` elige una de las ya
  * registradas. El motivo es que el número tiene que existir antes de abrir para
  * poder elegirlo de una lista.
  *
- * <p>Todos los métodos usan `environment.apiLocal` y NUNCA `environment.api`
+ * Todos los métodos usan `environment.apiLocal` y NUNCA `environment.api`
  * directo: el prefijo correcto es el del dominio local del POS.
  */
 @Injectable({
@@ -53,7 +53,7 @@ export class CashService {
   /**
    * Abre una caja YA registrada con el fondo inicial indicado.
    *
-   * <p>El fondo tiene un mínimo de 100 en el backend; aquí solo se avisa para no
+   * El fondo tiene un mínimo de 100 en el backend; aquí solo se avisa para no
    * mandar una petición que va a ser rechazada.
    */
   openCash(openingAmount: number, number: string): Observable<CashRegister> {

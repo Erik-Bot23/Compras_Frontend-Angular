@@ -64,8 +64,8 @@ export class CashFacade {
   /**
    * Efectivo acumulado: fondo inicial + ventas en efectivo, cuando se conoce.
    *
-   * Es el número que el cajero quiere ver mientras vende: cuánto hay que
-   * should've del cajón ahora mismo. Se devuelve en 0 mientras no haya resumen,
+   * Es el número que el cajero quiere ver mientras vende: cuánto hay 
+   * en el cajón ahora mismo. Se devuelve en 0 mientras no haya resumen,
    * para que la plantilla no muestre "null" ni tenga que comprobarlo en cada uso.
    */
   get efectivoAcumulado(): number {

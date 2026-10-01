@@ -1,4 +1,3 @@
-import { Injectable } from '@angular/core';
 import { PaymentMethod } from '../../enums/paymentMethod';
 import { CardPaymentRequest, CardPaymentResponse } from '../payment/payment';
 

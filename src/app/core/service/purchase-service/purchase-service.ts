@@ -1,10 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import {
-  PurchaseDTO,
-  PurchaseRequest,
-} from '../../interfaces/purchases/purchases';
+import { PurchaseDTO, PurchaseRequest} from '../../interfaces/purchases/purchases';
 import { environment } from '../../../../environments/environment';
 
 @Injectable({

@@ -18,7 +18,7 @@ import { CommonModule } from '@angular/common';
     /**
      * Ruta de la sección "Inicio" del menú.
      *
-     * <p>Se declara como campo de la clase y no como constante del módulo para
+     * Se declara como campo de la clase y no como constante del módulo para
      * que el template pueda compararla en `esActiva(inicioRoute)`. Se centraliza
      * porque la usan tres sitios: el template, `inicio()` y el marcado del
      * enlace activo. Escribiendo "/cobro" a mano en cada uno, cualquier cambio de
@@ -131,11 +131,11 @@ perfil(){
   /**
    * ¿La ruta dada es la sección donde el usuario está ahora? (PUNTO 6)
    *
-   * <p>Marca el enlace activo del menú con la clase `.active`, que el CSS
+   * Marca el enlace activo del menú con la clase `.active`, que el CSS
    * sombrea. Sin esto, en un menú de nueve secciones el usuario no tiene idea de
    * dónde está parado: el menú se ve igual en todas las pantallas.
    *
-   * <p><b>Por qué se compara exacta y no con `includes`.</b> Con `includes`,
+   * Por qué se compara exacta y no con `includes`. Con `includes`,
    * "/sales" matchearía también "/sales-history" y se marcarían las dos
    * secciones a la vez. La comparación exacta evita eso.
    *

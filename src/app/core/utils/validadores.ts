@@ -20,16 +20,14 @@
  * y no hay forma de detectarlos después. Por eso cada función mira la cadena.
  */
 
-import { text } from "stream/consumers";
-
 /** Máximo de caracteres del SKU. */
-export const MAX_SKU_LENGTH = 10;
+export const MAX_SKU_LENGTH = 50;
 
 /** Un RFC mexicano tiene 13 (física) o 12 (moral). */
 export const MAX_RFC_LENGTH = 13;
 
 /** Los códigos de barras más largos que se usan en la práctica no pasan de 20. */
-export const MAX_BARCODE_LENGTH = 12;
+export const MAX_BARCODE_LENGTH = 20;
 
 /** Resultado de una validación: `ok` o el mensaje de error ya redactado. */
 export interface ValidationResult {
@@ -307,7 +305,7 @@ export function validarTexto(valor: string, campo: string, max: number): Validat
 
   if(!texto) return ok();
 
-  if(text.length > max){
+  if(texto.length > max){
     return fail(`El ${campo} no puede tener más de ${max} caracteres (lleva ${texto.length}).`);
   }
 
@@ -341,7 +339,7 @@ export function validarTelefono(valor: string): ValidationResult{
 /**
  * Contraseña: entre 8 y 10 caracteres)
  */
-export function validarPassword(valor: string, min = 8, max =10): ValidationResult{
+export function validarPassword(valor: string, min = 8, max =16): ValidationResult{
   const pw = valor ?? '';
 
   if(!pw) return ok(); //vacío = no se cambia (solo al crear es obligatorio)

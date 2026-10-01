@@ -16,7 +16,6 @@ import { registerables } from 'chart.js';
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-
 import { Sidebar } from '../sidebar/sidebar';
 import { SidebarService } from '../../core/service/sidebar-service/sidebar-service';
 import { ReportService, ReportGroup } from '../../core/service/report-service/report-service';
@@ -397,7 +396,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Carga la lista de cajas para el selector "filtrar por caja".
    *
-   * <p>El selector queda vacío sin romper la pantalla: si el usuario no tiene
+   * El selector queda vacío sin romper la pantalla: si el usuario no tiene
    * VER_CAJA, el backend responde 403 y los reportes de utilidad siguen
    * funcionando. Por eso el error se traga en vez de avisar.
    */
@@ -411,7 +410,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Se dispara al elegir una caja en el filtro (o "todas").
    *
-   * <p>Con null se limpia la selección y el reporte vuelve al periodo completo.
+   * Con null se limpia la selección y el reporte vuelve al periodo completo.
    * Con un id se pide el detalle de ESA caja: sus ventas y su utilidad. Se usa
    * un 404 tolerado porque una caja recién borrada no debe romper la pantalla.
    */

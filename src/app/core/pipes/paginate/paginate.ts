@@ -4,7 +4,7 @@ import { Pipe, PipeTransform } from '@angular/core';
  * Pipe puro de paginacion (del lado del cliente).
  *
  * Uso en el template:
- *   <tr *ngFor="let p of products | paginate: page : pageSize">
+ *   *ngFor="let p of products | paginate: page : pageSize"
  *
  * - Es "pure" (por defecto): solo se re-ejecuta cuando cambia la referencia
  *   del array o los argumentos page/pageSize, no en cada deteccion de cambios.

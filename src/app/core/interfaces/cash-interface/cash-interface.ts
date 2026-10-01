@@ -1,8 +1,8 @@
 /**
  * Espejo de `model/dto/Cash/*.java`.
  *
- * <p><b>V3: los importes y fechas son `number | null` porque una caja recién
- * creada todavía no abrió.</b> Antes, `openCash` creaba la caja y le ponía todo de
+ * V3: los importes y fechas son `number | null` porque una caja recién
+ * creada todavía no abrió. Antes, `openCash` creaba la caja y le ponía todo de
  * golpe, así que todo llegaba siempre informado. Ahora la caja se registra primero
  * (nace con `openedAt`, `openingAmount` y `closingAmount` en null) y después se
  * abre. El frontend tiene que comprobar esos campos antes de mostrarlos, y por

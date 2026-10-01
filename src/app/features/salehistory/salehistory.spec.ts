@@ -11,9 +11,9 @@ import { Sidebar } from '../sidebar/sidebar';
 /**
  * Tests de las REGLAS DE UI del ciclo de vida de la venta (2026-09-30).
  *
- * <p>Qué se prueba y por qué estas funciones sí:
+ * Qué se prueba y por qué estas funciones sí:
  *
- * <p>`isAbierta`, `isConfirmada`, `isAnulada` y `canCancel` son funciones
+ * `isAbierta`, `isConfirmada`, `isAnulada` y `canCancel` son funciones
  * PURAS: reciben un `SaleHistory` y devuelven un booleano, sin tocar el DOM ni
  * llamar al backend. Eso las hace triviales de testear y, más importante,
  * hace que la regla de "qué botón se pinta" quede escrita en un lugar
@@ -25,7 +25,7 @@ import { Sidebar } from '../sidebar/sidebar';
  * va a fallar con 409. Si alguien cambia la regla en Java y no acá, lo
  * detecta la diferencia de comportamiento, no este test.
  *
- * <p>⚠️ Estos specs NO se ejecutan hoy: `npm test` (Vitest) no encuentra
+ * Estos specs NO se ejecutan hoy: `npm test` (Vitest) no encuentra
  * archivos de test en este proyecto porque la ruta del proyecto contiene
  * paréntesis (`Sistema de ventas (comida)`), que rompen el glob de Vitest.
  * Es un problema conocido, documentado en AGENTS.md. Los tests quedan escritos
