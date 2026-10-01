@@ -247,12 +247,17 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-width: 300px;
 }
 
 .field label {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 300;
   color: #cbd5e1;
+}
+
+.field input{
+  width: 100%;
 }
 
 .custom-select {
@@ -561,7 +566,6 @@ tr.confirmada td {
   /* El icono viene en negro; se tiñe rojo para que se lea como "peligro" y no
      como una acción más. filter es la única forma de recolorear un PNG sin
      tener otra versión del archivo. */
-  margin-left: 6px;
   filter: invert(24%) sepia(95%) saturate(2000%) hue-rotate(355deg) brightness(95%) contrast(90%);
   opacity: 0.75;
   transition: opacity 0.12s ease;
@@ -663,7 +667,7 @@ tr.confirmada td {
 }
 
 .linea-subtotal {
-  text-align: right;
+  text-align: center;
   font-weight: 600;
   color: #cbd5e1;
   font-variant-numeric: tabular-nums;
