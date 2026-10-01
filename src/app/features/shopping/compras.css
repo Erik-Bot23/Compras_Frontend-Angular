@@ -190,7 +190,6 @@
   height: 18px;
   object-fit: contain;
   flex-shrink: 0;
-  filter: brightness(0) invert(1);
 }
 
 /* -------- Formulario de proveedores -------- */
@@ -523,7 +522,7 @@ tr.confirmada td {
   /* Los títulos son cortos y las columnas estrechas: se les da alto para que
      "Costo de compra" pueda partirse en dos líneas sin cortar la fila. */
   line-height: 1.25;
-  opacity: 0.7;
+  color: #94a3b8;
 }
 
 .linea-cabecera span:not(:first-child) {
@@ -535,11 +534,6 @@ tr.confirmada td {
 .linea-cabecera span:nth-child(5) {
   text-align: right;
   padding-right: 4px;
-}
-
-
-.linea-cabecera span:not(:first-child) {
-  text-align: center;
 }
 
 /* =========================================================================
@@ -617,6 +611,7 @@ tr.confirmada td {
 
 .modal {
   background: #0f172a;
+  color: #e2e8f0;
   border: 1px solid #334155;
   border-radius: 14px;
   padding: 22px;
@@ -641,7 +636,7 @@ tr.confirmada td {
      su propio grid-template-columns, se desalinean solos.
      minmax(0,1fr) en el producto (no 1fr) para que el <select> pueda encogerse
      por debajo de su contenido en vez de empujar a las demás columnas. */
-  --cols-renglon: minmax(0, 1fr) 72px 110px 110px 84px 36px;
+  --cols-renglon: minmax(0, 1fr) 72px 110px 110px 84px 56px;
   display: flex;
   flex-direction: column;
   gap: 8px;
