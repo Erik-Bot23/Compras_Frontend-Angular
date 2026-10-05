@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  CashBoxReportDTO,
   CashReportDTO,
   CategoryPerformanceDTO,
   LowStockDTO,
@@ -63,13 +64,45 @@ export class ReportService {
   getCashReport(cashId: number): Observable<CashReportDTO> {
     return this.http.get<CashReportDTO>(`${this.api}/cash/${cashId}`);
   }
+
+  /**
+   * V5: historial de una CAJA con todos sus turnos, filtrable.
+   *
+   * <p>Reemplaza a `getCashReport` en la pantalla de reportes. La diferencia
+   * clave: aquí se pide una CAJA (y trae sus turnos adentro), no un turno
+   * suelto.
+   *
+   * <p>`userId` llega en `null` cuando no hay filtro, y `buildParams` lo omite:
+   * mandarlo como la cadena "null" haría que el backend no pudiera convertirlo
+   * a Long y devolviera 400.
+   */
+  getCashBoxReport(
+    boxId: number,
+    filters: { from?: string | null; to?: string | null; userId?: number | null } = {}
+  ): Observable<CashBoxReportDTO> {
+    return this.http.get<CashBoxReportDTO>(`${this.api}/cash-box/${boxId}`, {
+      params: buildParams({
+        from: filters.from ?? undefined,
+        to: filters.to ?? undefined,
+        userId: filters.userId ?? undefined,
+      }),
+    });
+  }
 }
 
-//Solo agrega al query string los parámetros definidos (ignora undefined/'').
-function buildParams(values: Record<string, string | number | undefined>): HttpParams {
+/*
+ * Solo agrega al query string los parámetros definidos.
+ *
+ * Filtra `undefined`, `''` **y `null`**. El `null` es lo importante y no es un
+ * descuido: un `<select>` sin opción elegida vale `null`, y `String(null)` es la
+ * cadena `"null"`, que el backend no puede convertir a Long y respondería 400.
+ */
+function buildParams(
+  values: Record<string, string | number | null | undefined>
+): HttpParams {
   let params = new HttpParams();
   for (const [key, value] of Object.entries(values)) {
-    if (value !== undefined && value !== '') {
+    if (value !== undefined && value !== '' && value !== null) {
       params = params.set(key, String(value));
     }
   }

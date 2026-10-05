@@ -83,6 +83,27 @@ export class Compras implements OnInit {
   modalFecha: string = ''; //input[type=date], opcional (si vacía, el backend usa ahora)
   lineas: LineaCompra[] = [];
 
+  // ===== Paginación del carrito de la compra =====
+  /**
+   * Página visible del carrito.
+   *
+   * <p>Es independiente de `page`, que es la de las TABLAS de la pantalla
+   * (compras, proveedores, márgenes). Si compartieran el mismo número, paginar
+   * el carrito movería también la tabla de compras, que es un efecto
+   * colateral que nadie pidió.
+   */
+  lineasPage = 0;
+
+  /**
+   * Renglones por página en el carrito.
+   *
+   * <p>Son 5 y no 8 como las tablas porque el renglón de compra tiene 6
+   * columnas y cuatro inputs: a 8 el modal crece tanto que hay que hacer scroll
+   * en la página entera, y con scroll interno del carrito se mantiene el modal
+   * quieto con el pie siempre visible.
+   */
+  lineasPageSize = 5;
+
   constructor(
     public sidebar: SidebarService,
     public auth: AuthService,
@@ -151,6 +172,10 @@ export class Compras implements OnInit {
     this.modalProviderId = null;
     this.modalFecha = '';
     this.lineas = [this.nuevaLinea()];
+    // El carrito arranca en la página 1: si se abrió antes en la página 3 y se
+    // cierra, al reabrir debe verse el renglón vacío del principio, no una
+    // página vacía.
+    this.lineasPage = 0;
     this.showModal = true;
   }
 
@@ -173,10 +198,49 @@ export class Compras implements OnInit {
   //Agregar un renglón más a la compra
   agregarLinea() {
     this.lineas.push(this.nuevaLinea());
+
+    // Si la compra ya grewó más allá de la última página, se salta a esa
+    // página para que el renglón nuevo quede a la vista. Sin esto, agregar el
+    // renglón número 8 con pageSize 5 lo agrega invisible (página 1) y parece
+    // que el botón no hizo nada.
+    const ultimaPagina = Math.max(0, Math.ceil(this.lineas.length / this.lineasPageSize) - 1);
+    if(this.lineasPage < ultimaPagina) {
+      this.lineasPage = ultimaPagina;
+    }
   }
 
+  /**
+   * Quita un renglón de la compra.
+   *
+   * Recibe el índice REAL dentro de `lineas`, no el índice de la página
+   * visible: por eso el template pasa `lineasIndiceBase + i`. Confundir los
+   * dos borraría el renglón equivocado al paginar.
+   *
+   * <p>Si la página queda vacía, se retrocede una: si no, el pie quedaría
+   * mostrando "Mostrando 11–10 de 10" en una tabla sin filas.
+   */
   quitarLinea(index: number) {
     this.lineas.splice(index, 1);
+
+    const maximoIndice = this.lineas.length - 1;
+    if(this.lineasPage > 0 && this.lineasIndiceBase > maximoIndice) {
+      this.lineasPage--;
+    }
+  }
+
+  /** Primer índice de `lineas` que corresponde a la página visible. */
+  get lineasIndiceBase(): number {
+    return this.lineasPage * this.lineasPageSize;
+  }
+
+  /** Total de páginas del carrito (mínimo 1, para que el pie no se desaparezca). */
+  get lineasTotalPaginas(): number {
+    return Math.max(1, Math.ceil(this.lineas.length / this.lineasPageSize));
+  }
+
+  /** Renglones de la página actual: los que se dibujan en la tabla. */
+  get lineasPagina(): LineaCompra[] {
+    return this.lineas.slice(this.lineasIndiceBase, this.lineasIndiceBase + this.lineasPageSize);
   }
 
   /**

@@ -340,6 +340,35 @@
   padding-right: 18px !important;
 }
 
+/* ==========================================================================
+   ALINEACIÓN DE LAS TABLAS CON SUS COLUMNAS (V5)
+   ==========================================================================
+   Regla general: si el dato de una columna va a la derecha, su TÍTULO también;
+   si va centrado, el título también. Los <th> y los <td> llevan la misma clase.
+
+   El síntoma sin esto: los <td class="money"> quedan a la derecha, los <th>
+   quedan a la izquierda, y cada título termina flotando sobre el espacio vacío
+   de la columna vecina. La tabla "se ve corrida" aunque los números estén
+   perfectos. */
+
+/* Los <th> de monto heredan .money, pero el padding-right tiene que calzar con
+   el de las celdas o el título queda a otra distancia del número que le toca. */
+th.money {
+  text-align: right;
+  padding-right: 18px !important;
+}
+
+/* El badge del % se centra: es una etiqueta corta y el centro es donde se lee
+   más rápido. */
+th.pct,
+td.pct {
+  text-align: center;
+}
+
+th.pct {
+  padding-right: 10px;
+}
+
 /* -------- Detalle expandible (fila completa con renglones) -------- */
 
 /* Fila del detalle: fondo ligeramente distinto para separarla del cuerpo */
@@ -690,8 +719,110 @@ tr.confirmada td {
 }
 
 .add-linea:hover {
-  border-color: #3b82f6;
-  color: white;
+    border-color: #3b82f6;
+    color: white;
+}
+
+/* Icono del botón "+ Agregar producto" (anadir.png).
+   El PNG mide 512x512, así que sin width/height fijo el botón se revienta por
+   dentro. 16px y sin filtro: el archivo ya es una cruz verde sobre fondo
+   transparente, y herechar el color tiraría la cruz y sus colores a un bloque
+   blanco (el mismo problema que se corrigió en el botón "Nueva compra"). */
+.add-linea img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+/* =========================================================================
+   PAGINACIÓN DEL CARRITO DE COMPRA (V5)
+   =========================================================================
+   El carrito se pagina a 5 renglones porque cada renglón tiene 6 columnas y
+   4 inputs: con 30 productos el modal medía más que la pantalla y el botón
+   "Guardar" quedaba inalcanzable.
+
+   NOTA: la regla .lineas y la definición de --cols-renglon viven ARRIBA, junto
+   a .linea y .linea-cabecera. Se dejan todas juntas a propósito: las tres
+   comparten el grid y separarlas es justo lo que causó que se desalinearan. */
+
+/* Contenedor con scroll INTERNO.
+   max-height: 5 renglones (38px cada uno + 8px de gap) + un poco de aire: con
+   eso el bloque nunca pasa de ~230px aunque la compra tenga 40 productos, y el
+   scroll ocurre dentro del modal en vez de en la página.
+   El fondo del borde distingue el bloque de los inputs de arriba. */
+.lineas-scroll {
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+}
+
+/* La cabecera va FUERA del scroll para que los títulos "Producto / Cantidad /
+   ... / Subtotal" sigan a la vista al hacer scroll: si se scrollearan, en la
+   fila 6 el usuario no sabría qué columna está leyendo. */
+.lineas-cabecera-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #0f172a;
+    /* Sombra sutil para separar del primer renglón al pasar por debajo. */
+    box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* Pie de paginación del carrito */
+.lineas-paginacion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    background: #1e293b;
+    border: 1px solid #263449;
+    border-radius: 10px;
+    font-size: 0.78rem;
+}
+
+/* Botones Anterior / Siguiente del carrito.
+   Familia más discreta que los del <app-pagination> de las tablas: aquí son
+   secundarios, la acción principal del modal es "Guardar compra". */
+.lineas-flecha {
+    border: none;
+    padding: 5px 12px;
+    border-radius: 7px;
+    background: #334155;
+    color: #e2e8f0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.lineas-flecha:hover:not(:disabled) {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.lineas-flecha:disabled {
+    background: #1e293b;
+    color: #64748b;
+    cursor: not-allowed;
+}
+
+.lineas-contador {
+    color: #cbd5e1;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* El total de productos entre paréntesis: el "Página 1 de 4" dice en qué página
+   se está, este dice cuántos hay en total. */
+.lineas-rango {
+    color: #64748b;
+    font-weight: 400;
 }
 
 .modal-total {

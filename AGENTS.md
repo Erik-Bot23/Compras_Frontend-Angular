@@ -95,6 +95,335 @@ src/app/
 
 ## Registro de cambios / decisiones
 
+### 2026-10-04 — V6: el doble Enter del modal de cobro ya no cobra dos veces
+
+> Encargo: que confirmar la venta con doble Enter no genere dos ventas, y
+> revisar la paginación del carrito de compras.
+> Contraparte backend: `Compras-Backend/AGENTS.md` sesión 2026-10-04 +
+> `docs/07-Paginacion-Carrito-e-Idempotencia-Ventas.pdf`.
+> Verificado con `npx ng build` en verde y con una prueba real de dos POST
+> simultáneos contra Supabase (ambas respuestas dieron la misma venta).
+
+**El bug**: el modal de cobro es un `<form>`; el cajero paga y aprieta Enter. Si
+lo aprieta dos veces, el frontend lanzaba **dos** POST a `/sales` y se hacían
+**dos ventas**: stock descontado dos veces, dos tickets y el corte de caja
+descuadrado.
+
+#### 1. Las dos barreras (y por qué la primera NO alcanza)
+
+| Barrera | Dónde | Qué hace |
+|---|---|---|
+| `isProcessing` | `sale-facade.ts` + `[disabled]` en `cobro.html` | Evita el 2.º **clic** |
+| `claveCobro` | `SaleRequest.idempotencyKey` | El backend reconoce el **reintento** |
+
+🔑 El botón deshabilitado **no arreglaba el bug**: previene el segundo clic,
+pero no el caso real, que es que **las dos peticiones ya viajan por la red a la
+vez**. También fallaría si el usuario recarga la pestaña o reintenta porque la
+respuesta tardó. La barrera 1 protege la **UI**; la 2 protege la **operación**.
+
+#### 2. La clave se genera al ABRIR el modal, no al confirmar
+
+```ts
+// sale-facade.ts
+private iniciarIntentoDeCobro() {
+  this.claveCobro = this.generarClaveCobro();
+  this.isProcessing = false;
+}
+
+openPaymentModal(){
+  ...
+  this.iniciarIntentoDeCobro();   // 🔑 aquí, NO en confirmPayment
+  this.showPaymentModal = true;
+}
+```
+
+🔑 Si la clave se generara en `confirmPayment`, **cada Enter tendría su propia
+clave** y cada una sería una venta nueva: exactamente el bug. Está escrito en
+`openPaymentModal()` para que nadie lo "simplifique" moviéndolo.
+
+- Se genera con `crypto.randomUUID()`, con respaldo de `Math.random()` para
+  entornos sin esa API. 🔑 El respaldo **no es criptográficamente seguro** y el
+  código lo dice: aquí sirve para evitar un cobro doble, no para proteger un
+  secreto.
+- El flujo de **tarjeta reutiliza la misma clave** (`cardProcessing` es su
+  bandera): elegir tarjeta y luego efectivo sigue siendo **el mismo cobro**.
+
+#### 3. La bandera se libera también en el error
+
+```ts
+error: (err) => {
+  this.isProcessing = false;   // 🔑 si no, el modal queda bloqueado
+  alert(...)                   //    y no se puede reintentar ni cerrar
+}
+```
+
+🔑 Liberarla solo en el éxito deja el modal inservible cuando el pago se rechaza
+(un caso normal, no una excepción).
+
+#### 4. El botón refleja el estado
+
+```html
+<button type="submit" [disabled]="sale.isProcessing">
+  {{ sale.isProcessing ? 'Cobrando…' : 'Confirmar pago' }}
+</button>
+```
+
+El `…` (puntos suspensivos) es el feedback de que la pulsación **sí** se
+registró: sin él el botón deshabilitado parece que el clic se perdió.
+
+#### 5. Carrito del **POS** (`cobro.html`): ahora sí paginado, a 8 renglones
+
+El encargo era el carrito de **venta**, no el de compras (que ya estaba
+paginado desde V5, ver §5 del PDF 06). Aquí sí había que trabajar.
+
+- `sale-facade.ts`: `cartPage`, `cartPageSize = 8` y getters `cartTotalItems`,
+  `cartTotalPages`, `cartDesde`, `cartHasta`.
+- `cobro.html`: `(sale.cobroItems$ | async) | paginate: sale.cartPage : sale.cartPageSize`
+  más el pie `.cart-paginacion`.
+
+🔑 **Los paréntesis alrededor del `async` no son opcionales.** Sin ellos Angular
+lo lee como `a | (async | paginate)`, que no existe, y el build falla con
+`TS2345`. Por eso el `PaginatePipe` ahora acepta `T[] | null | undefined`: el
+pipe `async` devuelve `null` antes del primer valor y la firma `T[]` obligaba a
+escribir `| async ?? []` en cada template. El tipo ahora refleja lo que el
+código **ya hacía** en su primera línea.
+
+🔑 **8 renglones y no 5**: aquí cada renglón es **una sola línea**; los 5 del
+carrito de compras son porque cada renglón ahí tiene 6 columnas y 4 inputs.
+
+🔑 **Cambia una decisión del 2026-09-12.** Estaba escrito que *"el carrito del
+POS no se pagina: es un carrito vivo, no una tabla de registros"*. La razón
+era válida para la **información** del carrito, pero no para su **altura**: con
+30 productos la tabla crecía sin tope y empujaba el botón **Cobrar** fuera de
+la pantalla. Paginándolo sigue vivo (mismos botones de +/−/✕) y además queda
+acotado.
+
+**Los tres detalles que hacen que se comporte bien:**
+
+| Detalle | Qué pasa sin él |
+|---|---|
+| `irAPaginaDelProducto(id)` al **agregar** (incluido el **escáner**) | Escanear el producto 12 con la vista en la página 1 lo agrega **invisible**: el carrito "no cambia" a ojos del cajero |
+| `ajustarPaginaAlQuitar()` al **quitar/bajar** | Borrar el último renglón de la página 2 deja la vista en una página que ya no existe: carrito vacío |
+| `cartPage = 0` tras `cobro.clear()` | Tras cobrar un carrito que estaba en la página 3, la venta siguiente aparece "en la página 3" de un carrito de 1 producto |
+
+🔑 `irAPaginaDelProducto()` calcula la página por **índice real** del producto,
+no con "saltar a la última página": agregar un producto **que ya estaba** en el
+carrito no crea renglón nuevo (solo sube su cantidad) y ese renglón puede estar
+en cualquier página.
+
+🔑 El pie usa un getter `cartPaginaValida` (la página recortada al rango válido)
+para los números, no `cartPage` directo. El `paginate` se recorta solo, pero los
+números del pie se calculan aparte y sin el recorte podrían salir al revés
+("Mostrando 9–3 de 3") si alguna ruta futura olvidara ajustar la página.
+
+El pie tiene `*ngIf` con `length > cartPageSize`: en una venta de dos o tres
+productos un control de paginación es ruido, y lo que importa es el botón verde
+**Cobrar**.
+
+### 2026-10-01 — V5: paginación del carrito, modal de cajas, historial de caja y filtros de usuarios
+
+> 8 encargos de UI. Todos verificados con `ng build` en verde.
+> Explicación completa (backend + frontend) en
+> `Compras_Backend/docs/06-Venta-Usuario-y-Historial-Caja.pdf`.
+
+**0. El patrón que se repitió en toda la tanda: los PNG son de 512×512**
+
+Cinco de los ocho encargos eran el **mismo bug**: un `<img>` de `assets/icons/`
+sin reglas de tamaño se renderiza a su tamaño natural y revienta el botón por
+dentro. Los archivosaffected miden 512×512 (o 128×128).
+
+🔑 **Regla: todo `<img>` de un icono necesita `width`/`height` +
+`object-fit: contain`.** Y hay dos familias de íconos que se tratan distinto:
+
+| Familia | Ejemplos | Cómo se pone blanca |
+|---|---|---|
+| **Un solo color** (silueta) | `menu.png`, `hogar.png`, `izquierda.png`, `derecha.png` | `filter: brightness(0) invert(1)` ✅ funciona |
+| **Dos o más colores** | `anadir.png` (cruz verde + contorno negro), `eliminar.png` | 🔑 **NO usar ese filtro**: fusiona los colores en un bloque blanco macizo |
+
+`izquierda.png` / `derecha.png` se verificaron muestreando píxeles: son un solo
+color (`0,0,0`) sobre fondo transparente, así que el filtro sí sirve ahí.
+
+**1. `pagination-control.css`: las flechas que reventaban el botón**
+
+El `<img>` ya estaba en el HTML desde hacía semanas; lo que faltaba era el CSS.
+
+```css
+.pagination-buttons button {
+  display: inline-flex;   /* el <img> y el texto en una fila */
+  align-items: center;
+  gap: 6px;
+}
+
+.pagination-buttons button img {
+  width: 14px; height: 14px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
+}
+```
+
+También se apagan con `opacity` al deshabilitar: si solo se atenuara el fondo, la
+flecha seguiría en blanco puro y parecería clicable.
+
+**2. Compras: el carrito ahora se pagina (5 renglones) y tiene scroll propio**
+
+Cada renglón de compra tiene 6 columnas y 4 inputs. Con 30 productos el modal
+medía más que la pantalla y **"Guardar compra" quedaba inalcanzable**.
+
+```ts
+lineasPage = 0;
+lineasPageSize = 5;              // 5 y no 8: cada renglón es alto
+
+get lineasIndiceBase(): number {
+  return this.lineasPage * this.lineasPageSize;
+}
+get lineasPagina(): LineaCompra[] {
+  return this.lineas.slice(this.lineasIndiceBase,
+                           this.lineasIndiceBase + this.lineasPageSize);
+}
+```
+
+🔑 **El bug de índices que casi no se ve:**
+
+```html
+<div class="linea" *ngFor="let l of lineasPagina; let i = index">
+  <button (click)="quitarLinea(lineasIndiceBase + i)">   <!-- NO solo i -->
+```
+
+La `i` del `*ngFor` es el índice **dentro de la página visible**, no dentro de
+`lineas`. En la página 1 coinciden, así que el bug no se ve; en la página 2 el
+primer botón borraría el renglón 1 de la página 1.
+
+**Síntoma clásico**: funciona en la primera página y falla en las demás. Por eso
+el comentario en el HTML lo explica en mayúsculas.
+
+Otros tres detalles del mismo trabajo:
+
+- **`agregarLinea()` salta a la última página.** Sin eso, agregar el renglón 8
+  con `pageSize` 5 lo agrega invisible (página 1) y el botón parece no hacer nada.
+- **`quitarLinea()` retrocede una página** si la actual quedó vacía, o el pie
+  muestra "Mostrando 11–10 de 10".
+- **La cabecera va fuera del bloque con scroll** (`.lineas-cabecera-wrap` con
+  `position: sticky`): si se scrolleara con las filas, en el renglón 6 el usuario
+  no sabría qué columna está leyendo.
+- `lineasPage` es **independiente** de `page` (el de las tablas de la pantalla).
+  Si compartieran el número, paginar el carrito movería también la tabla de
+  compras.
+
+**3. Modal de cajas: los inputs que se salían de la tarjeta** 🔑
+
+Error propio de esta tanda, y muy instructivo:
+
+```css
+.box-form input { width: 100%; }              /* MAL */
+.box-form input { width: 100%; box-sizing: border-box; }   /* BIEN */
+```
+
+Por defecto los `<input>` usan `content-box`: el `width` se aplica al
+**contenido** y el padding y el borde se suman encima. Con 10px de padding y 1px
+de borde, el input medía 22px más que la tarjeta. `border-box` incluye padding y
+borde en el 100%.
+
+**4. Modal de cajas: los botones de la fila**
+
+La celda pasó de 1 botón a 4, con textos de largo muy distinto.
+
+| Botón | Cuándo | Color | Por qué |
+|---|---|---|---|
+| `btn-edit` | Siempre | Azul | Acción neutra |
+| `btn-del` | `sessionsCount === 0` | **Rojo** | Eliminación real y definitiva |
+| `btn-baja` | Con turnos y activa | **Naranja** | No es borrar: el color debe distinguirlo |
+| `btn-alta` | Si está dada de baja | **Verde** | Es el inverso de "dar de baja" |
+
+🔑 `.boxes-actions` necesita `flex-wrap: wrap` **y `min-width: 0`**. El
+`min-width: 0` es la parte que se olvida: sin él, el ancho mínimo de los hijos
+empuja la celda, la tabla se ensancha y las columnas se descuadran.
+
+**5. Modal de cajas: el icono del botón "Crear caja"**
+
+`anadir.png` es una cruz **verde**. Dos decisiones que van juntas:
+
+- **Sin filtro de color** (herecharla la volvería un bloque blanco, ver §0).
+- **Fondo oscuro detrás** (`.btn-confirm-open img { background: #0f172a;
+  border-radius: 50% }`): cruz verde sobre botón verde es invisible.
+
+**6. Reportes: historial de CAJA en vez de corte de caja**
+
+El cambio estructural: el selector **lista cajas** y la tabla **lista sus
+turnos**, con un renglón por turno.
+
+- `cashHistory: CashRegister[]` → `cashBoxes: CashBox[]`
+- `selectedCashId` → `selectedBoxId`
+- `cashReport: CashReportDTO` → `cashBoxReport: CashBoxReportDTO`
+- Servicio nuevo: `reportService.getCashBoxReport(boxId, {from, to, userId})`
+
+**Los dos filtros viven en sitios distintos** (lo pidió el usuario explícitamente):
+
+| Filtro | Dónde | Por qué |
+|---|---|---|
+| **Caja** | En la barra de filtros general de arriba | Es un filtro de la consulta, como las fechas |
+| **Usuario** | Dentro de la sección de caja | Solo tiene sentido respecto a una caja elegida |
+
+🔑 **El filtro de usuario se arma con los `sellers` de las sesiones**, no con el
+padrón de usuarios del sistema:
+
+```ts
+get boxReportUsers() {
+  // ...deduplica por userId sobre todas las sesiones
+  // null (ventas sin usuario) va al final: es el caso excepcional
+}
+```
+
+En un local con 8 empleados, ofrecer los 8 cuando solo 2 trabajan en esa caja
+produce 6 opciones que devuelven tabla vacía, y el usuario no puede distinguir
+"sin resultados" de "este usuario no vendió aquí".
+
+- **El filtro va al backend**, no al cliente: filtrar en el navegador traería
+  todas las ventas de todos los turnos para descartar la mayoría, y los totales
+  no coincidirían con los del backend.
+- 🔑 **`buildParams` ahora filtra `null`, no solo `undefined` y `''`.** Un
+  `<select>` sin opción elegida vale `null`, y `String(null)` es la cadena
+  `"null"`, que el backend no puede convertir a `Long` → 400.
+- **`difference` es `number | null`**: el template usa `(s.difference ?? 0)`
+  porque comparar `null < 0` es error de tipos en Angular.
+- `sessionAbiertaId: number | null` — **un turno a la vez**; con dos abiertos la
+  tabla duplicaría su alto.
+- Al cambiar de caja se limpian el filtro de usuario y el turno desplegado, o
+  quedaría un `userId` de la caja anterior.
+
+**7. Usuarios dados de baja: filtros y columnas de fecha**
+
+La pregunta era *"buscar el registro de una persona que se fue"*. Con la tabla
+pelada había que revisarla a ojo.
+
+- Filtros: texto (nombre **y** correo), `fromDate`, `toDate`.
+- Columnas nuevas: **Alta** y **Baja** (`activatedAt` / `deactivatedAt`).
+- 🔑 **Las fechas se comparan como strings `yyyy-MM-dd`, no como `Date`.** El
+  orden lexicográfico de ese formato *es* el cronológico, y usar `new Date()`
+  con zona horaria (México es UTC-6) desplaza un día los bordes del rango.
+- `sinFecha` cuenta sobre la lista **completa**, no la filtrada: si fuera sobre la
+  filtrada daría siempre 0 (los que no tienen fecha ya quedaron excluidos) y el
+  aviso nunca aparecería.
+- Dos estados vacíos **distintos**: "No hay usuarios dados de baja" (dato del
+  sistema) vs. "Ninguno coincide con los filtros" (dato sobre lo que escribió el
+  usuario; lo que hay que arreglar es el filtro).
+
+**8. Historial de ventas: alinear las columnas con sus datos**
+
+Los `<td class="money">` iban a la derecha pero sus `<th>` a la izquierda: la
+tabla se veía corrida aunque los datos estuvieran bien.
+
+🔑 **Regla: si una columna tiene los datos alineados a la derecha, su título
+también.** La clase va en el `th` y en el `td` por igual.
+
+Se añadieron `col-id` (centro) y `col-fecha` (`nowrap`, porque
+"04/10/2026 14:30" partido en dos líneas hace la fila el doble de alta).
+
+**Verificación**: `ng build` en verde. ⚠️ `ng test` sigue sin encontrar specs por
+los paréntesis del path (problema pre-existente, ver más abajo).
+
+
+
 ### 2026-09-30 — FASE 1: los 12 servicios pasan a `${environment.apiLocal}` (`/api/local`)
 
 > Contraparte del backend: `Compras-Backend/AGENTS.md`, sesión 2026-09-30
@@ -518,8 +847,8 @@ debe mostrar `(2 x $X = $Y)`).
   - Los servicios ya cargan todos los registros → **paginación client-side** (sin tocar backend).
   - El estado `page` vive en cada componente CRUD (`page = 0; pageSize = 8;`); el pie solo emite la página nueva con `(pageChange)="page = $event"`.
   - La barra va **dentro de `.table-card`, tras `.table-scroll`** → `overflow:hidden` de la tarjeta redondea sus esquinas inferiores; se integra con fondo `#1e293b` + `border-top`.
-  - El carrito del POS (`cobro`) **no** se pagina: es un carrito vivo, no una tabla de registros.
-- **Integrado en**: productos, categorias, usuarios, roles (cada uno importa `PaginatePipe` + `PaginationControl` y usa el pie en el template).
+  - ~~El carrito del POS (cobro) no se pagina~~ → **REVISADO el 2026-10-04: SÍ se pagina**, a 8 renglones (`.cart-paginacion`). La razón original ("es un carrito vivo") era válida para la información pero no para la ALTURA: con 30 productos empujaba el botón Cobrar fuera de la pantalla. Ver la sesión del 2026-10-04.
+- **Integrado en**: productos, categorias, usuarios, roles (cada uno importa `PaginatePipe` + `PaginationControl` y usa el pie en el template) y el **carrito del POS** desde V6 (solo `PaginatePipe`, con pie propio `.cart-paginacion` porque allí los botones son secundarios frente al botón verde Cobrar).
 - Verificación: `npx ng build --configuration development` compila sin warnings. Tests: 15 pasan / 4 fallan (pre-existentes, missing provider `ActivatedRoute`).
 
 ### 2026-09-10 — Fixes UI/UX + Change Detection + Animations

@@ -1,8 +1,13 @@
 <!--
-  USUARIOS DADOS DE BAJA - vista minima: solo la tabla de inactivos y su
-  boton "Dar de alta". Sin formulario ni filtros (los inactivos se filtran
-  client-side de GET /api/users). Incluye <app-sidebar> para conservar el menu
-  sandwich y la navegacion. sidebar.menuOpen viene del SidebarService.
+  USUARIOS DADOS DE BAJA - tabla de inactivos con filtros de busqueda (V5) y su
+  boton "Dar de alta".
+
+  Los filtros existen para una pregunta concreta: "encontrar el registro de la
+  persona que se fue". Antes habia que revisar la tabla a ojo, y con historial
+  de varios años eso no era viable.
+
+  Se incluye <app-sidebar> para conservar el menu sandwich y la navegacion.
+  sidebar.menuOpen viene del SidebarService.
 -->
 <div class="layout" [class.collapsed]="!sidebar.menuOpen">
   <app-sidebar (toggle)="sidebar.menuOpen = $event"></app-sidebar>
@@ -15,6 +20,71 @@
          .table-container / .table-card / .table-scroll -->
     <div class="table-container fade-in">
       <div class="table-card">
+        <!--
+          Barra de filtros (mismo lenguaje visual que productos/usuarios).
+          Va PRIMERO dentro de .table-card, arriba de la tabla.
+
+          - El texto busca en nombre Y correo, porque quien busca un registro
+            muchas veces recuerda el correo y no el nombre.
+          - El rango de fechas aplica sobre la fecha de BAJA: eso es lo que se
+            quiere preguntar aquí.
+        -->
+        <div class="table-filter-bar">
+          <div class="table-filter-field">
+            <label for="buscarUsuario">Buscar</label>
+            <input
+              id="buscarUsuario"
+              class="filter-select"
+              type="text"
+              placeholder="Nombre o correo"
+              [(ngModel)]="searchText"
+              (ngModelChange)="onFilterChange()"
+            />
+          </div>
+
+          <div class="table-filter-field">
+            <label for="desdeBaja">Dado de baja desde</label>
+            <input
+              id="desdeBaja"
+              class="filter-select"
+              type="date"
+              [(ngModel)]="fromDate"
+              (ngModelChange)="onFilterChange()"
+            />
+          </div>
+
+          <div class="table-filter-field">
+            <label for="hastaBaja">Dado de baja hasta</label>
+            <input
+              id="hastaBaja"
+              class="filter-select"
+              type="date"
+              [(ngModel)]="toDate"
+              (ngModelChange)="onFilterChange()"
+            />
+          </div>
+
+          <!-- Boton "Limpiar": solo aparece si hay algo que limpiar. Mostrarlo
+               siempre haria ruido en el caso normal (sin filtros). -->
+          <button
+            type="button"
+            class="deactivated-link limpiar-filtros"
+            *ngIf="searchText || fromDate || toDate"
+            (click)="clearFilters()"
+          >
+            Limpiar filtros
+          </button>
+        </div>
+
+        <!-- Aviso de usuarios sin fecha de baja.
+             Los dados de baja ANTES de V5 no tienen `deactivatedAt` (la columna se
+             agregó después), así que con un filtro de fechas quedan fuera. Se
+             avisa para que el usuario no piense que desaparecieron. -->
+        <p class="aviso-sin-fecha" *ngIf="(fromDate || toDate) && sinFecha > 0">
+          {{ sinFecha }} usuario(s) dado(s) de baja antes de registrar las fechas
+          no aparecen en el rango de fechas.
+        </p>
+
         <div class="table-scroll">
           <table class="user-table">
             <thead>
@@ -22,19 +92,33 @@
                 <th>Nombre</th>
                 <th>Correo</th>
                 <th>Rol</th>
+                <th>Alta</th>
+                <th>Baja</th>
                 <th>Acciones</th>
               </tr>
             </thead>
 
             <tbody>
               <tr *ngIf="loading">
-                <td colspan="4" class="empty-row">Cargando usuarios dados de baja…</td>
+                <td colspan="6" class="empty-row">Cargando usuarios dados de baja…</td>
               </tr>
 
-              <tr *ngFor="let u of users | paginate: page : pageSize">
+              <!-- `filteredUsers` y no `users`: la lista que se pagina es la ya
+                   filtrada, así el pie cuenta lo que se ve y no lo que hay. -->
+              <tr *ngFor="let u of filteredUsers | paginate: page : pageSize">
                 <td>{{ u.name }}</td>
                 <td>{{ u.email }}</td>
                 <td>{{ u.roleName }}</td>
+
+                <!-- Fechas de alta y baja (V5).
+                     "—" cuando no hay dato, con el title explicando por qué:
+                     las columnas se agregaron en V5 y los usuarios anteriores no las
+                     tienen. -->
+                <td class="fecha">{{ u.activatedAt ? (u.activatedAt | date:'dd/MM/yyyy') : '—' }}</td>
+                <td class="fecha">
+                  {{ u.deactivatedAt ? (u.deactivatedAt | date:'dd/MM/yyyy') : '—' }}
+                </td>
+
                 <td>
                   <div class="table-actions">
                     <!-- Reactiva el usuario: desaparece de aqui y vuelve a /usuarios -->
@@ -45,16 +129,24 @@
                 </td>
               </tr>
 
+              <!-- Estado vacio: distingue "no hay dados de baja" de
+                   "no hay dados de baja que COINCIDAN con los filtros". -->
               <tr *ngIf="!loading && users.length === 0">
-                <td colspan="4" class="empty-row">No hay usuarios dados de baja</td>
+                <td colspan="6" class="empty-row">No hay usuarios dados de baja</td>
+              </tr>
+
+              <tr *ngIf="!loading && users.length > 0 && filteredUsers.length === 0">
+                <td colspan="6" class="empty-row">
+                  Ningún usuario dado de baja coincide con los filtros
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Pie de tabla con paginacion -->
+        <!-- Pie de tabla con paginacion: total = lista FILTRADA -->
         <app-pagination
-          [total]="users.length"
+          [total]="filteredUsers.length"
           [pageSize]="pageSize"
           [page]="page"
           (pageChange)="page = $event">

@@ -46,15 +46,24 @@
         <label>Stock máximo</label>
         <input type="number" min="0" [(ngModel)]="threshold" />
       </div>
-      <!-- V3: filtro por caja. El select muestra el número que escribió el
-           vendedor (NO el id), porque "CAJA 1" es lo que el usuario reconoce.
-           value = id porque es la clave real que pide /reports/cash/{cashId}. -->
+      <!--
+        V5: filtro por CAJA FISICA (no por turno).
+
+        El selector lista `cashBoxes` (las cajas del local, de GET /cash/boxes) y
+        NO `cashHistory` (los turnos). Antes listaba los turnos, así que una caja
+        abierta cinco veces aparecía cinco veces en el dropdown y el usuario
+        tenía que adivinar cuál de las cinco-era "la" caja: era imposible
+        responder "¿qué pasó en CAJA 1?".
+
+        value = boxId porque es la clave real que pide /reports/cash-box/{boxId}.
+        Solo el número se muestra porque "CAJA 1" es lo que el cajero reconoce.
+      -->
       <div class="filter">
         <label>Caja</label>
-        <select [(ngModel)]="selectedCashId" (ngModelChange)="onCashSelected($event)">
+        <select [(ngModel)]="selectedBoxId" (ngModelChange)="onBoxSelected($event)">
           <option [ngValue]="null">Todas las cajas</option>
-          <option *ngFor="let c of cashHistory" [ngValue]="c.id">
-            {{ c.number || ('Caja #' + c.id) }}{{ c.active ? ' (abierta)' : '' }}
+          <option *ngFor="let b of cashBoxes" [ngValue]="b.id">
+            {{ b.number }}{{ b.active ? '' : ' (dada de baja)' }}
           </option>
         </select>
       </div>
@@ -168,50 +177,193 @@
       para que el costo real de cada producto quede guardado.
     </div>
 
-    <!-- V3: detalle de la caja elegida (sus ventas y su utilidad) -->
-    <div class="table-container fade-in" *ngIf="cashReport">
+    <!-- =========================================================================
+         HISTORIAL DE CAJA (V5)
+         =========================================================================
+         Antes esto era un "corte de caja": las filas de dinero en vertical
+         (Fondo, Ventas efectivo, Total, Utilidad) de UN turno.
+
+         Ahora es una TABLA con una fila por TURNO de la caja elegida. Tres
+         razones:
+
+           1. Una caja se abre varios días, y el corte mostraba solo el último.
+           2. Las filas de monto en vertical no se comparan entre turnos: para
+              ver "cómo le fue a CAJA 1 el lunes" había que memorizar el número.
+           3. El filtro de usuario va acá adentro, y un filtro necesita una tabla
+              debajo: sobre una lista de montos no se puede filtrar por vendedor.
+
+         Al hacer clic en una fila se despliega el detalle de sus ventas.
+    -->
+    <div class="table-container fade-in" *ngIf="cashBoxReport">
       <div class="table-card">
         <div class="table-title">
-          <h3>Caja {{ cashReport.number || ('#' + cashReport.cashId) }}</h3>
-          <span class="cash-meta" *ngIf="cashReport.active">ABIERTA</span>
+          <h3>
+            Caja {{ cashBoxReport.number }}
+            <span class="box-desc-inline" *ngIf="cashBoxReport.description">
+              — {{ cashBoxReport.description }}
+            </span>
+          </h3>
+          <span class="cash-meta" *ngIf="!cashBoxReport.active">DADA DE BAJA</span>
         </div>
 
-        <div class="corte-body">
-          <div class="corte-row"><span>Abierta</span><strong>{{ cashReport.openedAt | date:'dd/MM/yyyy HH:mm' }}</strong></div>
-          <div class="corte-row" *ngIf="cashReport.closedAt"><span>Cerrada</span><strong>{{ cashReport.closedAt | date:'dd/MM/yyyy HH:mm' }}</strong></div>
-          <div class="corte-row"><span>Fondo inicial</span><strong>${{ cashReport.openingAmount | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Ventas efectivo</span><strong>${{ cashReport.cashSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Ventas débito</span><strong>${{ cashReport.debitSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Ventas crédito</span><strong>${{ cashReport.creditSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row total"><span>Total ventas</span><strong>${{ cashReport.totalSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row total"><span>Utilidad de la caja</span><strong>${{ cashReport.grossProfit | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Tickets</span><strong>{{ cashReport.totalTickets }}</strong></div>
+        <!--
+          Filtro por USUARIO, dentro de la sección de caja.
+
+          La lista sale de `boxReportUsers`, que NO es el padrón de usuarios del
+          sistema: se arma con los que REALMENTE vendieron en esta caja (viene en
+          cada sesión como `sellers`). Motivo: en un local con 8 empleados,
+          ofrecer los 8 cuando solo 2 trabajan en esa caja produce 6 opciones
+          que devolverían una tabla vacía, y el usuario no puede distinguir
+          "no Filters" de "Juan no vendió en esta caja".
+
+          Puede haber VARIOS vendedores por caja (y por turno): no es un select
+          excluyente, es una lista de todos los que aparecen.
+        -->
+        <div class="table-filter-bar">
+          <div class="table-filter-field">
+            <label for="filtroUsuarioCaja">Usuario</label>
+            <select id="filtroUsuarioCaja" class="filter-select"
+                    [(ngModel)]="cashBoxUserFilter"
+                    (ngModelChange)="applyCashBoxUserFilter()">
+              <option [ngValue]="null">Todos los usuarios</option>
+<!--
+              🔑 trackBy en el *ngFor: sin él, Angular destruye y reconstruye
+              cada <option> en cada ciclo de detección de cambios, eso hace que
+              el ngModel re-emita ngModelChange, que dispara la petición HTTP,
+              que devuelve datos nuevos... y la página se queda colgada. Con
+              trackBy los nodos se reusan y el ciclo se corta.
+            -->
+            <option *ngFor="let u of boxReportUsers; trackBy: trackByUsuario"
+                    [ngValue]="u.userId">
+              {{ u.userName }}
+            </option>
+            </select>
+          </div>
+
+          <span class="caja-conteo" *ngIf="cashBoxReport.totalSessions !== cashBoxReport.sessions.length">
+            {{ cashBoxReport.sessions.length }} de {{ cashBoxReport.totalSessions }} turnos
+          </span>
         </div>
 
-        <div class="table-scroll" *ngIf="cashReport.sales.length">
-          <table>
+        <div class="table-scroll">
+          <table class="sesiones-table">
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Ticket</th>
-                <th>Método</th>
-                <th>Artículos</th>
-                <th>Total</th>
+                <th>Apertura</th>
+                <th>Cierre</th>
+                <th>Estado</th>
+                <th class="money">Fondo</th>
+                <th class="money">Ventas</th>
+                <th class="money">Diferencia</th>
+                <th class="money">Utilidad</th>
+                <th class="num">Tickets</th>
+                <th>Vendedores</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let s of cashReport.sales">
-                <td>{{ s.saleDate | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td>#{{ s.saleId }}</td>
-                <td>{{ s.paymentMethod }}</td>
-                <td>{{ s.items.length }}</td>
-                <td class="money">${{ s.total | number:'1.2-2' }}</td>
+              <tr *ngIf="cashBoxReport.sessions.length === 0">
+                <td colspan="9" class="empty-row">
+                  <ng-container *ngIf="cashBoxUserFilter === null; else filtroSinResultado">
+                    Esta caja todavía no tiene turnos.
+                  </ng-container>
+                  <ng-template #filtroSinResultado>
+                    Ningún turno de esta caja tiene ventas del usuario elegido.
+                  </ng-template>
+                </td>
               </tr>
+
+              <!--
+                Cada turno es una fila. El (click) abre/cierra el detalle de sus
+                ventas, igual que el detalle de Compras: es la interacción que
+                ya conoce el usuario en este sistema.
+              -->
+              <ng-container *ngFor="let s of cashBoxReport.sessions">
+                <tr class="sesion-row"
+                    [class.sesion-abierta]="s.active"
+                    [class.sesion-expandida]="sessionAbiertaId === s.sessionId"
+                    (click)="toggleSesion(s.sessionId)">
+
+                  <td>{{ s.openedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ s.closedAt ? (s.closedAt | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  <td>
+                    <span class="badge-sesion" [class.abierta]="s.active">
+                      {{ s.active ? 'Abierta' : 'Cerrada' }}
+                    </span>
+                  </td>
+                  <td class="money">${{ s.openingAmount | number:'1.2-2' }}</td>
+                  <td class="money">${{ s.totalSales | number:'1.2-2' }}</td>
+                  <!--
+                      La diferencia se OCULTA cuando hay filtros activos: es un
+                      dato congelado del cierre del turno completo, y al lado de
+                      un total filtrado mostraría un descuadre que no ocurrió.
+
+                      El ?? 0 es necesario porque `difference` es `number | null`
+                      (null cuando hay filtro), y comparar null < 0 en TypeScript
+                      es un error de tipos. Como esta celda solo se pinta cuando
+                      NO hay filtro, el 0 nunca se ve.
+                  -->
+                  <td class="money" *ngIf="!s.filtrado"
+                      [class.dif-negativa]="(s.difference ?? 0) < 0"
+                      [class.dif-positiva]="(s.difference ?? 0) > 0">
+                    {{ (s.difference ?? 0) > 0 ? '+' : '' }}{{ (s.difference ?? 0) | number:'1.2-2' }}
+                  </td>
+                  <td class="money" *ngIf="s.filtrado" title="Sin filtros, ver la diferencia del corte">—</td>
+                  <td class="money">${{ s.grossProfit | number:'1.2-2' }}</td>
+                  <td class="num">{{ s.totalTickets }}</td>
+                  <td class="vendedores">
+                    <!-- Varios por caja: se listan todos, no uno solo. -->
+                    <span class="vendedor" *ngFor="let v of s.sellers">
+                      {{ v.userName }}
+                      <span class="vendedor-total">({{ v.tickets }})</span>
+                    </span>
+                    <span class="vendedor" *ngIf="s.sellers.length === 0">Sin ventas</span>
+                  </td>
+                </tr>
+
+                <!-- Detalle de las ventas del turno -->
+                <tr *ngIf="sessionAbiertaId === s.sessionId" class="sesion-detalle-row">
+                  <td colspan="9">
+                    <div class="sesion-detalle">
+                      <div class="detalle-title">Ventas de este turno</div>
+
+                      <!-- El motivo del descuadre va con la diferencia: "me
+                           sobraron 200" y "me faltaron 200" son opuestos con el
+                           mismo número, y sin el texto no se sabe cuál fue. -->
+                      <p class="detalle-motivo" *ngIf="s.differenceReason">
+                        Descuadre: {{ (s.difference ?? 0) | number:'1.2-2' }} — {{ s.differenceReason }}
+                      </p>
+
+                      <table class="subtable">
+                        <thead>
+                          <tr>
+                            <th>Fecha</th>
+                            <th>Ticket</th>
+                            <th>Usuario</th>
+                            <th>Método</th>
+                            <th class="money">Artículos</th>
+                            <th class="money">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngIf="s.sales.length === 0">
+                            <td colspan="6" class="empty-row">Este turno no tiene ventas.</td>
+                          </tr>
+                          <tr *ngFor="let v of s.sales">
+                            <td>{{ v.saleDate | date:'dd/MM/yyyy HH:mm' }}</td>
+                            <td>#{{ v.saleId }}</td>
+                            <td>{{ v.userName || 'Sin usuario' }}</td>
+                            <td>{{ v.paymentMethod }}</td>
+                            <td class="money">{{ v.items.length }}</td>
+                            <td class="money">${{ v.total | number:'1.2-2' }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
             </tbody>
           </table>
-        </div>
-        <div class="empty-row" *ngIf="!cashReport.sales.length">
-          Esta caja no tiene ventas registradas.
         </div>
       </div>
     </div>

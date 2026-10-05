@@ -9,11 +9,14 @@ import { AuthService } from '../../core/service/auth-service/auth-service';
 // Importar el servicio compartido del sidebar
 import { SidebarService } from '../../core/service/sidebar-service/sidebar-service';
 import { SelectOnFocus } from '../../core/routes/directives/select-on-focus';
+import { PaginatePipe } from '../../core/pipes/paginate/paginate';
 import { aMayusculas, soloDigitos, soloDigitosYPunto } from '../../core/utils/validadores';
 
 @Component({
   selector: 'app-cobro',
-  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, SelectOnFocus],
+  // PaginatePipe: recorta la página visible del carrito (V6). Es el mismo pipe
+  // de los CRUDs, importado aquí para no duplicar la lógica de paginación.
+  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, SelectOnFocus, PaginatePipe],
   templateUrl: './cobro.html',
   styleUrl: './cobro.css',
 })
@@ -41,7 +44,9 @@ export class Cobro implements OnInit {
       this.sale.showPaymentModal ||
       this.sale.showCardModal ||
       this.sale.showWaitingModal ||
-      this.cash.showCreateCashModal ||
+      //El modal "Ver cajas" también cuenta: si no, la página de fondo se
+      //desplaza hacia los lados mientras está abierto (V4).
+      this.cash.showBoxesModal ||
       this.cash.showOpenCashModal ||
       this.cash.showCloseCashModal
     );

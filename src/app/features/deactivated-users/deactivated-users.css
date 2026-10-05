@@ -55,3 +55,45 @@
   background: linear-gradient(135deg, #6afd5d, #45ca39);
   transform: scale(1.05);
 }
+
+/* =========================================================================
+   Filtros de búsqueda y columnas de fecha (V5)
+   ========================================================================= */
+
+/*
+  Las columnas de fecha van centradas y sin partirse.
+
+  `white-space: nowrap` porque "01/10/2026" partido en dos líneas ("01/10/" y
+  "2026") hace la fila el doble de alta y obliga a leerla con cuidado. Y
+  `tabular-nums` para que las fechas queden alineadas entre sí: con la fuente
+  default los dígitos tienen anchos distintos y la columna se ve "desordenada".
+*/
+.user-table .fecha {
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+/* Botón "Limpiar filtros".
+   Reutiliza .deactivated-link (el mismo estilo ghost del botón "Ver
+   desactivados") para que la barra de filtros tenga un solo lenguaje visual.
+   Se le quita el margin-left:auto porque en una barra de filtros el botón va
+   pegado a los campos, no empujado al extremo derecho. */
+.limpiar-filtros {
+  margin-left: 0;
+  align-self: flex-end;
+}
+
+/* Aviso de usuarios sin fecha de baja.
+   Ámbar y no rojo: no es un error, es información ("estos usuarios son más
+   viejos que la columna de fecha"). */
+.aviso-sin-fecha {
+  margin: 0;
+  padding: 9px 15px;
+  background: rgba(245, 158, 11, 0.09);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.28);
+  color: #fcd34d;
+  font-size: 12.5px;
+}

@@ -106,6 +106,16 @@ export interface SaleDetailHistoryResponse {
   confirmedAt: string | null;
   cancelled: boolean;
   cancelledAt: string | null;
+
+  /**
+   * Usuario que registró la venta (V5).
+   *
+   * `null` en las ventas anteriores a V5: el dato nunca se guardó. La tabla
+   * muestra "Sin usuario" en vez de "-", para que se lea que es una ausencia
+   * real de información y no un campo vacío.
+   */
+  userId: number | null;
+  userName: string | null;
 }
 
 export interface SaleDetailResponse {
@@ -114,4 +124,70 @@ export interface SaleDetailResponse {
   unitPrice: number;
   unitCost: number;
   subtotal: number;
+}
+
+// =========================================================================
+//  HISTORIAL DE CAJA (V5)
+// =========================================================================
+//  Espejo de `CashBoxReportDTO.java`. Reemplaza a `CashReportDTO` en la
+//  pantalla: antes se reportaba UN TURNO suelto y ahora se reporta UNA CAJA con
+//  todos sus turnos adentro.
+
+/** Un usuario dentro de un turno, con lo que vendió ahí. */
+export interface CashSessionSeller {
+  /** null en las ventas anteriores a V5 (no tienen dueño). */
+  userId: number | null;
+  userName: string;
+  tickets: number;
+  total: number;
+}
+
+/** Un turno (apertura + cierre) de una caja. */
+export interface CashBoxSession {
+  sessionId: number;
+  /** Copia histórica del número de la caja en el momento de abrir. */
+  number: string;
+  openedAt: string;
+  closedAt: string | null;
+  active: boolean;
+
+  openingAmount: number;
+  closingAmount: number | null;
+  expectedAmount: number;
+
+  cashSales: number;
+  debitSales: number;
+  creditSales: number;
+  totalSales: number;
+
+  /**
+   * Diferencia del corte.
+   *
+   * Viene en `null` cuando hay filtros activos: es un dato congelado del
+   * cierre, y al lado de un total filtrado mostraría un descuadre que no
+   * ocurrió. Por eso la tabla usa `filtrado` para ocultar la columna en vez de
+   * pintar un cero engañoso.
+   */
+  difference: number | null;
+  differenceReason: string | null;
+
+  totalTickets: number;
+  grossProfit: number;
+
+  sellers: CashSessionSeller[];
+  sales: SaleDetailHistoryResponse[];
+
+  /** true = hay al menos un filtro aplicado a este reporte. */
+  filtrado: boolean;
+}
+
+/** Una caja física con todos sus turnos. */
+export interface CashBoxReportDTO {
+  boxId: number;
+  number: string;
+  description: string | null;
+  active: boolean;
+  sessions: CashBoxSession[];
+  /** Total de turnos SIN contar filtros: permite el "3 de 12 turnos". */
+  totalSessions: number;
 }

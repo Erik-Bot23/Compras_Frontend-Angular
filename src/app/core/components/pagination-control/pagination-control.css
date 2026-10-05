@@ -38,24 +38,55 @@
 
 /* Botones Anterior / Siguiente */
 .pagination-buttons button {
-  border: none;
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: #3b82f6;
-  color: white;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    /* inline-flex + gap: el <img> y el texto quedan en una fila centrada
+       vertical. Sin esto el icono se alinea con la linea base del texto y
+       parece que "cuelga" del botón. */
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/*
+  Flechas del botón (izquierda.png / derecha.png).
+
+  Los PNG fuente miden 512x512. Sin width/height explicitos el <img> se
+  renderiza a su tamaño natural y revienta el botón por dentro: por eso hace
+  falta fijarlos. 14px es el tamaño de un icono de texto pequeño; con
+  object-fit: contain mantiene su forma sin deformarse.
+*/
+.pagination-buttons button img {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    /* flex-shrink: 0 para que no se aplasten si el botón se encoge */
+    flex-shrink: 0;
+    /* Los iconos vienen en negro: se invierten para que se vean blancos
+       sobre el fondo azul del botón. Mismo truco que .menu-icon del sidebar. */
+    filter: brightness(0) invert(1);
+}
+
+/* Cuando el botón está deshabilitado, el icono también se apaga: si solo se
+   atenuara el fondo, la flecha seguiría en blanco puro y parecería clicable. */
+.pagination-buttons button:disabled img {
+    opacity: 0.5;
 }
 
 .pagination-buttons button:hover:not(:disabled) {
-  background: #2563eb;
+    background: #2563eb;
 }
 
 /* Deshabilitado en los extremos (primera/ultima pagina) */
 .pagination-buttons button:disabled {
-  background: #334155;
-  cursor: not-allowed;
-  opacity: 0.6;
+    background: #334155;
+    cursor: not-allowed;
+    opacity: 0.6;
 }

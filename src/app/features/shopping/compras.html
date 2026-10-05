@@ -330,30 +330,39 @@
         <div class="table-card">
           <div class="table-scroll">
             <table>
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>SKU</th>
-                  <th>Costo</th>
-                  <th>Precio</th>
-                  <th>Margen</th>
-                  <th>%</th>
-                </tr>
-              </thead>
+<!--
+              ALINEACIÓN (V5): los <th> de las columnas de monto llevan la misma
+              clase .money que sus <td>. Antes los títulos quedaban a la
+              izquierda y sus números a la derecha, así que "Costo" caía sobre el
+              espacio vacío y la tabla se veía corrida aunque los datos
+              estuvieran bien.
 
-              <tbody>
-                <tr *ngFor="let m of margins | paginate: page : pageSize">
-                  <td>{{ m.name }}</td>
-                  <td>{{ m.sku || '—' }}</td>
-                  <td class="money">${{ m.cost | number:'1.2-2' }}</td>
-                  <td class="money">${{ m.price | number:'1.2-2' }}</td>
-                  <td class="money">${{ m.margin | number:'1.2-2' }}</td>
-                  <td>
-                    <span class="badge-margin" [class.low]="m.marginPercent < 20" [class.mid]="m.marginPercent >= 20 && m.marginPercent < 40">
-                      {{ m.marginPercent.toFixed(1) }}%
-                    </span>
-                  </td>
-                </tr>
+              La columna del % (badge) se centra en título y en dato.
+            -->
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>SKU</th>
+                <th class="money">Costo</th>
+                <th class="money">Precio</th>
+                <th class="money">Margen</th>
+                <th class="pct">%</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let m of margins | paginate: page : pageSize">
+                <td>{{ m.name }}</td>
+                <td>{{ m.sku || '—' }}</td>
+                <td class="money">${{ m.cost | number:'1.2-2' }}</td>
+                <td class="money">${{ m.price | number:'1.2-2' }}</td>
+                <td class="money">${{ m.margin | number:'1.2-2' }}</td>
+                <td class="pct">
+                  <span class="badge-margin" [class.low]="m.marginPercent < 20" [class.mid]="m.marginPercent >= 20 && m.marginPercent < 40">
+                    {{ m.marginPercent.toFixed(1) }}%
+                  </span>
+                </td>
+              </tr>
 
                 <tr *ngIf="margins.length === 0">
                   <!-- colspan abarca las 6 columnas para que la fila vacia ocupe todo el ancho -->
@@ -400,21 +409,43 @@
            Costo compra  → lo que se le PAGA al proveedor (unit_cost)
            Precio venta  → a cuánto se va a VENDER (unit_price, escribe product.price
                            al confirmar; vacío = se conserva el precio actual) -->
+
+    <!--
+      PAGINACIÓN DEL CARRITO (V5)
+
+      Se pagina a propósito y no se deja crecer: una compra con 30 productos
+     变为 un modal de 2000px de alto que empuja el botón "Guardar" fuera de la
+      pantalla. Con 5 renglones por página el modal mantiene su tamaño y el pie
+      de paginación queda siempre visible.
+
+      `.lineas-scroll` da scroll interno: si los renglones no entran, el scroll
+      ocurre DENTRO del bloque y no en la página entera (que además está
+      bloqueada mientras hay un modal abierto, por `.modal-open`).
+    -->
     <div class="lineas">
-      <div class="linea-cabecera">
-        <span>Producto</span>
-        <span>Cantidad</span>
-        <span>Costo de compra</span>
-        <span>Precio de venta</span>
-        <span>Subtotal</span>
-        <span></span>
+      <div class="lineas-cabecera-wrap">
+        <div class="linea-cabecera">
+          <span>Producto</span>
+          <span>Cantidad</span>
+          <span>Costo de compra</span>
+          <span>Precio de venta</span>
+          <span>Subtotal</span>
+          <span></span>
+        </div>
       </div>
 
-      <div class="linea" *ngFor="let l of lineas; let i = index">
-        <select class="custom-select" [(ngModel)]="l.productId" (ngModelChange)="onProductoSeleccionado(l)">
-          <option [ngValue]="null">Producto...</option>
-          <option *ngFor="let prod of products" [ngValue]="prod.id">{{ prod.name }} (${{ prod.price }})</option>
-        </select>
+      <!--
+        El *ngFor usa `lineasPagina` (la página visible) en vez de `lineas`.
+        Y `i` es el índice DENTRO de la página, así que el índice real es
+        `lineasIndiceBase + i`: es lo que se pasa a quitarLinea(). Sin esa suma,
+        en la página 2 el primer botón borraría el renglón 1 (de la página 1).
+      -->
+      <div class="lineas-scroll">
+        <div class="linea" *ngFor="let l of lineasPagina; let i = index">
+          <select class="custom-select" [(ngModel)]="l.productId" (ngModelChange)="onProductoSeleccionado(l)">
+            <option [ngValue]="null">Producto...</option>
+            <option *ngFor="let prod of products" [ngValue]="prod.id">{{ prod.name }} (${{ prod.price }})</option>
+          </select>
 
         <!-- Cantidad: enteros. (keydown) bloquea la 'e' y el '.', que en un
              <input type="number"> producirían 1e5 o 1.5. -->
@@ -454,13 +485,40 @@
         <span class="linea-subtotal">${{ subtotal(l) }}</span>
 
         <!-- Botón de eliminar renglón. Se le da clase propia para poder darle
-             estilo sin afectar a los "delete" de toda la app. -->
-        <button type="button" class="delete delete-linea" (click)="quitarLinea(i)" title="Quitar este producto de la compra">
+             estilo sin afectar a los "delete" de toda la app.
+
+             (click) pasa lineasIndiceBase + i y NO i: `i` es el índice dentro de
+             la página visible, y quitarLinea() espera el índice real dentro de
+             `lineas`. Sin la suma, en la página 2 el primer botón borraría el
+             renglón de la página 1. -->
+        <button type="button" class="delete delete-linea" (click)="quitarLinea(lineasIndiceBase + i)" title="Quitar este producto de la compra">
           <img src="assets/icons/eliminar.png" alt="Eliminar producto">
         </button>
+        </div>
+      </div>
+
+      <!-- Pie de paginación del carrito. Solo aparece si hay más de una página:
+           con 3 productos, un "Página 1 de 1" es ruido visual. -->
+      <div class="lineas-paginacion" *ngIf="lineas.length > lineasPageSize">
+        <button type="button" class="lineas-flecha"
+                [disabled]="lineasPage === 0"
+                (click)="lineasPage = lineasPage - 1"
+                title="Renglones anteriores">Anterior</button>
+
+        <span class="lineas-contador">
+          Página {{ lineasPage + 1 }} de {{ lineasTotalPaginas }}
+          <span class="lineas-rango">({{ lineas.length }} producto{{ lineas.length === 1 ? '' : 's' }})</span>
+        </span>
+
+        <button type="button" class="lineas-flecha"
+                [disabled]="lineasPage >= lineasTotalPaginas - 1"
+                (click)="lineasPage = lineasPage + 1"
+                title="Renglones siguientes">Siguiente</button>
       </div>
     </div>
 
+    <!-- El icono (anadir.png) mide 512x512: sin la regla .add-linea img de
+         compras.css se vería gigante dentro del botón. -->
     <button type="button" class="add-linea" (click)="agregarLinea()"><img src="assets/icons/anadir.png" alt=""> Agregar producto</button>
 
     <div class="modal-total">

@@ -3,24 +3,34 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  CashBox,
   CashRegister,
   CashSummary,
-  CreateCashRequest,
-  OpenCashRequest,
+  CreateCashBoxRequest,
   CloseCashRequest,
   NextNumberResponse,
+  OpenCashRequest,
 } from '../../interfaces/cash-interface/cash-interface';
 
 /**
  * Cliente HTTP del módulo de caja.
  *
- * V3: la caja se crea antes de abrirse. Antes solo existía `openCash`,
- * que creaba la caja y le ponía el número en el mismo request. Ahora hay dos
- * pasos: `createCash` registra la caja física y `openCash` elige una de las ya
- * registradas. El motivo es que el número tiene que existir antes de abrir para
- * poder elegirlo de una lista.
+ * <p><b>El módulo tiene DOS recursos y no uno (V4).</b> Es la misma distinción
+ * que en el backend, y es importante no mezclarlos:
+ * <ul>
+ *   <li><b>Cajas</b> (`/cash/boxes`): el inventario de cajas físicas del local.
+ *       Son pocas y cambian poco. Es un CRUD: listar, crear, editar, dar de
+ *       baja y borrar (solo si nunca se abrió).</li>
+ *   <li><b>Turnos</b> (`/cash/open`, `/cash/close`, `/cash/active`,
+ *       `/cash/summary`, `/cash/history`): la apertura y el cierre. Nacen al
+ *       abrir y se congelan al cerrar.</li>
+ * </ul>
  *
- * Todos los métodos usan `environment.apiLocal` y NUNCA `environment.api`
+ * <p>Antes (V3) ambos vivían en la misma ruta y `createCash` creaba un
+ * "corte". Ahora una caja se puede abrir todos los días: cada apertura crea un
+ * turno nuevo.
+ *
+ * <p>Todos los métodos usan `environment.apiLocal` y NUNCA `environment.api`
  * directo: el prefijo correcto es el del dominio local del POS.
  */
 @Injectable({
@@ -32,17 +42,77 @@ export class CashService {
   constructor(private http: HttpClient) {}
 
   // =========================================================================
-  //  CREAR y ABRIR (V3)
+  //  CAJAS FÍSICAS (V4)
   // =========================================================================
 
-  /** Registra una caja física nueva. Queda sin abrir hasta que se abra. */
-  createCash(request: CreateCashRequest): Observable<CashRegister> {
-    return this.http.post<CashRegister>(this.apiUrl, request);
+  /**
+   * Registra una caja física nueva.
+   *
+   * <p>No abre un turno ni mueve dinero: solo la da de alta en el inventario.
+   * Abrir un turno es {@link openCash}.
+   */
+  createBox(request: CreateCashBoxRequest): Observable<CashBox> {
+    return this.http.post<CashBox>(`${this.apiUrl}/boxes`, request);
   }
 
-  /** Cajas nunca abiertas: las candidatas para abrir. */
-  getAvailable(): Observable<CashRegister[]> {
-    return this.http.get<CashRegister[]>(`${this.apiUrl}/available`);
+  /**
+   * Todas las cajas del local, incluidas las dadas de baja.
+   *
+   * <p>Alimenta la tabla "Ver cajas". Las dadas de baja vienen a propósito: se
+   * ven atenuadas y con su número de turnos.
+   */
+  getBoxes(): Observable<CashBox[]> {
+    return this.http.get<CashBox[]>(`${this.apiUrl}/boxes`);
+  }
+
+  /**
+   * Cajas que se pueden abrir ahora: activas y sin turno abierto.
+   *
+   * <p>Alimenta el selector de "Abrir caja". Ojo con el criterio: NO son "las
+   * que nunca se abrieron" (eso las excluiría para siempre después del primer
+   * turno), sino las que están libres en este momento.
+   */
+  getOpenableBoxes(): Observable<CashBox[]> {
+    return this.http.get<CashBox[]>(`${this.apiUrl}/boxes/openable`);
+  }
+
+  /** Edita número y descripción de una caja. */
+  updateBox(id: number, request: CreateCashBoxRequest): Observable<CashBox> {
+    return this.http.put<CashBox>(`${this.apiUrl}/boxes/${id}`, request);
+  }
+
+  /**
+   * Da de baja una caja: deja de ofrecerse al abrir, pero sus ventas y cortes
+   * siguen en el historial. Es reversible.
+   */
+  deactivateBox(id: number): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/boxes/${id}`, {});
+  }
+
+  /**
+   * Da de ALTA una caja que estaba dada de baja.
+   *
+   * <p>Reactivar la MISMA caja: conserva su número y todo su historial, no crea
+   * una nueva. Por eso el número no queda libre para reutilizar.
+   */
+  activateBox(id: number): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/boxes/${id}/active`, {});
+  }
+
+  /**
+   * Borra una caja. Solo funciona si NUNCA se abrió.
+   *
+   * <p>Si ya tuvo cortes, el backend responde 409 con un mensaje que dice "dala
+   * de baja". Por eso el template solo muestra este botón cuando
+   * `sessionsCount === 0`.
+   */
+  deleteBox(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/boxes/${id}`);
+  }
+
+  /** Historial de una caja: un corte por turno, de la más reciente a la más antigua. */
+  getBoxHistory(id: number): Observable<CashRegister[]> {
+    return this.http.get<CashRegister[]>(`${this.apiUrl}/boxes/${id}/history`);
   }
 
   /** Sugerencia del backend para el número siguiente ("CAJA 7"). */
@@ -50,23 +120,26 @@ export class CashService {
     return this.http.get<NextNumberResponse>(`${this.apiUrl}/next-number`);
   }
 
+  // =========================================================================
+  //  TURNOS (abrir / cerrar)
+  // =========================================================================
+
   /**
-   * Abre una caja YA registrada con el fondo inicial indicado.
+   * Abre un turno con una caja física ya registrada.
    *
-   * El fondo tiene un mínimo de 100 en el backend; aquí solo se avisa para no
-   * mandar una petición que va a ser rechazada.
+   * <p>El fondo tiene un mínimo de 100 en el backend; el facade lo avisa antes
+   * para no mandar una petición que ya se sabe que va a ser rechazada.
+   *
+   * <p>La misma caja puede volver a abrirse en otro día: cada llamada crea un
+   * turno nuevo.
    */
   openCash(openingAmount: number, number: string): Observable<CashRegister> {
     const body: OpenCashRequest = { openingAmount, number };
     return this.http.post<CashRegister>(`${this.apiUrl}/open`, body);
   }
 
-  // =========================================================================
-  //  CERRAR
-  // =========================================================================
-
   /**
-   * Cierra la caja.
+   * Cierra el turno.
    *
    * @param closingAmount efectivo contado por el cajero
    * @param differenceReason motivo del descuadre. El backend lo exige (409) si
@@ -78,23 +151,25 @@ export class CashService {
   }
 
   // =========================================================================
-  //  Consultas
+  //  Consultas de turno
   // =========================================================================
 
+  /** El turno abierto ahora mismo. 404 si no hay ninguno. */
   getActiveCash(): Observable<CashRegister> {
     return this.http.get<CashRegister>(`${this.apiUrl}/active`);
   }
 
+  /** Resumen del corte del turno abierto (lo que va a la hoja de corte). */
   getSummary(): Observable<CashSummary> {
     return this.http.get<CashSummary>(`${this.apiUrl}/summary`);
   }
 
-  /** Historial completo, la más reciente primero. Alimenta el filtro de Reportes. */
+  /** Historial de turnos, la más reciente primero. Alimenta el filtro de Reportes. */
   getHistory(): Observable<CashRegister[]> {
     return this.http.get<CashRegister[]>(`${this.apiUrl}/history`);
   }
 
-  /** Una caja por su número. El número va codificado porque puede llevar espacios. */
+  /** Un turno por su número. El número va codificado porque puede llevar espacios. */
   getByNumber(number: string): Observable<CashRegister> {
     return this.http.get<CashRegister>(`${this.apiUrl}/number/${encodeURIComponent(number)}`);
   }

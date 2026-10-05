@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import {
+  CashBox,
   CashRegister,
   CashSummary,
 } from '../../../core/interfaces/cash-interface/cash-interface';
+import { CashBoxForm, CreateCashBoxRequest } from '../../../core/interfaces/cash-interface/cash-interface';
 import { CashService } from '../../../core/service/cash-service/cash-service';
 import { AuthService } from '../../../core/service/auth-service/auth-service';
 import { validarPrecio } from '../../../core/utils/validadores';
@@ -35,30 +37,58 @@ export class CashFacade {
   showOpenCashModal = false;
   openingAmount = 0;
 
-  /**
-   * Caja elegida para abrir. Se llena con `GET /cash/available`, que devuelve solo
-   * las que nunca se abrieron (una caja es un turno y no se reutiliza).
-   */
-  selectedCashNumber = '';
+/**
+    * Caja elegida para abrir. Se llena con `GET /cash/boxes/openable`, que
+    * devuelve las cajas activas que NO tienen un turno abierto ahora mismo.
+    *
+    * <p>Ya no son "las que nunca se abrieron": como una caja se puede abrir
+    * todos los días, el criterio es "¿está libre ahora?".
+    */
+   selectedCashNumber = '';
 
-  /** Cajas nunca abiertas, para el selector. */
-  availableCash: CashRegister[] = [];
+   /**
+    * Cajas que se pueden abrir ahora, para el selector de "Abrir caja".
+    *
+    * <p>Es un {@link CashBox} (una caja física) y no un {@link CashRegister}
+    * (un corte): lo que se elige al abrir es la caja, y el corte lo crea el
+    * backend al abrir.
+    */
+   openableBoxes: CashBox[] = [];
 
-  // ===== Modal de CREAR caja (V3) =====
-  showCreateCashModal = false;
+   // ===== Modal de CERRAR caja =====
+   showCloseCashModal = false;
+   closingAmount = 0;
 
-  /** Número nuevo, precargado con la sugerencia del backend ("CAJA 7"). */
-  newCashNumber = '';
+   /**
+    * Motivo del descuadre (V3). Se muestra SOLO cuando el dinero no cuadra, y sin
+    * él el backend rechaza el cierre con 409.
+    */
+   differenceReason = '';
 
-  // ===== Modal de CERRAR caja =====
-  showCloseCashModal = false;
-  closingAmount = 0;
+   // =========================================================================
+   //  CAJAS FÍSICAS (V4)
+   // =========================================================================
 
-  /**
-   * Motivo del descuadre (V3). Se muestra SOLO cuando el dinero no cuadra, y sin
-   * él el backend rechaza el cierre con 409.
-   */
-  differenceReason = '';
+   /**
+    * Todas las cajas del local, incluidas las dadas de baja.
+    *
+    * <p>Alimenta la tabla "Ver cajas". Las dadas de baja se incluyen a propósito:
+    * se muestran atenuadas y con su número de turnos, que es la información que
+    * justifica por qué no se pueden borrar.
+    */
+   boxes: CashBox[] = [];
+
+   /** Modal "Ver cajas". */
+   showBoxesModal = false;
+
+   /** Caja de la tabla que se está editando; null = creando una nueva. */
+   editingBoxId: number | null = null;
+
+   /** Borrador del formulario de alta/edición, que vive dentro de la tabla. */
+   boxForm: CashBoxForm = { number: '', description: '' };
+
+   /** Muestra u oculta el mini-formulario de la tabla. */
+   showBoxForm = false;
 
   // ===== Contador en vivo (punto 5.5) =====
   /**
@@ -109,83 +139,16 @@ export class CashFacade {
     this.userName = this.authService.getUsername();
   }
 
-  // ======================================================================
-  //  CREAR caja (V3)
-  // ======================================================================
+// ======================================================================
+   //  ABRIR caja (V4: se elige una caja FÍSICA libre)
+   // ======================================================================
 
-  /**
-   * Abre el modal de crear caja con el número ya sugerido.
-   *
-   * Se pide la sugerencia al backend para que el usuario no tenga que contar
-   * cuántas cajas hay. Si el request falla, se cae a "CAJA 1" y el usuario
-   * escribe lo que quiera: el modal nunca se queda vacío.
-   */
-  openCreateCashModal() {
-    this.newCashNumber = '';
-
-    this.cashService.getNextNumber().subscribe({
-      next: (r) => (this.newCashNumber = r.suggestedNumber),
-      error: () => (this.newCashNumber = 'CAJA 1'),
-    });
-
-    this.showCreateCashModal = true;
-  }
-
-  /** Cierra el modal de crear caja sin hacer nada. */
-  closeCreateCashModal() {
-    this.showCreateCashModal = false;
-    this.newCashNumber = '';
-  }
-
-  /**
-   * Crea la caja con el número escrito.
-   *
-   * Si el backend responde 409 (número repetido) el modal NO se cierra y se
-   * muestra el mensaje, para que el usuario corrija el número sin perder lo que
-   * llevaba escrito.
-   */
-  confirmCreateCash() {
-    const numero = (this.newCashNumber || '').trim().toUpperCase();
-
-    if (!numero) {
-      alert('El número de caja es obligatorio.');
-      return;
-    }
-
-    this.cashService.createCash({ number: numero }).subscribe({
-      next: () => {
-        this.closeCreateCashModal();
-        this.cargarDisponibles();
-        alert(`Caja ${numero} creada. Ya puedes abrirla.`);
-      },
-      error: (err) => alert(err.error?.message || 'No se pudo crear la caja'),
-    });
-  }
-
-  // ======================================================================
-  //  ABRIR caja (V3: se elige una ya registrada)
-  // ======================================================================
-
-  openCashModal() {
-    this.openingAmount = this.MIN_OPENING;
-    this.selectedCashNumber = '';
-    this.cargarDisponibles();
-    this.showOpenCashModal = true;
-  }
-
-  /** Carga las cajas que todavía no se abrieron, para el selector. */
-  cargarDisponibles() {
-    this.cashService.getAvailable().subscribe({
-      next: (cajas) => {
-        this.availableCash = cajas;
-        //Si solo hay una, se preselecciona: es el caso común y ahorra un clic.
-        if (cajas.length === 1) {
-          this.selectedCashNumber = cajas[0].number;
-        }
-      },
-      error: () => (this.availableCash = []),
-    });
-  }
+   openCashModal() {
+     this.openingAmount = this.MIN_OPENING;
+     this.selectedCashNumber = '';
+     this.loadOpenableBoxes();
+     this.showOpenCashModal = true;
+   }
 
   confirmOpenCashModal() {
     // ===== Validaciones antes de llamar al backend =====
@@ -210,10 +173,10 @@ export class CashFacade {
       alert(errorPrecio.error);
       return;
     }
-    if (!this.selectedCashNumber) {
-      alert('Elige qué caja vas a abrir. Si no hay ninguna, crea una primero.');
-      return;
-    }
+if (!this.selectedCashNumber) {
+       alert('Elige qué caja vas a abrir. Si no hay ninguna libre, crea una desde "Ver cajas".');
+       return;
+     }
 
     this.showOpenCashModal = false;
 
@@ -358,4 +321,187 @@ export class CashFacade {
   get activeNumber(): string {
     return this.cashStatus?.number ?? '';
   }
+
+  // =========================================================================
+   //  CAJAS FÍSICAS (V4)
+   // =========================================================================
+
+   /**
+    * Abre la tabla "Ver cajas" y la carga.
+    *
+    * <p>El alta y la edición NO viven en un modal aparte: el formulario se abre
+    * dentro de la tabla, para que se vea la caja que se está editando.
+    */
+   openBoxesModal() {
+     this.loadBoxes();
+     this.showBoxesModal = true;
+   }
+
+   closeBoxesModal() {
+     this.showBoxesModal = false;
+     this.showBoxForm = false;
+     this.editingBoxId = null;
+   }
+
+   loadBoxes() {
+     this.cashService.getBoxes().subscribe({
+       next: (data) => (this.boxes = data),
+       error: () => (this.boxes = []),
+     });
+   }
+
+   /**
+    * Empieza a CREAR una caja nueva. El número viene sugerido por el backend
+    * ("CAJA 7") para que el usuario no tenga que contar cuántas hay.
+    *
+    * <p>Se pide la sugerencia al abrir el formulario y no al abrir la tabla: si
+    * el request falla se cae a "CAJA 1" y el usuario escribe lo que quiera. El
+    * formulario nunca se queda vacío.
+    */
+   startNewBox() {
+     this.editingBoxId = null;
+     this.boxForm = { number: '', description: '' };
+     this.showBoxForm = true;
+
+     this.cashService.getNextNumber().subscribe({
+       next: (r) => (this.boxForm.number = r.suggestedNumber),
+       error: () => (this.boxForm.number = 'CAJA 1'),
+     });
+   }
+
+   /** Empieza a EDITAR una caja de la tabla. */
+   startEditBox(caja: CashBox) {
+     this.editingBoxId = caja.id;
+     this.boxForm = { number: caja.number, description: caja.description ?? '' };
+     this.showBoxForm = true;
+   }
+
+   /** Cierra el mini-formulario sin guardar. */
+   cancelBoxForm() {
+     this.showBoxForm = false;
+     this.editingBoxId = null;
+   }
+
+   /**
+    * Guarda la caja: crea si {@link editingBoxId} es null, actualiza si no.
+    *
+    * <p>Si el backend responde 409 (número repetido) el formulario NO se cierra
+    * y se muestra el mensaje, para que el usuario corrija sin perder lo escrito.
+    */
+   saveBox() {
+     const numero = (this.boxForm.number || '').trim().toUpperCase();
+
+     if (!numero) {
+       alert('El número de caja es obligatorio.');
+       return;
+     }
+
+     const request: CreateCashBoxRequest = {
+       number: numero,
+       description: (this.boxForm.description || '').trim() || null,
+     };
+
+     const peticion =
+       this.editingBoxId === null
+         ? this.cashService.createBox(request)
+         : this.cashService.updateBox(this.editingBoxId, request);
+
+     peticion.subscribe({
+       next: () => {
+         this.cancelBoxForm();
+         this.loadBoxes();
+         this.loadOpenableBoxes();
+       },
+       error: (err) => alert(err.error?.message || 'No se pudo guardar la caja'),
+     });
+   }
+
+   /**
+    * Da de baja una caja: deja de ofrecerse al abrir, pero sus ventas y sus
+    * cortes siguen en el historial.
+    *
+    * <p>Es la operación de siempre, y es reversible. Para borrar hace falta que
+    * la caja nunca se haya abierto, y eso lo decide el backend (409).
+    */
+   deactivateBox(caja: CashBox) {
+     if (!confirm(`¿Dar de baja la caja "${caja.number}"? Dejará de ofrecerse al abrir, pero sus ventas siguen en el historial.`)) {
+       return;
+     }
+
+     this.cashService.deactivateBox(caja.id).subscribe({
+       next: () => {
+         this.loadBoxes();
+         this.loadOpenableBoxes();
+       },
+       error: (err) => alert(err.error?.message || 'No se pudo dar de baja la caja'),
+     });
+   }
+
+   /**
+    * Borra una caja, pero SOLO si nunca se abrió.
+    *
+    * <p>Si ya tuvo cortes, el backend responde 409 y el mensaje dice "dala de
+    * baja". Por eso el template solo muestra el botón de borrar cuando
+    * {@code sessionsCount === 0}: en cualquier otro caso el botón no podría
+    * funcionar y sería una promesa que el sistema no puede cumplir.
+    */
+   deleteBox(caja: CashBox) {
+     if (!confirm(`¿Eliminar la caja "${caja.number}"? Solo es posible si nunca se abrió.`)) {
+       return;
+     }
+
+     this.cashService.deleteBox(caja.id).subscribe({
+       next: () => {
+         this.loadBoxes();
+         this.loadOpenableBoxes();
+       },
+       error: (err) => alert(err.error?.message || 'No se pudo eliminar la caja'),
+     });
+   }
+
+   /**
+   * Da de ALTA una caja que estaba dada de baja (V5).
+   *
+   * <p>No borra nada ni crea una caja nueva: es la MISMA caja, con su mismo
+   * número y su mismo historial, la que vuelve a ofrecerse al abrir. Por eso el
+   * número no puede reutilizarse para otra caja (está ocupado por esta fila).
+   *
+   * <p>Es lo que hace que "dar de baja" sea reversible: si se dio de baja por
+   * error, o porque una caja se estaba reparando y ya terminó, hay salida.
+   */
+  activateBox(caja: CashBox) {
+    if (!confirm(`¿Dar de alta la caja "${caja.number}"? Volverá a ofrecerse al abrir y conserva todo su historial.`)) {
+      return;
+    }
+
+    this.cashService.activateBox(caja.id).subscribe({
+      next: () => {
+        this.loadBoxes();
+        this.loadOpenableBoxes();
+      },
+      error: (err) => alert(err.error?.message || 'No se pudo dar de alta la caja'),
+    });
+  }
+
+  /**
+    * Carga las cajas que se pueden abrir ahora (activas y sin turno abierto).
+    *
+    * <p>Si solo hay una, se preselecciona: es el caso de un local con dos cajas
+    * donde casi siempre se usa la misma, y ahorra un clic.
+    */
+   loadOpenableBoxes() {
+     this.cashService.getOpenableBoxes().subscribe({
+       next: (data) => {
+         this.openableBoxes = data;
+
+         // Si la caja seleccionada ya no está libre (alguien la abrió), se
+         // limpia: mandar un número que el backend va a rechazar solo produce
+         // un 409 confuso.
+         if (!data.some((c) => c.number === this.selectedCashNumber)) {
+           this.selectedCashNumber = data.length === 1 ? data[0].number : '';
+         }
+       },
+       error: () => (this.openableBoxes = []),
+     });
+   }
 }

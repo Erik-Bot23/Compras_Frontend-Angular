@@ -113,6 +113,44 @@
 }
 
 /* ==========================================================================
+   Alineación de las columnas con sus datos (V5)
+   ==========================================================================
+   El problema era que los <th> de las columnas de monto NO tenían la clase
+   .money: quedaban a la izquierda mientras sus <td class="money"> iban a la
+   derecha. El resultado visual era una tabla "corrida" — el título "Total" caía
+   sobre el espacio vacío y el número en otro punto de la fila — aunque los
+   datos estuvieran perfectamente alineados entre sí.
+
+   La regla general: si una columna tiene datos alineados a la derecha, su
+   título también. Por eso .money se aplica a <th> y a <td> por igual.
+
+   padding-right: 18px en el <th> lo pone a la misma altura que sus celdas: sin
+   él el título quedaría pegado al borde derecho de la tabla, a distinta
+   distancia del número que le corresponde. */
+
+/* Número de ticket: centrado.
+   Es un identificador, no una cantidad: centrarlo lo hace más fácil de escanear
+   en vertical que si estuviera pegado a la izquierda junto al nombre. */
+.col-id {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fecha: sin partirse.
+   "04/10/2026 14:30" partido en dos líneas duplica la altura de la fila y
+   obliga a leerla con cuidado; además el ancho de columna quedaría sucio. */
+.col-fecha {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Los <th> de monto heredan .money (derecha + tabulares), pero el padding-right
+   tiene que calzar con el de las celdas. */
+th.money {
+  padding-right: 18px;
+}
+
+/* ==========================================================================
    Ciclo de vida de la venta: badge de ESTADO, botones y fila anulada (2026-09-30)
    ========================================================================== */
 

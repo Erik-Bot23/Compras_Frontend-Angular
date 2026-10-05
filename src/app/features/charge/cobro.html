@@ -89,12 +89,13 @@
                             Caja cerrada
                         </div>
 
-                        <!-- Punto 5.3: "Crear caja" es una acción separada de
-                             "Abrir". Registrar la caja física una sola vez y luego
-                             abrir la que toque. -->
+                        <!-- V4: "Crear caja" ya no es un botón suelto. El alta de una caja física
+     vive DENTRO de la tabla "Ver cajas", que es donde se ve la caja que se
+     está dando de alta o editando. Aquí solo quedan las dos acciones de
+     trabajo del cajero: consultar el inventario y abrir un turno. -->
                         <div class="cash-acciones">
-                            <button *hasPermission="'ABRIR_CAJA'" class="btn-cash create" (click)="cash.openCreateCashModal()">
-                                Crear caja
+                            <button *hasPermission="'VER_CAJA'" class="btn-cash boxes" (click)="cash.openBoxesModal()">
+                                Ver cajas
                             </button>
                             <button *hasPermission="'ABRIR_CAJA'" class="btn-cash open" (click)="cash.openCashModal()">
                                 Abrir caja
@@ -119,7 +120,16 @@
                 </thead>
 
                 <tbody>
-                    <tr *ngFor="let item of sale.cobroItems$ | async">
+                    <!-- PAGINACIÓN DEL CARRITO (V6)
+                         El pipe `paginate` recorta la página visible. Los paréntesis
+                         alrededor del `async` son obligatorios: sin ellos Angular
+                         lee `(a | async) | paginate` como `a | (async | paginate)`,
+                         que no existe.
+
+                         Es el MISMO PaginatePipe de los CRUDs, no uno nuevo: ya
+                         sabe recortar una página fuera de rango si el carrito
+                         se quedó corto. -->
+                    <tr *ngFor="let item of (sale.cobroItems$ | async) | paginate: sale.cartPage : sale.cartPageSize">
                         <td>{{ item.product.name }}</td>
                         <td>{{ item.unitPrice }}</td>
                         <td>{{ item.quantity }}</td>
@@ -140,8 +150,52 @@
                             </button>
                         </td>
                     </tr>
+
+                    <!-- Carrito vacío: mensaje en vez de una tabla de 0 filas.
+                         Antes esto no se mostraba nada, y con la paginación el
+                         hueco sería todavía más notorio. -->
+                    <tr *ngIf="!(sale.cobroItems$ | async)?.length">
+                        <td colspan="5" class="cart-vacio">
+                            No hay productos en el carrito
+                        </td>
+                    </tr>
                 </tbody>
             </table>
+
+            <!-- Pie de paginación del carrito.
+                 Solo aparece con MÁS de cartPageSize productos: en una venta de
+                 dos o tres productos un control de paginación es ruido, y el
+                 botón "Cobrar" de abajo es lo que importa. -->
+            <div class="cart-paginacion"
+                 *ngIf="((sale.cobroItems$ | async) ?? []).length > sale.cartPageSize">
+                <span class="cart-rango">
+                    Mostrando {{ sale.cartDesde }}–{{ sale.cartHasta }} de {{ sale.cartTotalItems }}
+                </span>
+
+                <div class="cart-paginacion-botones">
+                    <!-- Los botones se deshabilitan en los extremos: no es solo
+                         cosmético, `cartPage` quedaría en un número inválido y
+                         el pipe tendría que recortarlo por su cuenta. -->
+                    <button type="button" class="cart-flecha"
+                            [disabled]="sale.cartPage === 0"
+                            (click)="sale.cartPage = sale.cartPage - 1">
+                        <img src="assets/icons/izquierda.png" alt=""> Anterior
+                    </button>
+
+                    <span class="cart-pagina">
+                        <!-- `cartPage + 1` y no el getter `cartPaginaValida`: este
+                             es el número de página tal como está el estado, que
+                             es lo que el botón Anterior/Siguiente mueve. -->
+                        Página {{ sale.cartPage + 1 }} de {{ sale.cartTotalPages }}
+                    </span>
+
+                    <button type="button" class="cart-flecha"
+                            [disabled]="sale.cartPage >= sale.cartTotalPages - 1"
+                            (click)="sale.cartPage = sale.cartPage + 1">
+                        Siguiente <img src="assets/icons/derecha.png" alt="">
+                    </button>
+                </div>
+            </div>
 
             <div class="total">
                 Total: ${{ sale.total$ | async }}
@@ -207,12 +261,21 @@
                     </ng-container>
 
                     <!--Botones-->
+                    <!--
+                        El botón se DESHABILITA mientras hay un cobro en vuelo
+                        (V6). Es la barrera visible: le dice al cajero que el
+                        cobro ya está en marcha y evita el segundo clic.
+
+                        Ojo: esto solo es la primera barrera. Si las dos
+                        peticiones ya salieron a la red, el botón ya no ayuda;
+                        de eso se encarga la clave de idempotencia en el backend.
+                    -->
                     <div class="modal-buttons">
-                        <button type="submit">
-                            Confirmar pago
+                        <button type="submit" [disabled]="sale.isProcessing">
+                            {{ sale.isProcessing ? 'Cobrando…' : 'Confirmar pago' }}
                         </button>
 
-                        <button type="button" (click)="sale.closeModalCobro()">
+                        <button type="button" (click)="sale.closeModalCobro()" [disabled]="sale.isProcessing">
                             Cancelar
                         </button>
                     </div>
@@ -303,66 +366,197 @@
             </div>
 
             <!-- ============================================================
-                 Modal de CREAR CAJA (V3, punto 5.3)
-                 Registra la caja física con su número. Queda sin abrir: después
-                 se abre eligiéndola. Se separa de "Abrir" porque el número tiene
-                 que existir antes para poder elegirlo de una lista.
+                 Modal "VER CAJAS" (V4)
+                 Es un CRUD del inventario de cajas del local. El formulario de
+                 alta/edición vive DENTRO de la tabla, que es lo que pidió el
+                 dueño: se ve la caja y se edita en el sitio, sin abrir un modal
+                 encima del modal.
+
+                 Este modal REEMPLAZA al de "Crear caja" de V3: el alta ya no es
+                 un modal propio, es el formulario de esta tabla.
                  ============================================================ -->
-            <div class="modal-backdrop" *ngIf="cash.showCreateCashModal">
-                <form (ngSubmit)="cash.confirmCreateCash()" class="modal">
-                    <h3>Crear caja</h3>
+            <div class="modal-backdrop" *ngIf="cash.showBoxesModal">
+                <div class="modal boxes-modal">
+                    <h3>Cajas del local</h3>
 
                     <p class="modal-ayuda">
-                        Registra la caja antes de abrirla. El número identifica el
-                        corte en los reportes, así que no se puede repetir.
+                        Estas son las cajas físicas. Cada una se puede abrir y cerrar
+                        muchas veces, en distintos días. Aquí solo se registran.
                     </p>
 
-                    <!-- El número llega precargado con la sugerencia del backend
-                         ("CAJA 7") para no tener que contar cuántas hay. Se pasa a
-                         mayúsculas al escribir porque "caja 1" y "CAJA 1" son la
-                         misma caja y el UNIQUE de la base las trataría como dos. -->
-                    <input
-                        type="text"
-                        name="newCashNumber"
-                        [(ngModel)]="cash.newCashNumber"
-                        (input)="aMayusculas($event)"
-                        placeholder="CAJA 1"
-                        maxlength="50"
-                        required
-                        appSelectOnFocus
-                    >
+                    <!-- Formulario de alta/edición, DENTRO de la tabla -->
+                    <form class="box-form" *ngIf="cash.showBoxForm" (ngSubmit)="cash.saveBox()">
+                        <input
+                            type="text"
+                            name="boxNumber"
+                            [(ngModel)]="cash.boxForm.number"
+                            (input)="aMayusculas($event)"
+                            placeholder="CAJA 1"
+                            maxlength="50"
+                            appSelectOnFocus
+                        >
+                        <input
+                            type="text"
+                            name="boxDescription"
+                            [(ngModel)]="cash.boxForm.description"
+                            placeholder="Descripción (opcional)"
+                            maxlength="255"
+                            appSelectOnFocus
+                        >
+                        <div class="button-box">
+                            <button class="btn-confirm-open" type="submit">
+                                {{ cash.editingBoxId === null ? 'Crear' : 'Guardar' }}
+                            </button>
+                            <button class="btn-cancel" type="button" (click)="cash.cancelBoxForm()">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
 
+                    <!-- La tabla -->
+                    <div class="modal-body">
+                        <!--
+                            ALINEACIÓN (V5): cada <th> lleva la misma clase que
+                            sus <td>.
+                            - "Turnos" es un número: centrado.
+                            - "Último" es una fecha: sin partirse.
+                            - La última columna (acciones) va a la derecha, igual
+                              que sus botones. Con justify-content: flex-end en
+                              la celda, sin alinear el título, los botones
+                              quedaban bajo el centro en vez de bajo su columna.
+                        -->
+                        <table class="boxes-table">
+                            <thead>
+                                <tr>
+                                    <th class="caja-col">Caja</th>
+                                    <th class="turnos-col">Turnos</th>
+                                    <th class="fecha-col">Último</th>
+                                    <th class="acciones-col"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngIf="cash.boxes.length === 0">
+                                    <td colspan="4" class="empty-boxes">
+                                        No hay cajas registradas. Crea la primera.
+                                    </td>
+                                </tr>
+
+                                <tr *ngFor="let b of cash.boxes" [class.box-inactive]="!b.active">
+                                    <td class="caja-col">
+                                        <strong>{{ b.number }}</strong>
+                                        <div class="box-desc" *ngIf="b.description">{{ b.description }}</div>
+                                        <span class="badge-baja" *ngIf="!b.active">Dada de baja</span>
+                                        <span class="badge-uso" *ngIf="b.inUse">En uso</span>
+                                    </td>
+                                    <td class="turnos-col">{{ b.sessionsCount }}</td>
+                                    <td class="fecha-col">
+                                        {{ b.lastOpenedAt ? (b.lastOpenedAt | date:'dd/MM/yyyy HH:mm') : '—' }}
+                                    </td>
+                                    <td class="boxes-actions">
+                                        <!--
+                                            Las acciones van envueltas en un ng-container porque
+                                            *hasPermission es ESTRUCTURAL (usa TemplateRef y
+                                            ViewContainer): no puede compartir elemento con un
+                                            *ngIf. Por eso el permiso va afuera y la condición
+                                            de cada botón adentro.
+                                        -->
+                                        <ng-container *hasPermission="'ABRIR_CAJA'">
+                                            <button type="button" class="btn-edit"
+                                                    (click)="cash.startEditBox(b)">Editar</button>
+
+                                            <!--
+                                                Solo se muestra "Borrar" si la caja nunca se
+                                                abrió (sessionsCount === 0).
+
+                                                No es una decisión de diseño: es la regla del
+                                                backend. Con turnos, DELETE devuelve 409 porque
+                                                sus ventas quedan colgando de la caja y borrar
+                                                dejaría el historial de esos cortes
+                                                inalcanzable. Mostrar un botón que el
+                                                sistema no puede cumplir es una promesa falsa.
+                                            -->
+                                            <button type="button" class="btn-del"
+                                                    *ngIf="b.sessionsCount === 0"
+                                                    (click)="cash.deleteBox(b)"
+                                                    title="Borrar la caja: nunca se abrió, no hay historial que perder">Borrar</button>
+
+                                            <!--
+                                                "Dar de baja" aparece en dos casos distintos y
+                                                por eso son DOS botones, no uno con condición
+                                                mixta:
+                                                  · tiene cortes → NO se puede borrar, solo
+                                                    dejar de ofrecerse al abrir.
+                                                  · no tiene cortes → tampoco interesa
+                                                    borrarla a mano; el borrado ya está
+                                                    disponible arriba.
+                                            -->
+                                            <button type="button" class="btn-baja"
+                                                    *ngIf="b.sessionsCount > 0 && b.active"
+                                                    (click)="cash.deactivateBox(b)"
+                                                    title="Dar de baja: deja de ofrecerse al abrir, pero sus ventas siguen en el historial">Dar de baja</button>
+
+                                            <!--
+                                                DAR DE ALTA (V5): una caja dada de baja se puede
+                                                rehabilitar. El botón NO borra nada ni crea una
+                                                caja nueva: es la MISMA caja, con su mismo número
+                                                y su mismo historial, la que vuelve a ofrecerse.
+
+                                                Es lo que hace que "dar de baja" sea reversible y
+                                                no una decisión definitiva. El número sigue
+                                                ocupado por esta fila, así que no puede
+                                                reutilizarse para otra caja.
+                                            -->
+                                            <button type="button" class="btn-alta"
+                                                    *ngIf="!b.active"
+                                                    (click)="cash.activateBox(b)"
+                                                    title="Volver a ofrecer esta caja. Conserva su número y todo su historial">Dar de alta</button>
+                                        </ng-container>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+<!-- Pie del modal: el botón de crear vive AQUÍ.
+         El icono (anadir.png) mide 512x512: sin la regla .btn-confirm-open img
+         de cobro.css se vería gigante dentro del botón. -->
                     <div class="button-box">
-                        <button class="btn-confirm-open" type="submit">Crear</button>
-                        <button class="btn-cancel" type="button" (click)="cash.closeCreateCashModal()">
-                            Cancelar
+                        <button *hasPermission="'ABRIR_CAJA'" class="btn-confirm-open" type="button"
+                                (click)="cash.startNewBox()">
+                            <img src="assets/icons/anadir.png" alt="">Crear caja
+                        </button>
+                        <button class="btn-cancel" type="button" (click)="cash.closeBoxesModal()">
+                            Cerrar
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
 
             <!-- ============================================================
-                 Modal de ABRIR caja (V3, punto 5.3)
-                 Ahora se ELIGE una caja ya registrada en vez de crearla.
+                 Modal de ABRIR caja (V4)
+                 Ahora se ELIGE una caja FÍSICA libre. La misma caja puede
+                 abrirse de nuevo en otro día: cada apertura crea un turno
+                 nuevo.
                  ============================================================ -->
             <div class="modal-backdrop" *ngIf="cash.showOpenCashModal">
                 <form (ngSubmit)="cash.confirmOpenCashModal()" class="modal">
                     <h3>Abrir caja</h3>
 
-                    <!-- Selector de caja. Solo trae las que NUNCA se abrieron
-                         (GET /cash/available): una caja es un turno, y reabrir
-                         "CAJA 1" mezclaría dos cortes distintos en el mismo
-                         reporte. -->
+                    <!-- Selector de caja. Solo trae las cajas LIBRES ahora mismo
+                         (GET /cash/boxes/openable): activas y sin un turno
+                         abierto. No son "las que nunca se abrieron": como una caja
+                         se abre todos los días, ese criterio las excluiría para
+                         siempre después de su primer turno. -->
                     <label class="modal-label">Caja a abrir</label>
                     <select name="selectedCashNumber" [(ngModel)]="cash.selectedCashNumber" class="modal-select">
                         <option [ngValue]="null">Selecciona una caja...</option>
-                        <option *ngFor="let c of cash.availableCash" [ngValue]="c.number">
+                        <option *ngFor="let c of cash.openableBoxes" [ngValue]="c.number">
                             {{ c.number }}
                         </option>
                     </select>
 
-                    <p class="modal-ayuda" *ngIf="cash.availableCash.length === 0">
-                        No hay cajas disponibles. Crea una primero con "Crear caja".
+                    <p class="modal-ayuda" *ngIf="cash.openableBoxes.length === 0">
+                        No hay cajas libres. Crea una desde "Ver cajas".
                     </p>
 
                     <!-- Fondo inicial. Mínimo $100: una caja con menos no alcanza

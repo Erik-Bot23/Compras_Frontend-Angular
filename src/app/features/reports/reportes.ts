@@ -21,6 +21,7 @@ import { SidebarService } from '../../core/service/sidebar-service/sidebar-servi
 import { ReportService, ReportGroup } from '../../core/service/report-service/report-service';
 import { CashService } from '../../core/service/cash-service/cash-service';
 import {
+  CashBoxReportDTO,
   CashReportDTO,
   CategoryPerformanceDTO,
   LowStockDTO,
@@ -31,7 +32,7 @@ import {
   ReportsSummaryDTO,
   TopProductDTO,
 } from '../../core/interfaces/reports/reports';
-import { CashRegister, CashSummary } from '../../core/interfaces/cash-interface/cash-interface';
+import { CashBox, CashSummary } from '../../core/interfaces/cash-interface/cash-interface';
 
 Chart.register(...registerables);
 
@@ -64,16 +65,112 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   cashSummary!: CashSummary;
   profit!: ProfitDTO;
 
-  //Historial de cajas para el selector. Es CashRegister[] (NO CashReportDTO):
-  //getHistory() devuelve la lista de cajas; el detalle con ventas y utilidad
-  //de UNA caja es CashReportDTO y llega aparte, al elegirla.
-  cashHistory: CashRegister[] = [];
+  // =========================================================================
+  //  HISTORIAL DE CAJA (V5)
+  // =========================================================================
 
-  //Id de la caja elegida en el filtro (null = todas)
-  selectedCashId: number | null = null;
+  /**
+   * Cajas FÍSICAS para el selector, no turnos.
+   *
+   * <p>Es `CashBox[]` y antes era `CashRegister[]`. La diferencia no es
+   * estética: una caja abierta cinco veces produce cinco filas en
+   * `cashHistory`, así que el dropdown mostraba "CAJA 1" cinco veces y el
+   * usuario no podía distinguir los turnos entre sí.
+   */
+  cashBoxes: CashBox[] = [];
 
-  //Detalle de la caja elegida: sus ventas y su utilidad
-  cashReport: CashReportDTO | null = null;
+  /** Id de la caja elegida en la barra de filtros (null = ninguna elegida). */
+  selectedBoxId: number | null = null;
+
+  /** La caja elegida con TODAS sus sesiones. Llega al elegirla. */
+  cashBoxReport: CashBoxReportDTO | null = null;
+
+  /**
+   * Filtro por usuario DENTRO de la sección de caja (null = todos).
+   *
+   * <p>Es el mismo patrón que `selectedBoxId`: se aplica en el backend y por eso
+   * hay que volver a pedir el reporte. Un filtro solo en el frontend obligaría a
+   * traer todas las ventas de todos los turnos para descartar la mayoría en el
+   * navegador.
+   */
+  cashBoxUserFilter: number | null = null;
+
+  /**
+   * Último filtro de usuario que se aplicó de verdad al backend.
+   *
+   * <p>Existe SOLO para comparar: si el `ngModel` re-emite el mismo valor (por
+   * ejemplo porque las opciones se re-renderizaron), esta guarda evita repetir
+   * la petición. Sin ella, el ciclo render → `ngModelChange` → request →
+   * render deja la página colgada.
+   */
+  private usuarioAplicado: number | null = null;
+
+  /**
+   * Vendedores que aparecen en esta caja, para alimentar el filtro de usuario.
+   *
+   * <p>Se arma con los `sellers` de las sesiones, NO con el padrón de usuarios
+   * del sistema: son los que de verdad vendieron ahí. Con la lista completa, en
+   * un local con 8 empleados, 6 opciones darían una tabla vacía sin poder
+   * distinguir "sin resultados" de "este usuario no vendió aquí".
+   *
+   * 🔑 <b>POR QUÉ ES UN ARREGLO GUARDADO Y NO UN GETTER.</b> Con un getter que
+   * devuelve `[...mapa.values()].sort(...)`, cada ciclo de detección de cambios
+   * produce un array NUEVO con objetos NUEVOS. El `*ngFor` de los `<option>` no
+   * tiene `trackBy`, así que destruye y reconstruye todas las opciones en cada
+   * ciclo; eso hace que `ngModel` re-emita `ngModelChange`, que dispara la
+   * petición HTTP, que devuelve datos nuevos, que vuelven a crear el array... y
+   * la página se queda colgada.
+   *
+   * <p>Guardarlo en una propiedad y recalcularlo solo cuando llega el reporte
+   * corta el ciclo por la raíz, en vez de intentarfrenarlo en la plantilla.
+   */
+  boxReportUsers: { userId: number | null; userName: string }[] = [];
+
+  /**
+   * Recalcula `boxReportUsers` a partir del reporte recibido.
+   *
+   * <p>Se llama UNA vez por respuesta HTTP, nunca desde la plantilla.
+   */
+  private recalcularUsuariosDeLaCaja() {
+    if (!this.cashBoxReport) {
+      this.boxReportUsers = [];
+      return;
+    }
+
+    const porId = new Map<number | null, { userId: number | null; userName: string }>();
+
+    for (const sesion of this.cashBoxReport.sessions) {
+      for (const v of sesion.sellers) {
+        // set() y no add(): el mismo vendedor aparece en varios turnos y en el
+        // dropdown solo debe salir una vez.
+        porId.set(v.userId, { userId: v.userId, userName: v.userName });
+      }
+    }
+
+    // Null (sin usuario) al final: es el caso excepcional, no el principal.
+    this.boxReportUsers = [...porId.values()].sort((a, b) => {
+      if (a.userId === null) return 1;
+      if (b.userId === null) return -1;
+      return a.userName.localeCompare(b.userName);
+    });
+  }
+
+  /**
+   * `trackBy` del `*ngFor` de usuarios.
+   *
+   * <p>Segunda barrera contra el mismo problema: con `trackBy` Angular REUSSA los
+   * nodos del DOM cuando la identidad del objeto no cambia, en vez de recrear
+   * cada `<option>`. El id del usuario es la identidad correcta aquí.
+   *
+   * <p>Para el caso sin usuario (id null) se usa una etiqueta fija, porque
+   * `null` no sirve como clave de `trackBy` ( Angular lo trata como valor vacío).
+   */
+  trackByUsuario(userId: number | null): string {
+    return userId === null ? 'sin-usuario' : String(userId);
+  }
+
+  /** Id del turno cuyo detalle de ventas está desplegado (null = ninguno). */
+  sessionAbiertaId: number | null = null;
 
   // ------- Gráficas (solo navegador, SSR no soporta canvas) -------
   private trendChart?: Chart;
@@ -97,7 +194,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit() {
     this.applyFilters();
     this.loadCashSummary();
-    this.loadCashHistory();
+    this.loadCashBoxes();
   }
 
   ngAfterViewInit() {
@@ -390,45 +487,113 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // ============================================================
-  //  V3: Historial de cajas y detalle por caja (filtro)
+  //  V5: Historial de CAJA con sus sesiones (filtro)
   // ============================================================
 
   /**
-   * Carga la lista de cajas para el selector "filtrar por caja".
+   * Carga las cajas FÍSICAS para el selector de la barra de filtros.
    *
-   * El selector queda vacío sin romper la pantalla: si el usuario no tiene
-   * VER_CAJA, el backend responde 403 y los reportes de utilidad siguen
-   * funcionando. Por eso el error se traga en vez de avisar.
+   * <p>El error se traga a propósito: sin permiso VER_CAJA el backend responde
+   * 403, y el resto de los reportes (utilidad, ventas, gráficas) debe seguir
+   * funcionando. Un toast de error por un filtro opcional sería ruido.
    */
-  loadCashHistory() {
-    this.cashService.getHistory().subscribe({
-      next: (data) => (this.cashHistory = data),
-      error: () => (this.cashHistory = []),
+  loadCashBoxes() {
+    this.cashService.getBoxes().subscribe({
+      next: (data) => (this.cashBoxes = data),
+      error: () => (this.cashBoxes = []),
     });
   }
 
   /**
    * Se dispara al elegir una caja en el filtro (o "todas").
    *
-   * Con null se limpia la selección y el reporte vuelve al periodo completo.
-   * Con un id se pide el detalle de ESA caja: sus ventas y su utilidad. Se usa
-   * un 404 tolerado porque una caja recién borrada no debe romper la pantalla.
+   * <p>Al cambiar de caja se limpian el filtro de usuario y el turno desplegado:
+   * si no, se quedaría un `userId` que pertenece a la caja anterior y la tabla
+   * saldría vacía sin motivo aparente.
    */
-  onCashSelected(cashId: number | null) {
-    if (cashId === null || cashId === undefined) {
-      this.clearCashSelection();
+  onBoxSelected(boxId: number | null) {
+    this.cashBoxUserFilter = null;
+    this.usuarioAplicado = null;
+    this.sessionAbiertaId = null;
+
+    if (boxId === null || boxId === undefined) {
+      this.clearBoxSelection();
       return;
     }
 
-    this.cashReport = null; //limpia el anterior mientras carga el nuevo
-    this.reportService.getCashReport(cashId).subscribe({
-      next: (data) => (this.cashReport = data),
-      error: () => (this.cashReport = null),
+    // Se limpian primero para que la tabla anterior no quede visible mientras
+    // carga la nueva: ver los datos de CAJA 1 bajo el título de CAJA 2 sería
+    // peor que no mostrar nada.
+    this.cashBoxReport = null;
+    this.boxReportUsers = [];
+    this.loadCashBoxReport(boxId);
+  }
+
+  /** Cambia el filtro de usuario y recarga el reporte de la caja. */
+  applyCashBoxUserFilter() {
+    if (this.selectedBoxId === null) return;
+
+    // 🔑 Tercera barrera contra el ciclo infinito: si el valor no CAMBIÓ, no se
+    // pide nada. Sin esta guarda, cualquier re-emisión del `ngModel` (por
+    // ejemplo al re-renderizar las opciones) volvería a disparar el request.
+    if (this.cashBoxUserFilter === this.usuarioAplicado) return;
+
+    this.usuarioAplicado = this.cashBoxUserFilter;
+    this.sessionAbiertaId = null;
+    this.cashBoxReport = null;
+    this.loadCashBoxReport(this.selectedBoxId);
+  }
+
+  /**
+   * Pide el reporte de UNA caja con sus sesiones.
+   *
+   * <p>Los filtros de usuario y fechas van al backend: si se filtrara en el
+   * navegador habría que traer las ventas de todos los turnos para descartar la
+   * mayoría, y los totales de la tabla no coincidirían con los del backend.
+   *
+   * <p>El rango de fechas es el de la barra de filtros general: son los mismos
+   * "Desde/Hasta" de arriba y así el usuario no tiene dos juegos de fechas que
+   * se pisen.
+   */
+  private loadCashBoxReport(boxId: number) {
+    this.reportService.getCashBoxReport(boxId, {
+      from: this.from,
+      to: this.to,
+      userId: this.cashBoxUserFilter,
+    }).subscribe({
+      next: (data) => {
+        this.cashBoxReport = data;
+        // La lista de vendedores se recalcula AQUÍ y no en un getter: ver la nota
+        // de `boxReportUsers` sobre por qué eso congela la página si se hace al
+        // revés.
+        this.recalcularUsuariosDeLaCaja();
+      },
+      // 404 tolerado: la caja se pudo dar de baja o borrar entre la carga de la
+      // lista y el clic. No debe romper la pantalla.
+      error: () => {
+        this.cashBoxReport = null;
+        this.boxReportUsers = [];
+      },
     });
   }
 
-  clearCashSelection() {
-    this.selectedCashId = null;
-    this.cashReport = null;
+  /**
+   * Despliega u oculta el detalle de ventas de un turno.
+   *
+   * <p>Solo uno a la vez: `sessionAbiertaId` es un id, no una lista. Con dos
+   * turnos abiertos a la vez la tabla duplicaría su alto y se perdería de vista
+   * de qué turno es cada bloque.
+   */
+  toggleSesion(sessionId: number) {
+    this.sessionAbiertaId = this.sessionAbiertaId === sessionId ? null : sessionId;
+  }
+
+  clearBoxSelection() {
+    this.selectedBoxId = null;
+    this.cashBoxReport = null;
+    this.cashBoxUserFilter = null;
+    this.usuarioAplicado = null;
+    this.sessionAbiertaId = null;
+    this.boxReportUsers = [];
   }
 }

@@ -53,12 +53,25 @@
           <table>
             <thead>
               <tr>
-                <th>#</th>
-                <th>Fecha</th>
+                <!--
+                  ALINEACIÓN (V5): cada <th> lleva la misma clase de alineación
+                  que sus <td>. Antes los títulos de las columnas de monto
+                  quedaban a la izquierda mientras sus números iban a la derecha
+                  (clase .money), así que "Total" caía sobre el espacio vacío y
+                  el número en otra columna: la tabla se veía corrida aunque los
+                  datos estuvieran bien.
+
+                  - .col-id    → centrado, el número de ticket es un identificador
+                  - .col-fecha → sin partirse, "04/10/2026 14:30" en dos líneas
+                                hace la fila el doble de alta
+                  - .money     → derecha con dígitos tabulares, igual que los datos
+                -->
+                <th class="col-id">#</th>
+                <th class="col-fecha">Fecha</th>
                 <th>Método de pago</th>
-                <th>Efectivo</th>
-                <th>Cambio</th>
-                <th>Total</th>
+                <th class="money">Efectivo</th>
+                <th class="money">Cambio</th>
+                <th class="money">Total</th>
                 <!--
                   PUNTO 2 DEL ENCARGO: se quitaron las columnas "Estado" y
                   "Acciones" (2026-09-30).
@@ -86,8 +99,9 @@
 
               <tr *ngFor="let sale of filteredSales | paginate: page : pageSize"
                   [class.row-cancelled]="isAnulada(sale)">
-                <td>{{ sale.id }}</td>
-                <td>{{ sale.saleDate | date:'dd/MM/yyyy HH:mm' }}</td>
+                <!-- Las clases de columna son las mismas que en el <th> (V5). -->
+                <td class="col-id">{{ sale.id }}</td>
+                <td class="col-fecha">{{ sale.saleDate | date:'dd/MM/yyyy HH:mm' }}</td>
                 <!-- Badge de color segun el metodo de pago (estilos en salehistory.css) -->
                 <td>
                   <span class="method-badge"

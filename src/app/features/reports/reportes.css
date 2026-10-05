@@ -481,3 +481,235 @@
   padding-left: 12px;
   color: #fde68a !important;
 }
+
+/* =========================================================================
+   HISTORIAL DE CAJA (V5) — tabla de sesiones
+   =========================================================================
+   Reemplaza el "corte de caja", que eran filas de monto en vertical. Ahora cada
+   turno es una FILA, y las filas se comparan entre sí de un vistazo: ese es el
+   motivo del cambio (ver el comentario del HTML).
+*/
+
+.sesiones-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  /* min-width fuerza scroll horizontal en .table-scroll en vez de estirar la
+     tabla hasta romper las columnas en pantallas angostas. */
+  min-width: 900px;
+}
+
+/* Cabecera: se pega arriba al hacer scroll vertical, porque si no se pierde
+   la referencia de qué columna se está leyendo a mitad de la lista. */
+.sesiones-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid #334155;
+}
+
+.sesiones-table thead th.money {
+  text-align: right;
+}
+
+.sesiones-table thead th.num {
+  text-align: center;
+}
+
+.sesiones-table tbody td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #1e293b;
+  color: #e2e8f0;
+}
+
+/* Fila de turno: clicable, así que parece interactiva.
+   El cursor pointer + el hover lo dicen sin necesidad de un botón. */
+tr.sesion-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+tr.sesion-row:hover {
+  background: rgba(79, 140, 255, 0.07);
+}
+
+/* Ya abierta: el fondo la distingue de las cerradas. */
+tr.sesion-row.sesion-expandida {
+  background: rgba(79, 140, 255, 0.12);
+}
+
+/* Turno abierto (aún no se ha cerrado el corte). Se marca con una barra verde
+   a la izquierda: es el único dato del turno que cambia según su estado y hay
+   que verlo sin leer la columna. */
+tr.sesion-row.sesion-abierta td:first-child {
+  border-left: 3px solid #22c55e;
+}
+
+/* Montos alineados a la derecha con dígitos de ancho fijo (tabular-nums): sin
+   esto los $LOBALS no encajan en columna y la tabla se ve "desordenada" aunque
+   los números estén bien. */
+.sesiones-table .money {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sesiones-table .num {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Diferencia del corte: verde si sobró, roja si faltó. "Me sobraron 200" y "me
+   faltaron 200" son opuestos con el mismo número, así que el color es lo que
+   los distingue a simple vista. */
+.sesiones-table .dif-positiva {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.sesiones-table .dif-negativa {
+  color: #f87171;
+  font-weight: 600;
+}
+
+/* Badge de estado del turno */
+.badge-sesion {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #475569;
+  color: #e2e8f0;
+}
+
+.badge-sesion.abierta {
+  background: #22c55e;
+  color: #0f172a;
+}
+
+/* Lista de vendedores del turno.
+   `inline-flex` + `gap` en vez de `,`: los nombres quedan separados por un
+   espacio uniforme y no pegados al margen. */
+.vendedores {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 260px;
+}
+
+.vendedor {
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  font-size: 11px;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+/* Los tickets de cada vendedor van entre paréntesis y atenuados: el nombre es
+   el dato principal, el conteo es secundario. */
+.vendedor-total {
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fila del detalle desplegado (colspan) */
+tr.sesion-detalle-row td {
+  background: #0a1424;
+  padding: 12px 14px;
+  border-bottom: 1px solid #334155;
+}
+
+.sesion-detalle {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* Motivo del descuadre, dentro del detalle. Ámbar: es una anomalía, no un
+   error de sistema. */
+.detalle-motivo {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-left: 3px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #fde68a;
+}
+
+/* La tabla de ventas dentro del detalle reutiliza el mismo lenguaje visual que
+   el detalle de renglones de Compras (subtabla + título). */
+.sesion-detalle .detalle-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.sesion-detalle .subtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: #0f172a;
+  border: 1px solid #263449;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.sesion-detalle .subtable th {
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 6px 9px;
+  text-align: left;
+  border-bottom: 1px solid #1e293b;
+}
+
+.sesion-detalle .subtable td {
+  padding: 6px 9px;
+  border-bottom: 1px solid #1e293b;
+  color: #e2e8f0;
+}
+
+.sesion-detalle .subtable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Descripción de la caja junto al número, en el título de la tabla. */
+.box-desc-inline {
+  font-size: 13px;
+  font-weight: 400;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* "3 de 12 turnos": avisa que hay turnos ocultos por el filtro, para que el
+   usuario no crea que la caja solo tiene 3. */
+.caja-conteo {
+  margin-left: auto;
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+/* La columna de tiempo no debe partirse: "04/10/2026 14:30" en dos líneas hace
+   la fila el doble de alta y es más difícil de escanear. */
+.sesiones-table tbody td:first-child,
+.sesiones-table tbody td:nth-child(2) {
+  white-space: nowrap;
+}

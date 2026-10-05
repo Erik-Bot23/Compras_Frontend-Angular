@@ -11,6 +11,11 @@ import { Pipe, PipeTransform } from '@angular/core';
  * - page y pageSize se pasan DESPUES de ':' en el orden en que se declaran en
  *   el transform: primero la lista, luego page y luego pageSize.
  *
+ * - Acepta <b>null</b> y <b>undefined</b> a proposito, no por descuido: el pipe
+ *   `async` devuelve `null` antes de que llegue el primer valor, asi que una
+ *   firma `T[]` obliga a escribir `| async ?? []` en cada template. El tipo
+ *   refleja lo que el codigo YA hace en la primera linea del transform.
+ *
  * Proteccion de pagina fuera de rango:
  *   Si se borra el ultimo item de una pagina, "page" quedaria apuntando a una
  *   pagina que ya no existe. Con Math.min/Math.max se recorta a la ultima
@@ -18,7 +23,7 @@ import { Pipe, PipeTransform } from '@angular/core';
  */
 @Pipe({ name: 'paginate', standalone: true })
 export class PaginatePipe implements PipeTransform {
-  transform<T>(items: T[], page: number, pageSize: number): T[] {
+  transform<T>(items: T[] | null | undefined, page: number, pageSize: number): T[] {
     // Lista vacia o nula → se devuelve tal cual (evita errores).
     if (!items?.length) {
       return items ?? [];

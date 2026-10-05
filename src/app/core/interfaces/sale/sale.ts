@@ -12,6 +12,18 @@ export interface SaleRequest {
   paymentMethod: PaymentMethod;
   cashReceived?: number;
   items: SaleItemRequest[]; //Un arreglo con los atributos de la interface SaleItemRequest
+
+  /**
+   * Clave de idempotencia del cobro (V6).
+   *
+   * <p>La genera el frontend UNA vez por cada cobro y se repite en todas las
+   * peticiones de ese cobro. Si el backend ya tiene una venta con esta clave,
+   * devuelve esa en vez de crear otra: es lo que evita que un doble "Enter" en
+   * el modal de cobro descuente el stock dos veces y genere dos tickets.
+   *
+   * <p>Opcional para no romper a un cliente que no la mande.
+   */
+  idempotencyKey?: string;
   cardPayment?: CardPaymentRequest; //Para pagos con tarjetas
 }
 

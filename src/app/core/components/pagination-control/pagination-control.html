@@ -11,10 +11,10 @@
 
   <!-- Controles de navegacion -->
   <div class="pagination-buttons">
-    <button type="button" [disabled]="currentPage <= 0" (click)="prev()">← Anterior</button>
+    <button type="button" [disabled]="currentPage <= 0" (click)="prev()"><img src="assets/icons/izquierda.png"> Anterior</button>
 
     <span class="pagination-page">Página {{ currentPage + 1 }} de {{ totalPages }}</span>
 
-    <button type="button" [disabled]="currentPage >= totalPages - 1" (click)="next()">Siguiente →</button>
+    <button type="button" [disabled]="currentPage >= totalPages - 1" (click)="next()">Siguiente <img src="assets/icons/derecha.png"></button>
   </div>
 </div>
