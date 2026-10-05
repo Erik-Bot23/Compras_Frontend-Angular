@@ -162,40 +162,21 @@
                 </tbody>
             </table>
 
-            <!-- Pie de paginación del carrito.
-                 Solo aparece con MÁS de cartPageSize productos: en una venta de
-                 dos o tres productos un control de paginación es ruido, y el
-                 botón "Cobrar" de abajo es lo que importa. -->
-            <div class="cart-paginacion"
-                 *ngIf="((sale.cobroItems$ | async) ?? []).length > sale.cartPageSize">
-                <span class="cart-rango">
-                    Mostrando {{ sale.cartDesde }}–{{ sale.cartHasta }} de {{ sale.cartTotalItems }}
-                </span>
+            <!-- Pie de paginacion del carrito.
+                 Es el MISMO componente que usan productos, categorias, usuarios
+                 roles (<app-pagination>), para que el POS no tenga un paginador
+                 distinto al resto del sistema.
 
-                <div class="cart-paginacion-botones">
-                    <!-- Los botones se deshabilitan en los extremos: no es solo
-                         cosmético, `cartPage` quedaría en un número inválido y
-                         el pipe tendría que recortarlo por su cuenta. -->
-                    <button type="button" class="cart-flecha"
-                            [disabled]="sale.cartPage === 0"
-                            (click)="sale.cartPage = sale.cartPage - 1">
-                        <img src="assets/icons/izquierda.png" alt=""> Anterior
-                    </button>
-
-                    <span class="cart-pagina">
-                        <!-- `cartPage + 1` y no el getter `cartPaginaValida`: este
-                             es el número de página tal como está el estado, que
-                             es lo que el botón Anterior/Siguiente mueve. -->
-                        Página {{ sale.cartPage + 1 }} de {{ sale.cartTotalPages }}
-                    </span>
-
-                    <button type="button" class="cart-flecha"
-                            [disabled]="sale.cartPage >= sale.cartTotalPages - 1"
-                            (click)="sale.cartPage = sale.cartPage + 1">
-                        Siguiente <img src="assets/icons/derecha.png" alt="">
-                    </button>
-                </div>
-            </div>
+                 El `total` sale del async pipe y NO de un getter: el componente
+                 pide el numero de registros que hay en TOTAL, no los de la
+                 pagina visible. Un getter que leyera el carrito ya recortado
+                 haria que la paginacion nocould avanzar. -->
+            <app-pagination
+                [total]="(sale.cobroItems$ | async)?.length ?? 0"
+                [pageSize]="sale.cartPageSize"
+                [page]="sale.cartPage"
+                (pageChange)="sale.cartPage = $event">
+            </app-pagination>
 
             <div class="total">
                 Total: ${{ sale.total$ | async }}
@@ -478,7 +459,7 @@
                                             <button type="button" class="btn-del"
                                                     *ngIf="b.sessionsCount === 0"
                                                     (click)="cash.deleteBox(b)"
-                                                    title="Borrar la caja: nunca se abrió, no hay historial que perder">Borrar</button>
+                                                    title="Borrar la caja: nunca se abrió, no hay historial que perder">Eliminar</button>
 
                                             <!--
                                                 "Dar de baja" aparece en dos casos distintos y

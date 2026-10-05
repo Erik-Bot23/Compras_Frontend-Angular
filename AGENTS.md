@@ -95,6 +95,39 @@ src/app/
 
 ## Registro de cambios / decisiones
 
+### 2026-10-04 (2) — V7: los campos obligatorios se avisan en el campo, no al enviar
+
+> Encargo: que no se guarden como `null` el nombre de categoría, de usuario,
+> correo, contraseña, de rol, SKU, barcode y nombre/RFC de proveedor.
+> Contraparte backend: `Compras-Backend/AGENTS.md` sesión 2026-10-04 (2) +
+> `V7__campos_obligatorios.sql`.
+> Verificado con `npx ng build` en verde y con 12 peticiones reales a la API.
+
+**Qué cambió acá**: casi nada, y eso es lo correcto. El backend es el que
+impone la obligatoriedad; el frontend solo tiene que **avisar antes**.
+
+#### 1. `validarSku()` y `validarBarcode()` ya no aceptan vacío
+
+Estaban en `core/utils/validadores.ts` con `if (!codigo) return ok()`, porque
+el 2026-09-28 se decidió que eran opcionales. Ahora devuelven
+`fail('El SKU es obligatorio.')`.
+
+🔑 **El motivo de tocar el frontend aunque el backend ya devuelve 400**: sin
+esto el usuario llena todo el formulario, aprieta **Guardar** y solo entonces
+se le avisa que falta el SKU. La validación de cliente vale por **señalar
+DÓNDE** está el error, no por evitar el error: el que lo evita es el backend.
+
+#### 2. Lo que NO se tocó, y por qué
+
+Categoría, rol, usuario y proveedor **ya mandaban sus campos** y sus
+formularios ya exigían nombre, correo y contraseña. Se verificó campo por campo
+antes de cambiar nada: tocar un formulario que ya funciona introduce regresiones
+a cambio de nada.
+
+🔑 El único hueco real del lado del cliente era el del PUT de usuario, y se
+corrigió **en el backend** (`UserImpl.updateUser` copiaba el texto crudo), no
+acá: el formulario sí mandaba los valores, lo que faltaba era no creérselo.
+
 ### 2026-10-04 — V6: el doble Enter del modal de cobro ya no cobra dos veces
 
 > Encargo: que confirmar la venta con doble Enter no genere dos ventas, y

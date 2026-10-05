@@ -63,7 +63,12 @@ function tieneExponente(valor: string): boolean {
 export function validarSku(valor: string): ValidationResult {
   const codigo = (valor || '').trim().toUpperCase();
 
-  if (!codigo) return ok(); //el SKU es opcional
+  // V7: el SKU pasó a OBLIGATORIO (antes era opcional). El backend ya devuelve
+  // 400 con "El SKU es obligatorio", pero si el frontend lo acepta como válido
+  // el usuario llena todo el formulario, aprieta Guardar y solo entonces se le
+  // avisa. Aquí se marca el campo en rojo al instante, que es lo que hace útil
+  // la validación del cliente: señalar DÓNDE está el error.
+  if (!codigo) return fail('El SKU es obligatorio.');
 
   if (codigo.length > MAX_SKU_LENGTH) {
     return fail(`El SKU no puede tener más de ${MAX_SKU_LENGTH} caracteres (lleva ${codigo.length}).`);
@@ -103,7 +108,10 @@ export function validarRfc(valor: string): ValidationResult {
 export function validarBarcode(valor: string): ValidationResult {
   const codigo = (valor || '').trim();
 
-  if (!codigo) return ok();
+  // V7: el código de barras pasó a OBLIGATORIO. Mismo motivo que en el SKU: el
+  // backend ya lo rechaza, pero aquí el error se ve en el campo y no después
+  // de enviar todo el formulario.
+  if (!codigo) return fail('El código de barras es obligatorio.');
 
   if (!/^[0-9]+$/.test(codigo)) {
     return fail('El código de barras solo admite números');

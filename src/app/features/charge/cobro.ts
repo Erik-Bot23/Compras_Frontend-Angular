@@ -10,13 +10,23 @@ import { AuthService } from '../../core/service/auth-service/auth-service';
 import { SidebarService } from '../../core/service/sidebar-service/sidebar-service';
 import { SelectOnFocus } from '../../core/routes/directives/select-on-focus';
 import { PaginatePipe } from '../../core/pipes/paginate/paginate';
+import { PaginationControl } from '../../core/components/pagination-control/pagination-control';
 import { aMayusculas, soloDigitos, soloDigitosYPunto } from '../../core/utils/validadores';
 
 @Component({
   selector: 'app-cobro',
-  // PaginatePipe: recorta la página visible del carrito (V6). Es el mismo pipe
-  // de los CRUDs, importado aquí para no duplicar la lógica de paginación.
-  imports: [CommonModule, FormsModule, Sidebar, HasPermissionDirectives, SelectOnFocus, PaginatePipe],
+  // PaginatePipe: recorta la página visible del carrito (V6).
+  // PaginationControl: el pie de paginación, el MISMO de productos, categorías,
+  // usuarios y roles. El POS no tiene un paginador distinto al resto.
+  imports: [
+    CommonModule,
+    FormsModule,
+    Sidebar,
+    HasPermissionDirectives,
+    SelectOnFocus,
+    PaginatePipe,
+    PaginationControl,
+  ],
   templateUrl: './cobro.html',
   styleUrl: './cobro.css',
 })

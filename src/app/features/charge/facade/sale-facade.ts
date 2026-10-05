@@ -209,66 +209,30 @@ export class SaleFacade {
   cartPage = 0;
 
   /**
-   * Renglones por página.
+   * Renglones por página: <b>5</b>, el mismo número que usan productos,
+   * categorías, usuarios y roles. Así el POS no tiene un paginador distinto
+   * al resto del sistema.
    *
-   * <p>Son 8 y no 5 como en el carrito de compras porque aquí cada renglón es
-   * <b>una sola línea</b>: all�� el renglón de compra hay seis columnas y cuatro
-   * inputs. Con 8, el carrito ocupa unos 400px y el botón Cobrar sigue a la
-   * vista.
+   * <p>Ojo con una tentación: aquí el renglón es UNA sola línea y en el
+   * carrito de compras hay seis columnas y cuatro inputs, así que "caben más"
+   * parecería justificado. Pero un paginador que muestra 5 renglones en unas
+   * tablas y 8 en otra obligaría a aprender dos Muscle memories para lo mismo.
+   * El número lo decide la consistencia.
    */
-  cartPageSize = 8;
-
-  /** Número de productos en el carrito (no los de la página visible). */
-  get cartTotalItems(): number {
-    return this.cobro.cart$.value.length;
-  }
-
-  /** Páginas totales del carrito (mínimo 1, para que los índices no den 0). */
-  get cartTotalPages(): number {
-    return Math.max(1, Math.ceil(this.cartTotalItems / this.cartPageSize));
-  }
-
-  /**
-   * Página actual ya recortada al rango válido.
-   *
-   * <p>`cartPage` puede quedar fuera de rango si algún camino futuro quita
-   * productos sin llamar a {@link ajustarPaginaAlQuitar}. El `paginate` se
-   * recorta solo (por eso nunca se ve una tabla vacía), pero los números del pie
-   * se calculan aparte y podrían salir al revés ("Mostrando 9–3 de 3").
-   *
-   * <p>Por eso el pie usa SIEMPRE esta versión recortada en vez de `cartPage`
-   * directo: si hay un desajuste, que el texto siga siendo correcto.
-   */
-  private get cartPaginaValida(): number {
-    return Math.min(Math.max(this.cartPage, 0), this.cartTotalPages - 1);
-  }
-
-  /** Primer renglón visible, en 1-based porque es lo que se lee ("Mostrando 1–8"). */
-  get cartDesde(): number {
-    if (this.cartTotalItems === 0) {
-      return 0;
-    }
-
-    return this.cartPaginaValida * this.cartPageSize + 1;
-  }
-
-  /** Último renglón visible. Se acota al total para no prometer de más. */
-  get cartHasta(): number {
-    return Math.min(this.cartDesde + this.cartPageSize - 1, this.cartTotalItems);
-  }
+  cartPageSize = 5;
 
   /**
    * Lleva la vista a la página donde está un producto.
    *
    * <p>Se llama al <b>agregar</b>, no solo al paginar. Es lo que evita el bug
-   * másFastidioso de la paginación: escanear el código de barras del producto 12
-   * con la vista en la página 1 lo agrega invisible, y el cajero ve el carrito
-   * "sin cambios" aunque el producto se haya agregado. Con esto, el renglón
-   * recién agregado siempre aparece.
+   * más fastidioso de la paginación: escanear el código de barras del producto
+   * 12 con la vista en la página 1 lo agrega invisible, y el cajero ve el
+   * carrito "sin cambios" aunque el producto se haya agregado. Con esto, el
+   * renglón recién agregado siempre aparece.
    *
    * <p>Se calcula por <b>índice real</b> del producto, y no "saltar a la última
    * página", porque agregar un producto que ya estaba en el carrito no crea
-   * renglón nuevo: solo sube su cantidad, y el renglón puede estar en cualquier
+   * renglón nuevo: solo sube su cantidad, y ese renglón puede estar en cualquier
    * página.
    */
   private irAPaginaDelProducto(productId?: number) {
@@ -291,12 +255,20 @@ export class SaleFacade {
    * <p>Sin esto, borrar el último producto de la página 2 dejaría la vista en
    * la página 2 aunque ya no exista, y el carrito aparecería vacío: la misma
    * sensación de "no pasó nada" que daba el bug de agregar.
+   *
+   * <p>`<app-pagination>` también recorta por su cuenta, pero solo para lo que
+   * DIBUJA (sus getters usan una página clamp): no corrige `cartPage`. Si solo
+   * se dejara en manos del componente, el pie se vería bien pero el estado
+   * seguiría apuntando a una página inexistente. Aquí se corrige el estado.
    */
   private ajustarPaginaAlQuitar() {
-    const maximo = this.cartTotalPages - 1;
+    const totalPaginas = Math.max(
+      1,
+      Math.ceil(this.cobro.cart$.value.length / this.cartPageSize)
+    );
 
-    if (this.cartPage > maximo) {
-      this.cartPage = Math.max(0, maximo);
+    if (this.cartPage > totalPaginas - 1) {
+      this.cartPage = totalPaginas - 1;
     }
   }
 
