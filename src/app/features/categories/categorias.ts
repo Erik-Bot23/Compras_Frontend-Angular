@@ -58,7 +58,11 @@ export class Categorias implements OnInit {
   // AHORA: el sidebar maneja el estado via servicio compartido
 
   saveCategory(){
-    if(!this.categoryName.trim()) return;
+    // Primero se valida y se pinta el error; si hay alguno se corta el guardado.
+    // El orden importa: si se comprobara el vacío antes de validar, el usuario
+    // vería el formulario intacto y ninguna pista de qué hacer.
+    this.validarNombre();
+    if(this.errores['name']) return;
 
     // Si hay una categoría en edición, actualizar en vez de crear
     if(this.editingCategoryId !== null){
@@ -110,9 +114,19 @@ export class Categorias implements OnInit {
     });
   }
 
-  //Validar el nombre
+  /**
+   * Valida el nombre de la categoría.
+   *
+   * El `true` final es "obligatorio". Antes el vacío pasaba como válido, y por
+   * eso `saveCategory` tenía que frenarse con un `return` mudo: el formulario no
+   * guardaba, pero tampoco decía por qué ni dónde. Ahora el vacío es un error
+   * más y el mensaje sale bajo el campo.
+   *
+   * El máximo es 30 y no 50 porque ese es el `maxlength` del input: con 50, la
+   * regla del largo no se podía disparar nunca.
+   */
   validarNombre(){
-    const r = validarTexto(this.categoryName, 'nombre de la categoría', 50);
+    const r = validarTexto(this.categoryName, 'nombre', 30, true);
     if(r.ok) delete this.errores['name'];
     else this.errores['name'] = r.error;
   }

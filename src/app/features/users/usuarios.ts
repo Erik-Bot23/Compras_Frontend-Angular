@@ -117,11 +117,23 @@ export class Usuarios implements OnInit {
     });
   }
 
-  //Validar el largo de la contraseña
+  /**
+   * Valida la contraseña.
+   *
+   * Solo es obligatoria al CREAR. Al editar, `updateUser` no manda el campo
+   * password (ver la rama de abajo de `save`), así que exigirla dejaría
+   * imposible guardar cualquier edición: ese es el matiz que hace el
+   * `if(this.form.id)` de abajo.
+   */
   validarPassword(){
     const pw = this.form.password ?? '';
+
     if(!pw){
-      delete this.errores['password']; //vacío es válida al editar(no se cambia)
+      if(this.form.id){
+        delete this.errores['password']; //al editar vacía significa "no la cambio"
+      } else {
+        this.errores['password'] = 'La contraseña es obligatoria.';
+      }
       return;
     }
 
@@ -135,31 +147,48 @@ export class Usuarios implements OnInit {
     }
   }
 
-  //Validar los nombres en los campos
+  /**
+   * Valida los nombres en los campos.
+   *
+   * `nombre` e `correo` son obligatorios (V7): ambos_passan `true`. El máximo de
+   * 30 es el `maxlength` real del input, no un 80 que no podía dispararse.
+   */
   validarCampo(campo: 'name' | 'email'){
-    const r = campo === 'name' ? validarTexto(this.form.name, 'name', 80) : validarEmail(this.form.email ?? '');
+    const r = campo === 'name'
+      ? validarTexto(this.form.name, 'nombre', 30, true)
+      : validarEmail(this.form.email ?? '', true);
+
     if(r.ok) delete this.errores[campo];
     else this.errores[campo] = r.error;
+  }
+
+  /**
+   * Valida todo el formulario y devuelve si hay algo que arreglar.
+   *
+   * El `true` de `formularioValido()` de productos, pero acá se devuelve
+   * `boolean` en vez de dejar el resultado en `errores` para que el llamador lo
+   * consulte: es la diferencia de estilo entre los dos formularios, no de fondo.
+   */
+  validarFormulario(): boolean{
+    this.validarCampo('name');
+    this.validarCampo('email');
+    this.validarPassword();
+
+    return Object.keys(this.errores).length === 0;
   }
 
   save(){
     if(this.isSaving) return;
 
     // ===== Validaciones antes de llamar al backend =====
-    //La contraseña SOLO es obligatoria al crear. Al editar, updateUser no manda
-    //el campo password (ver la rama de abajo), asi que exigirla dejaria
-    //imposible guardar cualquier edicion.
-    if(!this.form.id){
-      const password = this.form.password ?? '';
-
-      if(password.trim().length < this.MIN_PASSWORD_LENGTH){
-        this.snack.open(
-          `La contraseña debe tener mínimo ${this.MIN_PASSWORD_LENGTH} caracteres (lleva ${password.trim().length}).`,
-          'Cerrar',
-          { duration: 4000 }
-        );
-        return;
-      }
+    // El aviso va DEBAJO del campo (input en rojo), igual que en productos,
+    // categorías y roles. Antes salía un snackbar que tapaba el formulario, se
+    // iba solo a los 4 segundos y no señalaba el campo culpable.
+    //
+    // La contraseña SOLO es obligatoria al crear; eso ya lo decide validarPassword()
+    // con `if(this.form.id)`, porque al editar updateUser no manda ese campo.
+    if(!this.validarFormulario()){
+      return;
     }
 
     this.isSaving = true;
@@ -212,6 +241,10 @@ export class Usuarios implements OnInit {
     // Fuera de modo edicion: despues de crear/actualizar el formulario vuelve
     // a "crear" y el boton Cancelar desaparece.
     this.editingUserId = null;
+    // 🔑 Se limpian los errores al resetear, no solo los valores: si no, el
+    // mensaje "La contraseña es obligatoria" de un intento fallido seguiría
+    // debajo del campo aunque el usuario ya esté escribiendo.
+    this.errores = {};
   }
 
   //Cancela la edicion a mano: resetea el formulario completo (mismo efecto que

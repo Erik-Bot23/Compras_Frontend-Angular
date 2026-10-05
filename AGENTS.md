@@ -95,6 +95,262 @@ src/app/
 
 ## Registro de cambios / decisiones
 
+### 2026-10-05 (3) — V10: los filtros de caja no borran la tabla, y el corte es de la caja elegida
+
+> Encargo: que al elegir un usuario la tabla no desapareciera y la lista de usuarios
+> no se redujera; y que el corte mostrara la caja filtrada. Explicación completa del
+> flujo de consultas en **`docs/Consulta-de-caja-frontend-backend-BD.pdf`** (10 páginas).
+> Verificado con `npx ng build --configuration development` en verde.
+> **Sin cambios de backend**: el corte se arma sumando lo que la tabla ya recibía.
+
+#### 1. Los tres bugs, y que ninguno estaba donde se miraba
+
+| Síntoma | Capa culpable | Arreglo |
+|---|---|---|
+| La tabla desaparece al filtrar usuario | `cashBoxReport = null` + `*ngIf` que envolvía también el desplegable | `boxLoading`: la tabla se queda, atenuada, con `pointer-events: none` |
+| El desplegable se queda con 1 opción | Backend: `continue` en turnos sin ventas del usuario → llega un subconjunto | Solo se reconstruye el roster si el recorte **no** fue por usuario |
+| El corte muestra el turno equivocado | `/cash/summary` → `findByActiveTrue()`: el turno abierto, no la caja | Suma de `CashBoxSessionDTO.sessions` |
+
+🔑 **El segundo era una consecuencia del primero y del tercero, no un bug aparte.** Los
+tres se explican (y se documentan) en `docs/Consulta-de-caja-frontend-backend-BD.pdf`.
+
+#### 2. `filtradoPorUsuario` y `reporteFiltrado` NO son la misma pregunta
+
+Es la corrección que más fácil se hace mal. El roster se reconstruye con los `sellers`
+que llegan, así que solo se reconstruye cuando la respuesta trae a todo el mundo:
+
+| Filtro | Qué llega | ¿Roster? |
+|---|---|---|
+| Solo fechas | Turnos del rango, con todos los que vendieron en él | ✅ se reconstruye |
+| Usuario | Solo los turnos de ese usuario | ❌ se queda |
+
+Usar un único getter para las dos cosas dejaba el desplegable en "Todos" y nada más
+**siempre que hubiera fechas**, que es el caso común: se rompía el caso importante para
+arreglar el que no importaba. `reporteFiltrado` (cualquier filtro) sigue mandando en la
+diferencia del corte, que sí es otro tema: no es calculable si no se está viendo la caja
+entera.
+
+#### 3. El rango de fechas es compartido, y ahora sí recarga
+
+`applyFilters()` no tocaba la tabla de turnos: cambiar las fechas movía las gráficas y la
+caja seguía con el rango anterior. El comentario del código ya decía que las fechas eran
+las mismas a propósito, así que ahora `applyFilters()` recarga el reporte si hay caja
+elegida.
+
+#### 4. El corte es una suma, no una consulta
+
+`CajaCorte` se calcula en `calcularCorteDeCaja()`, en el mismo callback que llena la tabla,
+así que **no puede quedar desfasado de lo que se ve arriba**. Sin endpoint nuevo, sin
+petición extra.
+
+🔑 **La diferencia solo se suma sobre turnos CERRADOS.** Con filtro el backend la manda en
+`null`, y un turno abierto todavía no tiene diferencia: sumarlos como cero daría un total
+más chico sin que nada lo advierta. Con filtro o sin turnos cerrados va `null` y se
+muestra `—` con su nota, nunca `$0.00`.
+
+#### 5. `.cash-summary` / `.cash-row` subieron a `styles.css`
+
+Estaban en `charge/css/cobro.css` y ahora los usan **dos** componentes. El corte viejo usaba
+`.corte-row`: una columna de 420 px con 9 montos apilados, el doble de alto que el modal de
+cobro, con el total debajo de todo. Se reutilizó la clase del modal en vez de copiarla.
+
+🔑 Imprimir, PDF y Excel usan el **mismo getter `corteRotulo`**: si cada uno escribiera su
+propio encabezado, el papel y la pantalla podrían discrepar sin forma de saber cuál es el
+bueno.
+
+### 2026-10-05 (2) — V9: las validaciones avisan EN EL CAMPO, no con un `return` mudo
+
+> Encargo: que al guardar con un campo vacío avise, y que producto exija nombre,
+> precio y stock. Contraparte backend: ya commiteada en `a672cef "Validación de
+> campos"`, **esta vez sin cambios de backend**. Verificado con
+> `npx ng build --configuration development` en verde.
+> Documento: **`docs/Validacion-campos-y-avisos-en-linea.pdf`**.
+
+#### 1. El síntoma y su causa: el `return` sin mensaje
+
+Cinco formularios frenaban el guardado con un `return` y **cero aviso**:
+
+```ts
+if(!this.formProvider.name.trim() || !this.formProvider.rfc.trim()) return;
+```
+
+🔑 **Un `return` silencioso es indistinguible de un no-op.** El usuario aprieta
+Guardar, no ocurre nada, y no sabe si falló el guardado, si el botón no sirve o
+si ya se guardó. Los `<span class="error-msg">` **ya existían** en los cinco
+formularios: lo que faltaba era que **nadie escribiera en `errores`**, porque
+`validarTexto`/`validarRfc` sin el flag `obligatorio` trataban el vacío como
+**válido** (`ok()`), así que el `delete` borraba el error y el mensaje jamás
+aparecía.
+
+| Archivo | Antes | Ahora |
+|---|---|---|
+| `categorias.ts:113` | `if(!this.categoryName.trim()) return` | `validarNombre()` + `if(this.errores['name']) return` |
+| `roles.ts:176` | `if(!this.roleName.trim()) return` | igual (también en `updateRole()`) |
+| `usuarios.ts:190` | snackbar de contraseña | `validarFormulario()` inline |
+| `compras.ts:407` | `if(!name.trim() \|\| !rfc.trim()) return` | `validarFormularioProveedor()` |
+| `productos.ts` | `name` **sin validar** | `validarTexto(..., 'nombre', 80, true)` |
+
+#### 2. `validadores.ts`: los flags que faltaban
+
+Se agregaron parámetros opcionales, **todos con default que preserva el
+comportamiento anterior** para no romper los 12 servicios que los usan:
+
+```ts
+validarTexto(valor, campo, max, obligatorio = false)
+validarEmail(valor, obligatorio = false)
+validarPassword(valor, obligatorio = false)
+validarRfc(valor, obligatorio = false)
+validarEntero(valor, campo, min = 0)
+validarPrecio(valor, campo, min = 0)
+```
+
+🔑 **`min = 0` por default en precio/entero es a propósito, NO un descuido.**
+`cash-facade.ts:159` valida el monto inicial de caja con `validarPrecio()`, y ese
+dinero **puede ser 0** (caja que abre sin fondo). Si el default fuera 1, abrir
+una caja sin efectivo quedaría bloqueado. Productos es quien pasa `min = 1`
+explícitamente.
+
+#### 3. Producto: `novalidate` es lo que hace funcionar el aviso
+
+`productos.html` pasó de `min="0"` a `min="1"` en precio y stock, y el `<form>`
+recibió `novalidate`:
+
+```html
+<form class="form-card" (ngSubmit)="save()" novalidate ...>
+```
+
+🔑 **Sin `novalidate` el `min="1"` del navegador bloquea el submit antes de que
+Angular vea nada**, y el usuario ve la burbuja nativa del navegador (un globito
+gris, en inglés, sin decir qué campo es) en vez de nuestro mensaje en rojo
+debajo del campo. Los
+dos avisos se pelean: el nativo gana porque ocurre primero. `novalidate` no
+desactiva la regla —el `min` sigue sirviendo para el spinner y el teclado— solo
+le quita la autoridad de frenar el formulario, que es ahora de `validarCampo()`.
+
+#### 4. Orden de mayúsculas y validación: un método, no dos `(input)`
+
+`productos.html` y `compras.html` tenían **dos atributos `(input)` en la misma
+etiqueta** (el RFC incluso tenía tres). Angular los dispara en orden de
+plantilla, pero `ngModel` actualiza su propio valor por su cuenta:
+
+```html
+(input)="aMayusculas($event)" (input)="validarCampo('sku')"
+```
+
+🔑 Si el orden queda al revés, la validación corre contra el texto **sin
+mayúsculas** de `form.sku` mientras la caja ya muestra mayúsculas. Se unificó en
+un método: `onInputSku()`, `onInputRfc()`, `onInputProviderName()` — mayúsculas
+primero, validación después, en ese orden y en el mismo turno del evento.
+
+#### 5. El `0` del stock: el que escribe, decide
+
+`validateNumber()` de productos **corregía en silencio** (`if(stock < 0) stock = 0`)
+y el template lo tenía en `(input)`. Se desacopló:
+
+- El template ya llama a `validarCampo('stock')`, que **avisa** y deja el `0`.
+- `validateNumber()` se conserva pero **documentado como no usado**, porque
+  escribir "0" y que la caja saltara a "1" sin aviso es peor que un error.
+
+🔑 El stock `0` **sí es válido en la base**: un producto vendido hasta agotarse
+queda en 0, y ahí no es un error. Lo que no se permite es **crearlo** en 0. Por
+eso el `min = 1` va en el formulario, no en el servicio ni en el backend.
+
+#### 6. Dos `<span>` que sobraban y dos que faltaban
+
+| Formulario | Antes | Ahora |
+|---|---|---|
+| roles | mensaje decía **"nombre de la categoría"** (copy-paste) | "El nombre es obligatorio." |
+| usuarios | el campo **correo** no tenía `<span>` (solo nombre y contraseña) | agregado, con `[class.input-error]` |
+| productos | **ningún** input tenía `[class.input-error]` | los 5 |
+| categorías / roles | los `<span>` existían pero el input **nunca se ponía rojo** | `[class.input-error]` |
+| compras (proveedores) | dos `<div class="field">` con **distinto nivel de indentación**, uno sin cerrar | nivelados |
+
+🔑 El `.input-error` faltante es **la** razón de que los mensajes "no aparecieran"
+en varios sitios: el texto se pintaba pero sin marcar el campo, y con el input en
+su color normal el aviso pasaba desapercibido.
+
+#### 7. `.error-msg` y `.input-error` subieron a `styles.css`
+
+Estaban **duplicados** en `productos.css` y `compras.css`, con `!important` en
+ambos. Ahora viven **una sola vez** en el global (`styles.css:459-478`), porque
+los cinco formularios los necesitan y ninguno de los dos CSS cubre los otros tres.
+
+🔑 Se conserva el `!important` **a propósito**: los formularios declaran su propio
+`border-color` con la misma especificidad (0,1,0) que `.input-error`, así que sin
+él ganaría el del componente y el input seguiría viéndose normal.
+
+#### 8. `errores = {}` al resetear, no solo los valores
+
+`resetForm()` (usuarios) y `cancelarEdicionProveedor()` (compras) limpian los
+valores pero **no** el mapa de errores. Con el aviso ya visible, el mensaje "El
+RFC es obligatorio" sobreviviría a un formulario recién vaciado.
+
+### 2026-10-05 — V8: las 4 tablas centradas (y por qué NO era un problema de cada tabla)
+
+> Encargo: centrar las columnas con su información en la tabla del modal de cajas,
+> el reporte de ventas por caja, el historial de ventas y los márgenes de compras.
+> Verificado con `npx ng build --configuration development` en verde.
+> Documento completo: **`docs/Alineacion-tablas-y-separacion-CSS.pdf`** (9 páginas).
+
+#### 1. La causa NO era de las tablas: era especificidad CSS
+
+🔑 **`src/styles.css:315` y `:333` ya centran todo** lo que vive dentro de
+`.table-card` (`.table-card th` y `.table-card td`, ambos `text-align: center`).
+Los componentes que redefinen la alineación de sus montos y **no tienen el mismo
+peso**, así que unas reglas ganaban y otras no:
+
+| Selector | Peso | ¿Gana al global? | Resultado real |
+|---|---|---|---|
+| `.table-card td` / `th` | (0,1,1) | — | centro |
+| `.money` | (0,1,0) | **NO: pierde** | centro (el global) |
+| `th.money` | (0,1,1) | empate: gana por **orden** | **derecha** |
+| `.sesiones-table .money` | (0,2,0) | sí | derecha |
+| `.sesiones-table thead th` | (0,1,2) | sí | izquierda |
+
+🔑 El descuadre del historial y de compras era **el mismo nombre de clase dando
+dos alineaciones distintas**: `<td class="money">` lo resolvía `.table-card td`
+(0,1,1), que le gana a `.money` (0,1,0) → **centrado**; `<th class="money">` lo
+resolvía `th.money` (0,1,1) → empate exacto, gana por orden → **derecha**.
+Título a la derecha, número al centro. Eso era el "título corrido".
+
+#### 2. Los 4 archivos y lo que cambió
+
+| Archivo | Cambio |
+|---|---|
+| `charge/css/cajas.css` | `.boxes-table th` `left`→`center`; `.fecha-col` +`center`; `.acciones-col` `right`→`center`; `.caja-col` `left`→`center`; `.boxes-actions` `flex-end`→`center` |
+| `reports/reportes.css` | `.sesiones-table thead th` `left`→`center`; `thead th.money` y `.money` `right`→`center` |
+| `salehistory/salehistory.css` | `.money` y `th.money` `right`→`center` (+ padding simétrico) |
+| `shopping/compras.css` | `.money` y `th.money` `right`→`center` (+ padding simétrico) |
+
+🔑 **`center` se declara a propósito en el `th` Y en el `td`.** Apoyarse en el
+global sería depender del orden de `styleUrls`, que es frágil: si mañana se mueve
+un archivo, la tabla se descuadra sola.
+
+🔑 **El padding pasó a simétrico** (`padding-left` además del `padding-right`
+existente). Con el texto centrado, un padding solo de un lado lo descentra hacia el
+otro lado. Los `!important` se conservan: ya peleaban con el padding del global y
+quitarlos sería un segundo cambio en la misma línea.
+
+#### 3. Lo que NO se tocó (y por qué)
+
+`.sesion-detalle .subtable th` (`reportes.css:687`), `.subtable th`
+(`compras.css:422`), `.linea-cabecera span:nth-child(5)` (`compras.css:579`) y
+`.modal-total` (`compras.css:832`). Son las subtablas de detalle, el encabezado del
+carrito del modal y el total grande del modal: no son columnas de las 4 tablas
+pedidas. **Un total de modal a la derecha está bien**; centrarlo sería peor.
+
+#### 4. Los otros 2 encargos YA estaban resueltos
+
+- **Paginación del carrito**: `cartPageSize = 5` (`sale-facade.ts:222`), el
+  `*ngFor` con `PaginatePipe` (`cobro.html:132`) y el `<app-pagination>`
+  (`cobro.html:174-179`). Es exactamente lo que se pidió; no se tocó nada.
+- **Campos obligatorios**: los 5 formularios ya importan `core/utils/validadores.ts`
+  y el backend ya lo tiene commiteado en `a672cef "Validación de campos"`
+  (`InputValidator.requerido()`/`.requerida()`, `V7__campos_obligatorios.sql`,
+  294 tests en verde).
+  👉 **Ojo: no existe carpeta `providers/`**: el CRUD de proveedores vive en
+  `features/shopping` (`compras.ts:29`).
+
 ### 2026-10-04 (2) — V7: los campos obligatorios se avisan en el campo, no al enviar
 
 > Encargo: que no se guarden como `null` el nombre de categoría, de usuario,

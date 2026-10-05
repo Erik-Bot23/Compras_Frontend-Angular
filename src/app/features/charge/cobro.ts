@@ -28,7 +28,7 @@ import { aMayusculas, soloDigitos, soloDigitosYPunto } from '../../core/utils/va
     PaginationControl,
   ],
   templateUrl: './cobro.html',
-  styleUrl: './cobro.css',
+  styleUrls: ['./css/cobro.css', './css/cajas.css']
 })
 
 export class Cobro implements OnInit {

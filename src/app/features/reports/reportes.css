@@ -352,66 +352,89 @@
   color: #ff6b8a;
 }
 
-/* -------- Corte de caja -------- */
-/* La tarjeta del corte no ocupa todo el ancho de la pantalla: se centra y mide
-   lo que su contenido (align-items:center centra la tarjeta; width:fit-content
-   la ajusta al ancho del corte). */
-.cortes {
-  margin-top: 4px;
-  align-items: center;
+/* =========================================================================
+   CORTE DE CAJA — total de los turnos de la caja elegida
+
+   Va DEBAJO de la tabla de turnos, dentro de la misma tarjeta (`.table-card`),
+   y usa las clases globales `.cash-summary` / `.cash-row` (movidas desde
+   cobro.css). Ver la nota larga en `styles.css`.
+
+   🔑 Se BORRARON aquí `.cortes`, `.corte-header`, `.corte-body` y
+   `.corte-row`: pertenecían al corte viejo, que era una tarjeta aparte, angosta
+   (`max-width: 420px`) y con los 9 montos apilados en vertical. Ese diseño es el
+   que hacía que la sección se sintiera "alargada". Reutilizar las clases del
+   modal de cobro no es solo estética: es el mismo documento y tiene que verse
+   igual en los dos lugares.
+   ========================================================================= */
+
+.corte-caja {
+  padding: 12px 14px 14px;
+  border-top: 1px solid #263449;
 }
 
-.cortes .table-card {
-  width: fit-content;
-  min-width: 320px;
-  max-width: 100%;
-}
-
-/* Encabezado del corte: botones arriba del titulo y todo centrado.
-   Se usa .corte-header (no .table-title) para no afectar la tabla de stock. */
-.corte-header {
+.corte-caja-head {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  padding: 12px 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
-.corte-header h3 {
+.corte-caja-head h4 {
   margin: 0;
   font-size: 0.95rem;
-}
-
-.corte-body {
+  font-weight: 600;
+  color: #e2e8f0;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 14px 14px;
-  max-width: 420px;
-  /* margin:auto centra el bloque del corte dentro de la tarjeta */
-  margin: 0 auto;
+  align-items: baseline;
+  gap: 8px;
 }
 
-.corte-row {
+/* "CAJA 3 · 12 turno(s)": identifica el corte sin abrir el detalle. */
+.corte-caja-sub {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.corte-caja-acciones {
   display: flex;
-  justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-  font-size: 0.9rem;
+  gap: 6px;
 }
 
-/* Los montos del corte usan digitos tabulares para alinear cifras */
-.corte-row strong {
-  font-variant-numeric: tabular-nums;
+.corte-caja-acciones .btn {
+  padding: 5px 11px;
+  font-size: 0.78rem;
 }
 
-.corte-row.total {
-  font-weight: 700;
-  border-bottom-style: solid;
+/* Explicación de por qué un dato NO está. Sin esto el "—" parece un bug.
+   Con un filtro de usuario la diferencia no existe, y decirlo evita que el
+   cajero la busque en el papel. */
+.corte-nota {
+  margin: 10px 0 0;
+  font-size: 0.76rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: #94a3b8;
 }
 
-.corte-row.warn {
-  color: #ffb86b;
+/* Diferencia del corte en la tarjeta: verde si sobró, roja si faltó. Los selectores
+   `.sesiones-table .dif-*` de arriba NO aplican acá porque estánScoped a la tabla;
+   sin estas dos, el signo +/− sería el único indicio del color. */
+.cash-row.dif-positiva strong {
+  color: #4ade80;
+}
+
+.cash-row.dif-negativa strong {
+  color: #f87171;
+}
+
+/* Subtítulos del bloque imprimible (`.print-only`, fuera del tema oscuro) */
+.print-sub {
+  font-size: 0.8rem;
+  color: #444;
+  margin: 2px 0;
 }
 
 /* Zona que solo aparece al imprimir el corte (window.print) */
@@ -443,9 +466,9 @@
 /* =========================================================================
    Bloque de explicación (punto 4 del encargo)
    =========================================================================
-   Los reportes Financiales se leen mal si no se sabe de donde sale cada número.
-   Este bloque se despliega debajo de las tarjetas de utilidad y de la secci�n de
-   margenes, con el texto exacto de por que se calcula así y, sobre todo, por qué
+Los reportes Financiales se leen mal si no se sabe de donde sale cada número.
+   Este bloque se despliega debajo de las tarjetas de utilidad y de la sección de
+   márgenes, con el texto exacto de por que se calcula así y, sobre todo, por qué
      NO se restan las compras del periodo.
    Se deja SIEMPRE visible en vez de plegable: la confusión entre margen,
    utilidad y gasto es la más común y es la que lleva a cambiar de proveedor
@@ -511,13 +534,17 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  text-align: left;
+  /* CENTRADOS (no `left`): `styles.css` ya centra enteras las tablas de
+     `.table-card`, pero esta regla es mas especifica (0,1,2 contra 0,1,1) y lo
+     revertia a la izquierda: los titulos quedaban pegados al borde mientras sus
+     datos si salian centrados. */
+  text-align: center;
   padding: 9px 10px;
   border-bottom: 1px solid #334155;
 }
 
 .sesiones-table thead th.money {
-  text-align: right;
+  text-align: center;
 }
 
 .sesiones-table thead th.num {
@@ -553,11 +580,15 @@ tr.sesion-row.sesion-abierta td:first-child {
   border-left: 3px solid #22c55e;
 }
 
-/* Montos alineados a la derecha con dígitos de ancho fijo (tabular-nums): sin
+/* Montos alineados al centro con dígitos de ancho fijo (tabular-nums): sin
    esto los $LOBALS no encajan en columna y la tabla se ve "desordenada" aunque
    los números estén bien. */
 .sesiones-table .money {
-  text-align: right;
+  /* CENTRADOS (no a la derecha). Este selector es (0,2,0) y le gana a
+     `.table-card td` (0,1,1), asi que aqui el `right` SI se aplicaba: por eso en
+     esta tabla el titulo y su dato ya coincidian, pero la columna quedaba
+     corrida respecto a las demas. */
+  text-align: center;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -705,6 +736,30 @@ tr.sesion-detalle-row td {
   font-size: 12px;
   color: #94a3b8;
   white-space: nowrap;
+}
+
+/* "Actualizando…": aviso de que la petición del filtro de usuario está en
+   vuelo. Va pegado al conteo de turnos, así que hace falta neutralizar el
+   `margin-left: auto` de `.caja-conteo`, que lo empujaría al otro extremo. */
+.caja-actualizando {
+  margin-left: 10px;
+  font-size: 12px;
+  font-style: italic;
+  color: #60a5fa;
+  white-space: nowrap;
+}
+
+/* La tabla NO desaparece al recargar: se atenúa.
+
+   🔑 Sin `pointer-events: none` el usuario podría.clickear una fila mientras
+   sus datos están siendo reemplazados, y el detalle que se abriera sería el
+   de la fila anterior. Se atenúa el contenido pero el bloque se sigue viendo,
+   que es justo lo que pidió quien reportó el bug ("que se quede estática"). */
+.caja-cargando .table-scroll,
+.caja-cargando .sesion-detalle {
+  opacity: 0.45;
+  transition: opacity 150ms ease-in-out;
+  pointer-events: none;
 }
 
 /* La columna de tiempo no debe partirse: "04/10/2026 14:30" en dos líneas hace

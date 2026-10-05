@@ -261,9 +261,10 @@ body.modal-open{
 /*Botones de los modales abrir y cerrar*/
 .button-box{
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 12px;
   margin-top: 10px;
+  text-align: center;
 }
 
 .button-box button{
@@ -296,13 +297,20 @@ body.modal-open{
 }
 
 /*Botones de modal abrir*/
-.btn-confirm-open{
-  background: #22c55e;;
-  color: white;
+/*
+  El `:not(:disabled)` sigue la convención que ya usan `.btn-pay`, `.btn-cancel`
+  y `.btn-retry` más abajo: el hover solo se aplica a un botón realmente
+  apretable. Sin el `:not`, un botón deshabilitado seguiría cambiando de color
+  al pasarle el mouse encima, que es la forma más rápida de hacer creer que sí
+  se puede.
+*/
+.btn-confirm-open:hover:not(:disabled){
+   background: #22c55e;
 }
 
-.btn-confirm-open:hover{
-   background: #22c55e;
+.btn-confirm-open:disabled{
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /*
@@ -315,11 +323,29 @@ body.modal-open{
   y herechar el color (brightness/invert) la convertiría en un bloque blanco.
   Como el botón es verde, la cruz verde se perdería, así que se pone un fondo
   oscuro detrás del icono para que la cruz siga viéndose.
+
+  `justify-content: center` es lo que CENTRA EL TEXTO, y el `text-align` de
+  abajo es lo que lo hace seeming redundante. La razón: este botón es
+  `inline-flex`, y en un contenedor flex el texto no es un bloque sino un
+  FLEX ITEM. `text-align` solo actúa sobre cajas de línea, así que con él
+  solo el texto se queda pegado al padding izquierdo y a la derecha, que es
+  justo lo que se veía.
+  El mismo razonamiento ya está aplicado en los .box-btn-* de cajas.css.
 */
 .btn-confirm-open{
+  background: #22c55e;
+  color: white;
   display:inline-flex;
   align-items:center;
+  justify-content:center;
   gap:6px;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  text-align: center;
 }
 
 .btn-confirm-open img{
@@ -703,43 +729,17 @@ cuando es más alto que la pantalla.
   width: 520px;
 }
 
-/*==Resumen del corte de caja==*/
-.cash-summary{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px 14px;
-}
+/*==Resumen del corte de caja==
+   🔑 `.cash-summary`, `.cash-row`, `.cash-row.total` y `.cash-row.expected`
+   se movieron a `styles.css` (buscá "Resumen del corte de caja" en el global).
 
-.cash-row{
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  padding: 5px 0;
-  border-bottom: 1px solid #1e293b;
-  font-size: 0.88rem;
-}
+   Ya no viven acá porque Reportes también los usa, para el corte agregado de la
+   caja: son el MISMO formato, solo cambia el origen de los números (modal = el
+   turno abierto, Reportes = la suma de los turnos de la caja elegida).
 
-.cash-row span{
-  opacity: 0.75;
-}
-
-.cash-row strong{
-  color: #f8fafc
-}
-
-/*La fila monto esperado ocupa las 2 columnas porque es el dato clave*/
-.cash-row.total{
-  grid-column: 1 / -1;
-  font-weight: 700;
-}
-
-.cash-row.expected{
-  background: rgb(34, 197, 94, .12);
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-}
+   Es el mismo criterio que se aplicó con `.input-error` y `.error-msg`: si dos
+   componentes necesitan una regla, va en el global. Duplicarla en dos CSS es
+   pedir que se desincronicen. */
 
 .difference-preview{
   text-align: center;
@@ -1060,277 +1060,6 @@ cuando es más alto que la pantalla.
     cursor: not-allowed;
 }
 
-/* =========================================================================
-   MODAL "VER CAJAS" (V4) — CRUD del inventario de cajas
-   ========================================================================= */
 
-/*
-  Este modal tiene su propio ancho porque su contenido es una tabla de 4
-  columnas, no un formulario vertical como los demás modales de caja. Sin
-  `width` la tabla se estira al 100% del viewport y las columnas quedan
-  desproporcionadas.
-*/
-.boxes-modal {
-    width: min(620px, 94vw);
-}
 
-/* Botón "Ver cajas": gris neutro.
-   No es azul como "Abrir caja" a propósito: "Abrir" es la acción del turno
-   (la que el cajero usa todo el día) y "Ver cajas" es consultar el inventario.
-   Dos azules de la misma jerarquía harían competir dos acciones que no son de
-   la misma importancia. */
-.btn-cash.boxes {
-    background: #64748b;
-    color: white;
-}
 
-.btn-cash.boxes:hover {
-    background: #475569;
-}
-
-/* -------- Formulario de alta/edición, dentro de la tabla -------- */
-
-/*
-  Fondo azul translúcido + borde: separa el formulario del fondo del modal sin
-  necesidad de un borde separador, y usa la misma familia de color que los
-  modales de caja.
-*/
-.box-form {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-    border-radius: 10px;
-    background: rgba(79, 140, 255, 0.08);
-    border: 1px solid rgba(79, 140, 255, 0.3);
-}
-
-/* Los inputs del formulario se estiran a todo el ancho del bloque.
-
-   ⚠️ box-sizing: border-box NO es opcional aquí. Por defecto los <input> usan
-   content-box, así que `width: 100%` significa "el 100% del ancho disponible
-   MÁS el padding y el borde": con 10px de padding a cada lado y 1px de borde
-   (22px en total), los inputs se salían de la card y se comían el fondo. Con
-   border-box el 100% incluye padding y borde, y el input entra justo. */
-.box-form input {
-    width: 100%;
-    box-sizing: border-box;
-}
-
-/* .button-box dentro del formulario no lleva borde separador: ahí sí estorba,
-   porque el gap del flex ya separa los botones del input de arriba. */
-.box-form .button-box {
-    border-top: none;
-    padding-top: 4px;
-}
-
-/* -------- La tabla -------- */
-
-.boxes-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.88rem;
-}
-
-.boxes-table th {
-    text-align: left;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    /* gris claro en vez de opacity: los títulos tienen que verse sobre el fondo
-       oscuro del modal (el mismo bug que se corrigió en el modal de compras). */
-    color: #94a3b8;
-    padding: 6px 4px;
-    border-bottom: 1px solid #1e293b;
-}
-
-/* ==========================================================================
-   ALINEACIÓN DE LA TABLA DE CAJAS (V5)
-   ==========================================================================
-   Cada columna lleva su clase en el <th> Y en el <td>. Sin esto los títulos
-   quedan a la izquierda mientras sus datos van al centro o a la derecha, y
-   cada título termina flotando sobre el espacio vacío de la columna vecina.
-*/
-
-.boxes-table th.turnos-col,
-.boxes-table td.turnos-col {
-    /* Turnos es un CONTADOR: centrado y con dígitos tabulares, para que la
-       columna no se corra al cambiar de 9 a 10. */
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-}
-
-.boxes-table th.fecha-col,
-.boxes-table td.fecha-col {
-    /* Sin partirse: "04/10/2026 14:30" partido en dos líneas hace la fila el
-       doble de alta. */
-    white-space: nowrap;
-}
-
-.boxes-table th.acciones-col,
-.boxes-table td.acciones-col {
-    /* Derecha, igual que los botones (que usan justify-content: flex-end). Con
-       el título centrado o a la izquierda, los botones parecían "no tener
-       forma": quedaban pegados al borde, bajo el aire. */
-    text-align: right;
-}
-
-.boxes-table th.caja-col,
-.boxes-table td.caja-col {
-    text-align: left;
-}
-
-.boxes-table td {
-    padding: 8px 4px;
-    border-bottom: 1px solid #1e293b;
-    vertical-align: middle;
-}
-
-.boxes-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-/* Texto del modal: se declara en la tabla para que no dependa de que
-   `.modal` traiga el color por herencia. */
-.boxes-table td {
-    color: #e2e8f0;
-}
-
-/* Descripción de la caja, debajo del número: chica y atenuada, es un dato
-   secundario. */
-.box-desc {
-    font-size: 0.76rem;
-    color: #94a3b8;
-    font-weight: 400;
-}
-
-/* Caja dada de baja: se atenúa, no se borra de la vista. Ver el WHY en el
-   backend: sus ventas siguen en el historial. */
-.box-inactive {
-    opacity: 0.55;
-}
-
-/* -------- Badges -------- */
-
-.badge-baja,
-.badge-uso {
-    display: inline-block;
-    margin-top: 3px;
-    padding: 1px 7px;
-    border-radius: 8px;
-    font-size: 0.65rem;
-    font-weight: 700;
-}
-
-/* "En uso": verde. La caja tiene un turno abierto ahora mismo. */
-.badge-uso {
-    background: #22c55e;
-    color: #0f172a;
-}
-
-/* "Dada de baja": gris, no rojo. No es un error ni un peligro: es un estado
-   válido y reversible. Pintarla de rojo haría pensar que hay algo mal. */
-.badge-baja {
-    background: #475569;
-    color: #e2e8f0;
-}
-
-/* -------- Acciones de la fila -------- */
-
-/*
-  La celda de acciones es la que más sufre con 3 botones: "Editar", "Borrar"
-  y "Dar de baja" tienen textos de largo muy distinto (6, 6 y 12 caracteres) y
-  el más largo empujaba a los otros y los partía en dos líneas.
-
-  La solución NO es acortar el texto (que perdería claridad) sino que la fila
-  pueda-BAJAR: min-width 0 + flex-wrap. Así los botones se acomdan en dos
-  líneas si no caben, y ninguno se mutila.
-*/
-.boxes-actions {
-    display: flex;
-    gap: 6px;
-    justify-content: flex-end;
-    align-items: center;
-    flex-wrap: wrap;
-    /* min-width: 0 es lo que permite que los hijos se encojan en vez de
-       desbordar la celda. Sin esto, el ancho mínimo de los botones empuja la
-       tabla y las columnas se descuadran. */
-    min-width: 0;
-}
-
-.btn-edit,
-.btn-del,
-.btn-baja,
-.btn-alta {
-    /* padding vertical menor + line-height: da botones más compactos, que en
-       una fila de 4 acciones es lo que hace falta para que quepan. */
-    padding: 5px 10px;
-    border-radius: 6px;
-    border: none;
-    font-size: 0.74rem;
-    font-weight: 600;
-    line-height: 1.3;
-    cursor: pointer;
-    color: white;
-    white-space: nowrap;
-    /* 🔑 Sin esto el botón "pierde la forma": un <button> es inline-block y se
-       estira hasta el ancho disponible de la celda, que con
-       justify-content: flex-end lo empuja contra el borde. Con flex: 0 0 auto
-       conserva SU tamaño y no el de la celda, que es lo que se ve como un
-       botón deformado o "todo hacia la derecha". */
-    flex: 0 0 auto;
-    /* display:inline-flex para que el padding y el fondo se apliquen al
-       contenido, no a toda la celda. */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-edit {
-    background: #3b82f6;
-}
-
-.btn-edit:hover {
-    background: #2563eb;
-}
-
-/* Borrar: rojo. Solo sale cuando la caja nunca se abrió. */
-.btn-del {
-    background: #ef4444;
-}
-
-.btn-del:hover {
-    background: #dc2626;
-}
-
-/* Dar de baja: naranja, no rojo.
-   No es una eliminación: es una baja, y el usuario tiene que distinguirla de un
-   borrado de un vistazo. Mismo criterio que el botón "Dar de baja" de
-   productos. */
-.btn-baja {
-    background: #f59e0b;
-    color: #0f172a;
-}
-
-.btn-baja:hover {
-    background: #d97706;
-}
-
-/* Dar de ALTA: verde.
-   Es el inverso de "Dar de baja" y tiene que leerse como tal. Verde = vuelve a
-   estar disponible, que es exactamente lo que hace. */
-.btn-alta {
-    background: #22c55e;
-    color: #0f172a;
-}
-
-.btn-alta:hover {
-    background: #16a34a;
-}
-
-/* Fila vacía del modal */
-.empty-boxes {
-    text-align: center;
-    padding: 20px 4px;
-    color: #94a3b8;
-}

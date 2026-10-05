@@ -55,7 +55,7 @@
                             Abierta
                         </div>
 
-                        <!-- Punto 5.4: se muestra "Caja: 1". El número es lo que el
+                        <!-- Se muestra "Caja: 1". El número es lo que el
                              cajero reconoce de su caja física, y a simple vista
                              evita tener que abrir Reportes para saber cuál es. -->
                         <div class="cash-data" *ngIf="cash.activeNumber">
@@ -68,7 +68,7 @@
                             <strong>${{ cash.cashStatus.openingAmount | number:'1.2-2' }}</strong> 
                         </div>
 
-                        <!-- Punto 5.5: CONTADOR EN VIVO. Muestra el efectivo que
+                        <!-- CONTADOR EN VIVO. Muestra el efectivo que
                              debería haber en el cajón ahora mismo (fondo + ventas en
                              efectivo), que es lo que el cajero quiere ver mientras
                              vende. Se recalcula solo porque el getter depende del
@@ -89,10 +89,10 @@
                             Caja cerrada
                         </div>
 
-                        <!-- V4: "Crear caja" ya no es un botón suelto. El alta de una caja física
-     vive DENTRO de la tabla "Ver cajas", que es donde se ve la caja que se
-     está dando de alta o editando. Aquí solo quedan las dos acciones de
-     trabajo del cajero: consultar el inventario y abrir un turno. -->
+                        <!--"Crear caja" ya no es un botón suelto. El alta de una caja física
+                            vive DENTRO de la tabla "Ver cajas", que es donde se ve la caja que se
+                            está dando de alta o editando. Aquí solo quedan las dos acciones de
+                            trabajo del cajero: consultar el inventario y abrir un turno. -->
                         <div class="cash-acciones">
                             <button *hasPermission="'VER_CAJA'" class="btn-cash boxes" (click)="cash.openBoxesModal()">
                                 Ver cajas
@@ -120,7 +120,7 @@
                 </thead>
 
                 <tbody>
-                    <!-- PAGINACIÓN DEL CARRITO (V6)
+                    <!-- PAGINACIÓN DEL CARRITO
                          El pipe `paginate` recorta la página visible. Los paréntesis
                          alrededor del `async` son obligatorios: sin ellos Angular
                          lee `(a | async) | paginate` como `a | (async | paginate)`,
@@ -170,7 +170,7 @@
                  El `total` sale del async pipe y NO de un getter: el componente
                  pide el numero de registros que hay en TOTAL, no los de la
                  pagina visible. Un getter que leyera el carrito ya recortado
-                 haria que la paginacion nocould avanzar. -->
+                 haria que la paginacion no pueda avanzar. -->
             <app-pagination
                 [total]="(sale.cobroItems$ | async)?.length ?? 0"
                 [pageSize]="sale.cartPageSize"
@@ -243,8 +243,8 @@
 
                     <!--Botones-->
                     <!--
-                        El botón se DESHABILITA mientras hay un cobro en vuelo
-                        (V6). Es la barrera visible: le dice al cajero que el
+                        El botón se DESHABILITA mientras hay un cobro en vuelo.
+                        Es la barrera visible: le dice al cajero que el
                         cobro ya está en marcha y evita el segundo clic.
 
                         Ojo: esto solo es la primera barrera. Si las dos
@@ -347,14 +347,11 @@
             </div>
 
             <!-- ============================================================
-                 Modal "VER CAJAS" (V4)
+                 Modal "VER CAJAS"
                  Es un CRUD del inventario de cajas del local. El formulario de
-                 alta/edición vive DENTRO de la tabla, que es lo que pidió el
-                 dueño: se ve la caja y se edita en el sitio, sin abrir un modal
+                 alta/edición vive DENTRO de la tabla
+                 Se ve la caja y se edita en el sitio, sin abrir un modal
                  encima del modal.
-
-                 Este modal REEMPLAZA al de "Crear caja" de V3: el alta ya no es
-                 un modal propio, es el formulario de esta tabla.
                  ============================================================ -->
             <div class="modal-backdrop" *ngIf="cash.showBoxesModal">
                 <div class="modal boxes-modal">
@@ -386,7 +383,7 @@
                         >
                         <div class="button-box">
                             <button class="btn-confirm-open" type="submit">
-                                {{ cash.editingBoxId === null ? 'Crear' : 'Guardar' }}
+                                {{ cash.editingBoxId === null ? 'Crear caja' : 'Guardar' }}
                             </button>
                             <button class="btn-cancel" type="button" (click)="cash.cancelBoxForm()">
                                 Cancelar
@@ -395,10 +392,26 @@
                     </form>
 
                     <!-- La tabla -->
-                    <div class="modal-body">
+                    <!--
+                        La tabla se BLOQUEA mientras el formulario de alta/edición
+                        está abierto. Parece un detalle visual, pero es un bug de
+                        datos: si el usuario está escribiendo "CAJA 3" y aprieta
+                        "Editar" sobre otra caja, `startEditBox` reemplaza
+                        `cash.boxForm` por debajo y se pierde lo tecleado sin aviso.
+
+                        Hay dos capas y cada una cubre algo distinto:
+                        · la clase `.tabla-bloqueada` (abajo, cajas.css) pone
+                          `pointer-events: none`, que bloquea cualquier clic dentro
+                          del bloque, incluidas filas que se agreguen después;
+                        · `[disabled]` en cada botón deja el control fuera del
+                          recorrido con el teclado y lo pone en gris de forma nativa.
+
+                        La tabla NO se oculta a propósito: el usuario necesita ver
+                        sobre qué caja está editando, y en qué estado están las
+                        demás. Lo que se apaga es su capacidad de actuar.
+                    -->
+                    <div class="modal-body" [class.tabla-bloqueada]="cash.showBoxForm">
                         <!--
-                            ALINEACIÓN (V5): cada <th> lleva la misma clase que
-                            sus <td>.
                             - "Turnos" es un número: centrado.
                             - "Último" es una fecha: sin partirse.
                             - La última columna (acciones) va a la derecha, igual
@@ -412,7 +425,7 @@
                                     <th class="caja-col">Caja</th>
                                     <th class="turnos-col">Turnos</th>
                                     <th class="fecha-col">Último</th>
-                                    <th class="acciones-col"></th>
+                                    <th class="acciones-col">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -433,17 +446,27 @@
                                     <td class="fecha-col">
                                         {{ b.lastOpenedAt ? (b.lastOpenedAt | date:'dd/MM/yyyy HH:mm') : '—' }}
                                     </td>
-                                    <td class="boxes-actions">
+                                    <td class="acciones-col">
                                         <!--
-                                            Las acciones van envueltas en un ng-container porque
-                                            *hasPermission es ESTRUCTURAL (usa TemplateRef y
-                                            ViewContainer): no puede compartir elemento con un
-                                            *ngIf. Por eso el permiso va afuera y la condición
-                                            de cada botón adentro.
+                                            El <td> NO puede ser el flex container: un <td> con
+                                            display:flex deja de comportarse como celda de tabla y
+                                            table-layout:fixed deja de respetarse (las columnas se
+                                            descuadran y los botones se salen). Por eso el <td> es
+                                            una celda normal y el <div> de adentro es el flex
+                                            container — ahí sí funciona flex-wrap:wrap.
                                         -->
-                                        <ng-container *hasPermission="'ABRIR_CAJA'">
-                                            <button type="button" class="btn-edit"
-                                                    (click)="cash.startEditBox(b)">Editar</button>
+                                        <div class="boxes-actions">
+                                            <!--
+                                                Las acciones van envueltas en un ng-container porque
+                                                *hasPermission es ESTRUCTURAL (usa TemplateRef y
+                                                ViewContainer): no puede compartir elemento con un
+                                                *ngIf. Por eso el permiso va afuera y la condición
+                                                de cada botón adentro.
+                                            -->
+                                            <ng-container *hasPermission="'ABRIR_CAJA'">
+                                                <button type="button" class="box-btn-edit"
+                                                        [disabled]="cash.showBoxForm"
+                                                        (click)="cash.startEditBox(b)">Editar</button>
 
                                             <!--
                                                 Solo se muestra "Borrar" si la caja nunca se
@@ -456,28 +479,30 @@
                                                 inalcanzable. Mostrar un botón que el
                                                 sistema no puede cumplir es una promesa falsa.
                                             -->
-                                            <button type="button" class="btn-del"
-                                                    *ngIf="b.sessionsCount === 0"
-                                                    (click)="cash.deleteBox(b)"
-                                                    title="Borrar la caja: nunca se abrió, no hay historial que perder">Eliminar</button>
+                                            <button type="button" class="box-btn-del"
+                                                        *ngIf="b.sessionsCount === 0"
+                                                        [disabled]="cash.showBoxForm"
+                                                        (click)="cash.deleteBox(b)"
+                                                        title="Borrar la caja: nunca se abrió, no hay historial que perder">Eliminar</button>
 
                                             <!--
                                                 "Dar de baja" aparece en dos casos distintos y
                                                 por eso son DOS botones, no uno con condición
                                                 mixta:
-                                                  · tiene cortes → NO se puede borrar, solo
+                                                  · tiene cortes y NO se puede borrar, solo
                                                     dejar de ofrecerse al abrir.
-                                                  · no tiene cortes → tampoco interesa
+                                                  · no tiene cortes y tampoco interesa
                                                     borrarla a mano; el borrado ya está
                                                     disponible arriba.
                                             -->
-                                            <button type="button" class="btn-baja"
-                                                    *ngIf="b.sessionsCount > 0 && b.active"
-                                                    (click)="cash.deactivateBox(b)"
-                                                    title="Dar de baja: deja de ofrecerse al abrir, pero sus ventas siguen en el historial">Dar de baja</button>
+                                            <button type="button" class="box-btn-baja"
+                                                        *ngIf="b.sessionsCount > 0 && b.active"
+                                                        [disabled]="cash.showBoxForm"
+                                                        (click)="cash.deactivateBox(b)"
+                                                        title="Dar de baja: deja de ofrecerse al abrir, pero sus ventas siguen en el historial">Dar de baja</button>
 
                                             <!--
-                                                DAR DE ALTA (V5): una caja dada de baja se puede
+                                                DAR DE ALTA: una caja dada de baja se puede
                                                 rehabilitar. El botón NO borra nada ni crea una
                                                 caja nueva: es la MISMA caja, con su mismo número
                                                 y su mismo historial, la que vuelve a ofrecerse.
@@ -487,11 +512,13 @@
                                                 ocupado por esta fila, así que no puede
                                                 reutilizarse para otra caja.
                                             -->
-                                            <button type="button" class="btn-alta"
-                                                    *ngIf="!b.active"
-                                                    (click)="cash.activateBox(b)"
-                                                    title="Volver a ofrecer esta caja. Conserva su número y todo su historial">Dar de alta</button>
-                                        </ng-container>
+                                            <button type="button" class="box-btn-alta"
+                                                        *ngIf="!b.active"
+                                                        [disabled]="cash.showBoxForm"
+                                                        (click)="cash.activateBox(b)"
+                                                        title="Volver a ofrecer esta caja. Conserva su número y todo su historial">Dar de alta</button>
+                                            </ng-container>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -499,14 +526,31 @@
                     </div>
 
 <!-- Pie del modal: el botón de crear vive AQUÍ.
-         El icono (anadir.png) mide 512x512: sin la regla .btn-confirm-open img
-         de cobro.css se vería gigante dentro del botón. -->
+                         El icono (anadir.png) mide 512x512: sin la regla .btn-confirm-open img
+                         de cobro.css se vería gigante dentro del botón.
+
+                         Los DOS botones se inhabitilan mientras hay una caja en
+                         alta/edición, por la misma razón que la tabla: cada uno
+                         descarta lo escrito sin aviso.
+                           · "Crear" llama a startNewBox(), que reemplaza
+                             `boxForm` por uno nuevo → se pierde lo tecleado.
+                           · "Cerrar" llama a closeBoxesModal(), que además
+                             pone `showBoxForm = false` → se pierde el formulario
+                             entero.
+                         Quedan dos salidas, y ambas son explícitas: el botón
+                         "Cancelar" del formulario y guardar. Así el usuario no
+                         queda atrapado y no puede perder datos por un clic
+                         distraído.
+                    -->
                     <div class="button-box">
                         <button *hasPermission="'ABRIR_CAJA'" class="btn-confirm-open" type="button"
+                                [disabled]="cash.showBoxForm"
                                 (click)="cash.startNewBox()">
-                            <img src="assets/icons/anadir.png" alt="">Crear caja
+                            <img src="assets/icons/anadir.png" alt="">Crear
                         </button>
-                        <button class="btn-cancel" type="button" (click)="cash.closeBoxesModal()">
+                        <button class="btn-cancel" type="button"
+                                [disabled]="cash.showBoxForm"
+                                (click)="cash.closeBoxesModal()">
                             Cerrar
                         </button>
                     </div>
@@ -514,7 +558,7 @@
             </div>
 
             <!-- ============================================================
-                 Modal de ABRIR caja (V4)
+                 Modal de ABRIR caja
                  Ahora se ELIGE una caja FÍSICA libre. La misma caja puede
                  abrirse de nuevo en otro día: cada apertura crea un turno
                  nuevo.
@@ -564,7 +608,7 @@
             </div>
 
             <!-- ============================================================
-                 Modal de CERRAR caja (V3, punto 5.1)
+                 Modal de CERRAR caja:
                  El cierre EXIGE que el efectivo contado coincida con el esperado.
                  Si no cuadra, aparece el campo de motivo: es la salida de
                  emergencia, y el descuadre queda registrado.
@@ -606,7 +650,7 @@
                             </div>
                         </div>
 
-                        <label class="modal-label">Dinero contado en el cajón</label>
+                        <label class="modal-label">Dinero contado en la caja</label>
                         <input
                             type="number"
                             name="closingAmount"
@@ -630,7 +674,7 @@
                             </ng-template>
                         </div>
 
-                        <!-- Punto 5.1: salida de emergencia. Solo aparece si NO cuadra,
+                        <!-- Salida de emergencia. Solo aparece si NO cuadra,
                             y sin motivo el backend rechaza el cierre con 409. -->
                         <div class="diferencia-ayuda" *ngIf="cash.closingAmount > 0 && !cash.cashCuadra">
                             <p class="diferencia-warn">

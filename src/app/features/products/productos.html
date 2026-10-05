@@ -15,10 +15,27 @@
 
     <div class="main-grid">
       <!-- FORMULARIO -->
-      <form class="form-card" (ngSubmit)="save()" *ngIf="auth.hasPermission('CREAR_PRODUCTOS') || auth.hasPermission('EDITAR_PRODUCTOS')">
+      <!-- novalidate: TODA la validación la hace el componente (validarCampo) y el
+           aviso va DEBAJO del campo. Sin esto, el min="1" de precio y stock hace
+           que el navegador bloquee el submit por su cuenta y muestre su propia
+           burbuja flotante: el usuario vería un aviso del navegador y los campos
+           nunca se marcarían en rojo. -->
+      <form class="form-card" (ngSubmit)="save()" novalidate *ngIf="auth.hasPermission('CREAR_PRODUCTOS') || auth.hasPermission('EDITAR_PRODUCTOS')">
         <div class="field">
+          <!-- OBLIGATORIO. Antes este campo no se validaba y se guardaba un
+               producto sin nombre: el backend no lo rechazaba. Ahora el aviso va
+               en el input (rojo) y debajo, igual que SKU y código de barras. -->
           <label>Nombre del producto</label>
-          <input name="name" [(ngModel)]="form.name" />
+          <input
+            name="name"
+            [(ngModel)]="form.name"
+            (input)="validarCampo('name')"
+            [class.input-error]="errores['name']"
+            appSelectOnFocus
+            maxlength="80"
+            autocomplete="off"
+          />
+          <span class="error-msg" *ngIf="errores['name']">{{ errores['name'] }}</span>
         </div>
 
         <div class="field">
@@ -31,7 +48,7 @@
           <input
             name="price"
             [(ngModel)]="form.price"
-            min="0"
+            min="1"
             step="0.01"
             (keydown)="soloDigitosYPunto($event)"
             (paste)="onPastePrecio($event, 'price')"
@@ -52,7 +69,7 @@
           <input 
             name="stock"
             [(ngModel)]="form.stock"
-            min="0"
+            min="1"
             step="1"
             (keydown)="soloDigitos($event)"
             (paste)="onPasteEntero($event, 'stock')"
@@ -96,10 +113,10 @@
           <label>SKU</label>
           <input name="sku" 
           [(ngModel)]="form.sku" 
-          (input)="aMayusculas($event)"
+          (input)="onInputSku($event)"
           [class.input-error]="errores['sku']"
           (paste)="onPasteSku($event)"
-          placeholder="CHOC-500 (opcional)"
+          placeholder="CHOC-500"
           maxlength="10"
           autocomplete="off"/>
           <span class="error-msg" *ngIf="errores['sku']">{{ errores['sku'] }}</span>
@@ -235,6 +252,12 @@
                         <button *ngIf="p.hasHistory" type="button" (click)="deactivateProduct(p.id)" class="deactivate">Dar de baja</button>
                       </ng-container>
                     </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td colspan="8" *ngIf="filteredProducts.length === 0">
+                    No hay productos que mostrar.
                   </td>
                 </tr>
               </tbody>

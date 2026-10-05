@@ -28,6 +28,7 @@ import {
     validarPrecio,
     validarRfc,
     validarSku,
+    validarTexto,
   } from '../../core/utils/validadores';
 
 
@@ -163,9 +164,14 @@ export class Productos implements OnInit {
     // ===== Validación ANTES de mandar nada (V3) =====
     // Se valida aquí y no solo en el backend por dos razones: no se hace un
     // request que ya se sabe que va a fallar con 400, y el mensaje aparece
-    // debajo del campo que está mal en vez de un aviso genérico arriba.
+    // DEBAJO del campo que está mal.
+    //
+    // Ya NO se abre un snackbar al detectar el error: el aviso vive en el input
+    // (que se pone rojo) y en el texto bajo el campo. El mensaje emergente además
+    // tapaba el formulario, se iba solo a los 4 segundos y no decía QUÉ campo
+    // era el culpable. El snackbar se queda solo para los errores DEL SERVIDOR
+    // (SKU duplicado, conflicto de nombre), que son distintos de un campo vacío.
     if(!this.formularioValido()){
-      this.snack.open('Revisa los campos marcados en rojo', 'Cerrar', { duration: 4000 });
       return;
     }
 
@@ -317,9 +323,19 @@ export class Productos implements OnInit {
   }
 
   //Validar campos numericos
+  // ⚠️ Este método ya no lo invoca el template: el `<input>` de precio y stock
+  // ahora llama a `validarCampo(...)`, que AVISA en vez de corregir el valor.
+  //
+  // La diferencia importa: aquí, si se teclea "0" en el stock, el 0 se convierte
+  // en 1 por su cuenta,
+  // y el usuario no se entera de nada; el campo queda con un número que él no
+  // escribió. Con `validarCampo` el 0 se queda en 0 y el error se muestra
+  // debajo, que es lo que el usuario pidió.
+  //
+  // Se deja el código por si hace falta reutilizarlo, pero no debe volver a
+  // engancharse al (input): corregir en silencio es justo lo que se corrigió.
   validateNumber(field: 'price' | 'stock'){//Field:
-    // El stock puede ser 0 (agotado); el precio no puede bajar de 1.
-    const min = field === 'stock' ? 0 : 1;
+    const min = 1;
     if(this.form[field] < min){
       this.form[field] = min;
     }
@@ -350,8 +366,10 @@ export class Productos implements OnInit {
    * un objeto con un tipo sin índice. Este getter devuelve el valor ya con el
    * tipo que el validador espera, sin casts inseguros.
    */
-  private valorDe(campo: 'price' | 'stock' | 'sku' | 'barcode'): string | number | null {
+  private valorDe(campo: 'name' | 'price' | 'stock' | 'sku' | 'barcode'): string | number | null {
     switch (campo) {
+      case 'name':
+        return this.form.name;
       case 'price':
         return this.form.price;
       case 'stock':
@@ -374,17 +392,30 @@ export class Productos implements OnInit {
     }
   }
 
-  /** Valida un campo y guarda (o limpia) su mensaje de error. */
-  validarCampo(campo: 'price' | 'stock' | 'sku' | 'barcode') {
+  /**
+   * Valida un campo y guarda (o limpia) su mensaje de error.
+   *
+   * `precio` y `stock` pasan `min = 1`: un producto no se crea a precio 0 ni a
+   * stock 0. El 0 sigue siendo un valor legítimo YA EN LA BASE (un producto que
+   * se vendió hasta agotarse queda en 0, y ahí no es un error); lo que no se
+   * permite es crearlo así.
+   *
+   * `name` es obligatorio: antes el nombre no se validaba y se guardaba un
+   * producto sin nombre, que el backend no rechazaba.
+   */
+  validarCampo(campo: 'name' | 'price' | 'stock' | 'sku' | 'barcode') {
     const valor = this.valorDe(campo);
 
     let resultado;
     switch (campo) {
+      case 'name':
+        resultado = validarTexto(String(valor ?? ''), 'nombre', 80, true);
+        break;
       case 'price':
-        resultado = validarPrecio(valor, 'precio');
+        resultado = validarPrecio(valor, 'precio', 1);
         break;
       case 'stock':
-        resultado = validarEntero(valor, 'stock');
+        resultado = validarEntero(valor, 'stock', 1);
         break;
       case 'sku':
         resultado = validarSku(String(valor ?? ''));
@@ -405,7 +436,7 @@ export class Productos implements OnInit {
 
   /** Valida todo el formulario. Devuelve false si algo está mal. */
   formularioValido(): boolean {
-    (['price', 'stock', 'sku', 'barcode'] as const).forEach((c) => this.validarCampo(c));
+    (['name', 'price', 'stock', 'sku', 'barcode'] as const).forEach((c) => this.validarCampo(c));
     return Object.keys(this.errores).length === 0;
   }
 
@@ -450,6 +481,21 @@ export class Productos implements OnInit {
     this.form.barcode = sanearDigitos(texto);
     event.preventDefault();
     this.validarCampo('barcode');
+  }
+
+  /**
+   * Escribe en el SKU: pasa a mayúsculas y valida en el mismo golpe.
+   *
+   * 🔑 Van juntos en un método y no como dos `(input)` en la etiqueta porque el
+   * ORDEN importa: hay que poner en mayúsculas ANTES de validar, o el mensaje de
+   * error se calcula sobre el texto en minúsculas que todavía no se ha guardado.
+   * Con dos bindings sueltos, Angular los ejecuta en el orden del template pero
+   * `ngModel` actualiza `form.sku` por su cuenta, y el resultado deja de ser
+   * predecible en cuanto se toca algo de este bloque.
+   */
+  onInputSku(event: Event) {
+    aMayusculas(event);
+    this.validarCampo('sku');
   }
 
   /**

@@ -187,9 +187,9 @@
             <input
               name="formProvider.rfc"
               [(ngModel)]="formProvider.rfc"
-              (input)="aMayusculas($event)"
+              (input)="onInputRfc($event)"
               (paste)="onPasteRfc($event)"
-              (input)="validarCampo('rfc')"
+              [class.input-error]="errores['rfc']"
               placeholder="GODE561231GR8"
               maxlength="13"
               autocomplete="off"
@@ -204,10 +204,14 @@
             <input
               name="formProvider.name"
               [(ngModel)]="formProvider.name"
-              (input)="aMayusculas($event)"
+              (input)="onInputProviderName($event)"
+              (blur)="validarCampo('name')"
+              [class.input-error]="errores['name']"
               placeholder="DAIRY QUEEN"
+              maxlength="100"
               autocomplete="off"
             />
+            <span class="error-msg" *ngIf="errores['name']">{{ errores['name'] }}</span>
           </div>
         <div class="field">
           <label>Teléfono</label>

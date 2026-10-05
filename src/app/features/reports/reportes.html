@@ -26,10 +26,12 @@
         <label>Desde</label>
         <input type="date" [(ngModel)]="from" />
       </div>
+
       <div class="filter">
         <label>Hasta</label>
         <input type="date" [(ngModel)]="to" />
       </div>
+
       <div class="filter">
         <label>Agrupación</label>
         <select [(ngModel)]="groupBy">
@@ -38,10 +40,12 @@
           <option value="YEAR">Año</option>
         </select>
       </div>
+
       <div class="filter">
         <label>Top productos</label>
         <input type="number" min="1" max="100" [(ngModel)]="topN" />
       </div>
+
       <div class="filter">
         <label>Stock máximo</label>
         <input type="number" min="0" [(ngModel)]="threshold" />
@@ -67,6 +71,7 @@
           </option>
         </select>
       </div>
+      
       <!-- Acciones de filtros: Aplicar (azul) y Restablecer (verde), juntos -->
       <div class="filters-actions">
         <button class="btn btn-primary" (click)="applyFilters()" [disabled]="loading">
@@ -194,7 +199,7 @@
 
          Al hacer clic en una fila se despliega el detalle de sus ventas.
     -->
-    <div class="table-container fade-in" *ngIf="cashBoxReport">
+    <div class="table-container fade-in" *ngIf="cashBoxReport" [class.caja-cargando]="boxLoading">
       <div class="table-card">
         <div class="table-title">
           <h3>
@@ -226,8 +231,8 @@
                     [(ngModel)]="cashBoxUserFilter"
                     (ngModelChange)="applyCashBoxUserFilter()">
               <option [ngValue]="null">Todos los usuarios</option>
-<!--
-              🔑 trackBy en el *ngFor: sin él, Angular destruye y reconstruye
+            <!--
+              trackBy en el *ngFor: sin él, Angular destruye y reconstruye
               cada <option> en cada ciclo de detección de cambios, eso hace que
               el ngModel re-emita ngModelChange, que dispara la petición HTTP,
               que devuelve datos nuevos... y la página se queda colgada. Con
@@ -243,6 +248,14 @@
           <span class="caja-conteo" *ngIf="cashBoxReport.totalSessions !== cashBoxReport.sessions.length">
             {{ cashBoxReport.sessions.length }} de {{ cashBoxReport.totalSessions }} turnos
           </span>
+
+          <!--
+            Indicador de recarga. La tabla NO se borra mientras llega la respuesta
+            (ver `boxLoading`): se atenúa para que se vea que algo está pasando sin
+            que el contenido salte. El `…` del texto avisa que el clic sí se
+            registró.
+          -->
+          <span class="caja-actualizando" *ngIf="boxLoading">Actualizando…</span>
         </div>
 
         <div class="table-scroll">
@@ -365,6 +378,118 @@
             </tbody>
           </table>
         </div>
+
+        <!--
+          ================================================================
+            CORTE DE CAJA — total de los turnos de la tabla de arriba.
+
+            Va AQUÍ, dentro de la misma tarjeta y debajo de la tabla, porque es
+            la MISMA información a otra granularidad: la tabla es un renglón por
+            turno y esto es la suma._Readalo junto, no tres pantallas más abajo.
+
+            🔑 NO se pide nada extra. `corteCaja` se calcula en el navegador
+            sumando las filas que la tabla ya tiene (`calcularCorteDeCaja`). Por
+            construcción no puede quedar desfasado de la tabla, y no hay una
+            segunda consulta que pueda fallar sola.
+
+            Antes esto leía `/cash/summary`, que devuelve el turno ABIERTO en ese
+            momento: con una caja filtrada arriba y el corte de otro turno abajo,
+            la sección respondía una pregunta distinta a la de la tabla.
+          ================================================================
+        -->
+        <div class="corte-caja" *ngIf="corteCaja as c">
+          <div class="corte-caja-head">
+            <h4>
+              Corte de caja
+              <span class="corte-caja-sub">{{ cashBoxReport.number }} · {{ c.turnos }} turno(s)</span>
+            </h4>
+
+            <div class="corte-caja-acciones">
+              <button class="btn btn-secondary" (click)="printCorte()"
+                      [disabled]="!corteCaja">Imprimir</button>
+              <button class="btn btn-secondary" (click)="exportCortePDF()"
+                      [disabled]="!corteCaja">PDF</button>
+              <button class="btn btn-secondary" (click)="exportCorteExcel()"
+                      [disabled]="!corteCaja">Excel</button>
+            </div>
+          </div>
+
+          <!--
+            `.cash-summary` / `.cash-row`: las MISMAS clases del modal de cobro
+            (cobro.html). Se movieron a styles.css porque ahora las usan dos
+            componentes. Antes esta sección usaba `.corte-row`, que es una
+            columna angosta con 9 renglones apilados: los mismos datos, el doble
+            de alto. La versión de cobro es un grid de 2 columnas.
+          -->
+          <div class="cash-summary">
+            <div class="cash-row">
+              <span>Fondo inicial</span>
+              <strong>${{ c.openingAmount | number:'1.2-2' }}</strong>
+            </div>
+            <div class="cash-row">
+              <span>Ventas efectivo</span>
+              <strong>${{ c.cashSales | number:'1.2-2' }}</strong>
+            </div>
+            <div class="cash-row">
+              <span>Ventas débito</span>
+              <strong>${{ c.debitSales | number:'1.2-2' }}</strong>
+            </div>
+            <div class="cash-row">
+              <span>Ventas crédito</span>
+              <strong>${{ c.creditSales | number:'1.2-2' }}</strong>
+            </div>
+            <div class="cash-row">
+              <span>Tickets</span>
+              <strong>{{ c.totalTickets }}</strong>
+            </div>
+            <div class="cash-row">
+              <span>Utilidad</span>
+              <strong>${{ c.grossProfit | number:'1.2-2' }}</strong>
+            </div>
+
+            <!-- El total ocupa las 2 columnas: es el dato que se va a leer. -->
+            <div class="cash-row total">
+              <span>Total vendido</span>
+              <strong>${{ c.totalSales | number:'1.2-2' }}</strong>
+            </div>
+            <div class="cash-row expected">
+              <span>Monto esperado en el cajón</span>
+              <strong>${{ c.expectedAmount | number:'1.2-2' }}</strong>
+            </div>
+
+            <!--
+              🔑 La diferencia se muestra SOLO si es calculable, y si no se
+              explica por qué falta. Un "$0.00" acá afirmaría "el cajero no
+              sobró ni faltó nada", que es una afirmación sobre el dinero real.
+              El "—" no dice nada falso.
+
+              El `*ngIf` de este mismo <div> es lo que hace que `c.difference`
+              esté ya angosto a `number` en las expresiones de abajo: por eso
+              acá NO lleva `?? 0`. El compilador lo detecta y avisa (NG8102).
+            -->
+            <div class="cash-row total" *ngIf="c.difference !== null"
+                 [class.dif-negativa]="c.difference < 0"
+                 [class.dif-positiva]="c.difference > 0">
+              <span>Diferencia</span>
+              <strong>
+                {{ c.difference > 0 ? '+' : '' }}{{ c.difference | number:'1.2-2' }}
+              </strong>
+            </div>
+          </div>
+
+          <p class="corte-nota" *ngIf="c.differenceReason">
+            Descuadre: {{ c.differenceReason }}
+          </p>
+
+          <p class="corte-nota" *ngIf="c.difference === null && cashBoxUserFilter !== null">
+            La diferencia no se muestra con filtro de usuario: es el dato congelado
+            del cierre de cada turno y al lado de un total recortado daría un
+            descuadre que no ocurrió.
+          </p>
+          <p class="corte-nota" *ngIf="c.difference === null && cashBoxUserFilter === null && c.turnoAbierto">
+            La diferencia aparece cuando se cierre el turno abierto.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -432,54 +557,55 @@
       </div>
     </div>
 
-    <!-- Corte de caja (imprimible / exportable) -->
-    <div class="table-container cortes fade-in">
-      <div class="table-card corte-print">
-        <!-- Encabezado del corte: botones ARRIBA del titulo, todo centrado -->
-        <div class="corte-header">
-          <div class="actions">
-            <button class="btn btn-secondary" (click)="printCorte()">Imprimir</button>
-            <button class="btn btn-secondary" (click)="exportCortePDF()">PDF</button>
-            <button class="btn btn-secondary" (click)="exportCorteExcel()">Excel</button>
-          </div>
-          <h3>Corte de caja</h3>
-        </div>
+    <!--
+      La sección de CORTE DE CAJA ya NO vive aquí: está debajo de la tabla de
+      turnos, dentro de la misma tarjeta. Ver el bloque `.corte-caja`.
 
-        <div class="corte-body" *ngIf="cashSummary; else noCash">
-          <!-- Cada monto se muestra con $ y | number:'1.2-2' (2 decimales, tabular-nums en CSS) -->
-          <div class="corte-row"><span>Caja #</span><strong>{{ cashSummary.cashId }}</strong></div>
-          <div class="corte-row"><span>Fondo inicial</span><strong>${{ cashSummary.openingAmount | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Ventas en efectivo</span><strong>${{ cashSummary.cashSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Ventas débito</span><strong>${{ cashSummary.debitSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Ventas crédito</span><strong>${{ cashSummary.creditSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row total"><span>Total ventas</span><strong>${{ cashSummary.totalSales | number:'1.2-2' }}</strong></div>
-          <div class="corte-row"><span>Tickets</span><strong>{{ cashSummary.totalTickets }}</strong></div>
-          <div class="corte-row total"><span>Monto esperado</span><strong>${{ cashSummary.expectedAmount | number:'1.2-2' }}</strong></div>
-          <div class="corte-row" [class.warn]="cashSummary.difference !== 0">
-            <span>Diferencia</span><strong>${{ cashSummary.difference | number:'1.2-2' }}</strong>
-          </div>
-        </div>
-
-        <ng-template #noCash>
-          <div class="empty-row">No hay caja abierta o cerrada para mostrar (permiso VER_CAJA)</div>
-        </ng-template>
-      </div>
-    </div>
+      Se quitó de este lugar porque leía `/cash/summary`, que devuelve el turno
+      ABIERTO en ese momento y no el de la caja seleccionada: la tabla y el
+      corte quedaban respondiendo preguntas distintas en la misma pantalla. Con
+      Imprimir / PDF / Excel arriba del todo de la página, además, el papel
+      impreso no se podía atribuir a ninguna caja.
+    -->
   </main>
 </div>
 
-<!-- Zona que solo se imprime (window.print) -->
-<div class="print-only corte-print" *ngIf="cashSummary">
+<!--
+  Zona que solo se imprime (window.print).
+
+  @media print oculta todo con `visibility: hidden` y revive solo `.print-only`,
+  así que este bloque es el ÚNICO que sale en el papel. Va ligado a `corteCaja`,
+  igual que la pantalla: si se dejara en `cashSummary` el papel volvería a
+  decir el turno abierto mientras la pantalla dice la caja elegida.
+-->
+<div class="print-only corte-print" *ngIf="corteCaja as c">
   <h1>Corte de caja</h1>
-  <p>Generado: {{ cashSummary.cashId }} · {{ today | date:'dd/MM/yyyy HH:mm' }}</p>
+  <!--
+    `corteRotulo` es el MISMO getter que usan el PDF y el Excel: si el encabezado
+    impreso dijera una caja distinta de la que dice el archivo exportado, no
+    habría forma de saber cuál de los dos papelitos es el bueno.
+  -->
+  <p class="print-sub">
+    {{ corteRotulo }}
+    · {{ c.turnos }} turno(s), {{ c.turnosCerrados }} cerrado(s)
+  </p>
+  <p class="print-sub">
+    Generado: {{ today | date:'dd/MM/yyyy HH:mm' }}
+    <span *ngIf="cashBoxUserFilter !== null"> · Filtro por usuario aplicado</span>
+  </p>
   <table>
-    <tr><td>Fondo inicial</td><td>{{ cashSummary.openingAmount | number:'1.2-2' }}</td></tr>
-    <tr><td>Ventas en efectivo</td><td>{{ cashSummary.cashSales | number:'1.2-2' }}</td></tr>
-    <tr><td>Ventas débito</td><td>{{ cashSummary.debitSales | number:'1.2-2' }}</td></tr>
-    <tr><td>Ventas crédito</td><td>{{ cashSummary.creditSales | number:'1.2-2' }}</td></tr>
-    <tr><td>Total ventas</td><td>{{ cashSummary.totalSales | number:'1.2-2' }}</td></tr>
-    <tr><td>Tickets</td><td>{{ cashSummary.totalTickets }}</td></tr>
-    <tr><td>Monto esperado</td><td>{{ cashSummary.expectedAmount | number:'1.2-2' }}</td></tr>
-    <tr><td>Diferencia</td><td>{{ cashSummary.difference | number:'1.2-2' }}</td></tr>
+    <tr><td>Fondo inicial</td><td>{{ c.openingAmount | number:'1.2-2' }}</td></tr>
+    <tr><td>Ventas en efectivo</td><td>{{ c.cashSales | number:'1.2-2' }}</td></tr>
+    <tr><td>Ventas débito</td><td>{{ c.debitSales | number:'1.2-2' }}</td></tr>
+    <tr><td>Ventas crédito</td><td>{{ c.creditSales | number:'1.2-2' }}</td></tr>
+    <tr><td>Total ventas</td><td>{{ c.totalSales | number:'1.2-2' }}</td></tr>
+    <tr><td>Tickets</td><td>{{ c.totalTickets }}</td></tr>
+    <tr><td>Utilidad</td><td>{{ c.grossProfit | number:'1.2-2' }}</td></tr>
+    <tr><td>Monto esperado</td><td>{{ c.expectedAmount | number:'1.2-2' }}</td></tr>
+    <tr>
+      <td>Diferencia</td>
+      <td>{{ c.difference === null ? '—' : (c.difference | number:'1.2-2') }}</td>
+    </tr>
   </table>
+  <p class="print-sub" *ngIf="c.differenceReason">Descuadre: {{ c.differenceReason }}</p>
 </div>

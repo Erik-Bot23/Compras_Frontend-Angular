@@ -98,12 +98,27 @@
 
 /* -------- Columnas de montos -------- */
 
-/* Derecha + digitos tabulares: los numeros quedan alineados y estables
-   (font-variant-numeric: tabular-nums evita que el ancho fluctue). */
+/* Centrada + digitos tabulares: los numeros quedan estables en su columna
+   (font-variant-numeric: tabular-nums evita que el ancho fluctue).
+
+   POR QUE SE CENTRA Y NO SE PONE A LA DERECHA (esto era el bug):
+   `styles.css` ya centra TODO lo que esta dentro de `.table-card`
+   (`.table-card th` y `.table-card td`, ambos `text-align: center`). Esta
+   regla `.money` es de especificidad (0,1,0) y el global es (0,1,1), asi que
+   ANTES no se aplicaba a los <td>: los datos salian centrados (por el global)
+   mientras el <th> si se iba a la derecha, porque `th.money` es (0,1,1) y le
+   ganaba al global por orden de carga. Ese desajuste es justo lo que se veía:
+   el titulo a la derecha y su numero al centro.
+
+   Ahora `center` se declara en los DOS lados a proposito, sin depender del
+   orden de los styleUrls. */
 .money {
-  text-align: right;
+  text-align: center;
   font-variant-numeric: tabular-nums;
+  /* Padding SIMETRICO a proposito: con `padding-right` suelto y el texto
+     centrado, el numero queda descentrado hacia la izquierda. */
   padding-right: 18px !important;
+  padding-left: 18px !important;
 }
 
 /* Total: semibold para que sea la columna protagonista */
@@ -121,7 +136,7 @@
    sobre el espacio vacío y el número en otro punto de la fila — aunque los
    datos estuvieran perfectamente alineados entre sí.
 
-   La regla general: si una columna tiene datos alineados a la derecha, su
+   La regla general: si una columna tiene datos alineados al centro, su
    título también. Por eso .money se aplica a <th> y a <td> por igual.
 
    padding-right: 18px en el <th> lo pone a la misma altura que sus celdas: sin
@@ -144,10 +159,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Los <th> de monto heredan .money (derecha + tabulares), pero el padding-right
-   tiene que calzar con el de las celdas. */
+/* Los <th> de monto heredan .money (centrada + tabulares). El padding tiene que
+   calzar con el de las celdas en los DOS lados: si no, el titulo queda a otra
+   distancia del numero que le corresponde. */
 th.money {
-  padding-right: 18px;
+  text-align: center;
+  padding-right: 18px !important;
+  padding-left: 18px !important;
 }
 
 /* ==========================================================================

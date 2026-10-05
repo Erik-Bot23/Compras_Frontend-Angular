@@ -1,0 +1,421 @@
+/* =========================================================================
+   MODAL "VER CAJAS" — CRUD del inventario de cajas
+   ========================================================================= */
+
+/*
+  Este modal tiene su propio ancho porque su contenido es una tabla de 4
+  columnas, no un formulario vertical como los demás modales de caja. Sin
+  `width` la tabla se estira al 100% del viewport y las columnas quedan
+  desproporcionadas.
+*/
+.boxes-modal {
+    width: min(620px, 94vw);
+    /* El proyecto NO tiene un reset global de box-sizing, así que los <div>
+       usan content-box: sin esto, width:620px + padding 18px de .modal =
+       656px reales y el "ancho del modal" deja de ser el que dice el CSS. */
+    box-sizing: border-box;
+}
+
+/* Botón "Ver cajas": gris neutro.
+   No es azul como "Abrir caja" a propósito: "Abrir" es la acción del turno
+   (la que el cajero usa todo el día) y "Ver cajas" es consultar el inventario.
+   Dos azules de la misma jerarquía harían competir dos acciones que no son de
+   la misma importancia. */
+.btn-cash.boxes {
+    background: #64748b;
+    color: white;
+}
+
+.btn-cash.boxes:hover {
+    background: #475569;
+}
+
+/* -------- Formulario de alta/edición, dentro de la tabla -------- */
+
+/*
+  Fondo azul translúcido + borde: separa el formulario del fondo del modal sin
+  necesidad de un borde separador, y usa la misma familia de color que los
+  modales de caja.
+*/
+.box-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(79, 140, 255, 0.08);
+    border: 1px solid rgba(79, 140, 255, 0.3);
+
+    /*
+      `flex: 0 0 auto` es lo que evita que el formulario se EMPALME con la
+      tabla de abajo, y no es cosmético.
+
+      `.modal` es `display: flex; flex-direction: column` y tiene
+      `max-height: calc(100vh - 48px)`. Sus hijos por defecto son
+      `flex: 0 1 auto`, o sea ENCOGER. Cuando la tabla tiene muchas cajas, el
+      alto total pasa el `max-height` y los dos bloques empiezan a encogerse:
+      `.modal-body` (que es `flex: 1 1 auto` con `overflow-y: auto`) absorbe
+      el escurrimiento, pero `.box-form` también encoge.
+
+      Y aquí está el fallo: los <input> del formulario son hijos flex con
+      `min-height: auto`, o sea NO pueden bajar de su alto natural. Si el
+      formulario encoge por debajo de ese alto, su contenido se sale de su
+      caja y PISA la tabla de abajo. Por eso se veía el formulario encimado
+      sobre las cajas.
+
+      Con `flex: 0 0 auto` el formulario no encoge nunca: si no cabe, el que
+      cede espacio es `.modal-body`, que es el que tiene scroll. Es el mismo
+      tratamiento que ya lleva el `h3` del modal (`flex: 0 0 auto`).
+    */
+    flex: 0 0 auto;
+}
+
+/* Los inputs del formulario se estiran a todo el ancho del bloque.
+
+   box-sizing: border-box NO es opcional aquí. Por defecto los <input> usan
+   content-box, así que `width: 100%` significa "el 100% del ancho disponible
+   MÁS el padding y el borde": con 10px de padding a cada lado y 1px de borde
+   (22px en total), los inputs se salían de la card y se comían el fondo. Con
+   border-box el 100% incluye padding y borde, y el input entra justo. */
+.box-form input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* .button-box dentro del formulario no lleva borde separador: ahí sí estorba,
+   porque el gap del flex ya separa los botones del input de arriba. */
+.box-form .button-box {
+    border-top: none;
+    padding-top: 4px;
+}
+
+/* -------- La tabla -------- */
+
+/*
+  Tabla atenuada y sin clics mientras hay una caja en alta/edición
+  (`cash.showBoxForm`, ver cobro.html).
+
+  No se usa `visibility: hidden` ni se oculta la tabla: el usuario necesita ver
+  sobre qué caja está editando y cómo están las demás. Lo que se apaga es su
+  capacidad de actuar, y se atenúa para que se lea como bloque inactivo en vez
+  de como contenido vivo.
+
+  `pointer-events: none` es la barrera real de clics: aplica al subárbol
+  entero, así que también cubre lo que se agregue después sin tocar este CSS.
+  Los `[disabled]` de cada botón hacen el trabajo equivalente para teclado y
+  lectores de pantalla, que no dependen del puntero.
+*/
+.modal-body.tabla-bloqueada {
+    pointer-events: none;
+    opacity: 0.35;
+    filter: grayscale(0.7);
+    transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+/* El navegador ya pone en gris un <button disabled>, pero su fondo sigue siendo
+   el color de la acción (azul, rojo, naranja). Con la tabla atenuada se ve
+   todavía más fuerte, así que se baja la opacidad y se quita el cursor de "se
+   puede apretar" que sí estaba puesto. */
+.boxes-actions button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/*
+  table-layout: fixed es OBLIGATORIO aquí, no cosmético.
+
+  Con el layout automático (el default), la columna de acciones crece hasta que
+  le quepan los botones: el <td> se ensancha, empuja a las otras y la tabla
+  termina más ancha que el modal. Con `fixed` el navegador respeta los anchos
+  de columna de abajo y NO los deja crecer con el contenido; si algo no cabe,
+  se desborda (y por eso los botones viven en un <div> con flex-wrap, que baja
+  de línea en vez de desbordar).
+
+  OJO: en `fixed` las propiedades min-width/max-width de las celdas se ignoran.
+  Por eso los anchos van en porcentajes, no en píxeles.
+*/
+.boxes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    table-layout: fixed;
+}
+
+/* Los anchos de columna van aquí y no al final del archivo: en `fixed` solo
+   cuenta la primera declaración de cada celda, así que dejar una segunda regla
+   "de corrección" más abajo no hace nada (solo confunde al que lea). */
+.boxes-table th.caja-col,
+.boxes-table td.caja-col {
+    /* 30% — el nombre de la caja + su descripción. */
+    width: 30%;
+}
+
+.boxes-table th.turnos-col,
+.boxes-table td.turnos-col {
+    /* 12% — es un contador: la cifra máxima es 3 dígitos ("Turnos" ~45px). */
+    width: 12%;
+}
+
+.boxes-table th.fecha-col,
+.boxes-table td.fecha-col {
+    /* 24% — "04/10/2026 14:30" son ~112px; no la partes para que la fila no se
+       haga el doble de alta. */
+    width: 24%;
+}
+
+.boxes-table th.acciones-col,
+.boxes-table td.acciones-col {
+    /* 34% — la más ancha a propósito. Solo se muestran 2 o 3 botones a la vez
+       ("Eliminar" y "Dar de baja" son mutuamente excluyentes), pero el ancho
+       se calcula para los 3: ~157px de botones + 12px de gaps entran en los
+       ~191px que deja este 34%. Si no entran, flex-wrap los baja de línea
+       en vez de romper la tabla. */
+    width: 34%;
+}
+
+.boxes-table th {
+    text-align: center;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    /* gris claro en vez de opacity: los títulos tienen que verse sobre el fondo
+       oscuro del modal (el mismo bug que se corrigió en el modal de compras). */
+    color: #94a3b8;
+    padding: 6px 4px;
+    border-bottom: 1px solid #1e293b;
+}
+
+/* ==========================================================================
+   ALINEACIÓN DE LA TABLA DE CAJAS
+   ==========================================================================
+   Cada columna lleva su clase en el <th> Y en el <td>. Sin esto los títulos
+   quedan a la izquierda mientras sus datos van al centro o a la derecha, y
+   cada título termina flotando sobre el espacio vacío de la columna vecina.
+*/
+
+.boxes-table th.turnos-col,
+.boxes-table td.turnos-col {
+    /* Turnos es un CONTADOR: centrado y con dígitos tabulares, para que la
+       columna no se corra al cambiar de 9 a 10. */
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.boxes-table th.fecha-col,
+.boxes-table td.fecha-col {
+    /* CENTRADA: el <th> "Ultimo" no traia alineacion propia, asi que heredaba el
+       `left` de `.boxes-table th` y quedaba flotando sobre el aire de la
+       columna mientras la fecha de abajo si se leia al centro. */
+    text-align: center;
+    /* Sin partirse: "04/10/2026 14:30" partido en dos lineas hace la fila el
+       doble de alta. */
+    white-space: nowrap;
+}
+
+.boxes-table th.acciones-col,
+.boxes-table td.acciones-col {
+    /* CENTRADA, igual que los botones (que usan justify-content: center). Con el
+       titulo a la derecha y los botones al centro, el titulo flotaba sobre el
+       aire de la columna y los botones parecian "no tener forma": quedaban
+       pegados al borde, bajo el aire. */
+    text-align: center;
+}
+
+.boxes-table th.caja-col,
+.boxes-table td.caja-col {
+    /* CENTRADA, igual que su <th>. */
+    text-align: center;
+}
+
+.boxes-table td {
+    padding: 8px 4px;
+    border-bottom: 1px solid #1e293b;
+    vertical-align: middle;
+}
+
+.boxes-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Texto del modal: se declara en la tabla para que no dependa de que
+   `.modal` traiga el color por herencia. */
+.boxes-table td {
+    color: #e2e8f0;
+}
+
+/* Descripción de la caja, debajo del número: chica y atenuada, es un dato
+   secundario. */
+.box-desc {
+    font-size: 0.76rem;
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+/* Caja dada de baja: se atenúa, no se borra de la vista. Ver el WHY en el
+   backend: sus ventas siguen en el historial. */
+.box-inactive {
+    opacity: 0.55;
+}
+
+/* -------- Badges -------- */
+
+.badge-baja,
+.badge-uso {
+    display: inline-block;
+    margin-top: 3px;
+    padding: 1px 7px;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+/* "En uso": verde. La caja tiene un turno abierto ahora mismo. */
+.badge-uso {
+    background: #22c55e;
+    color: #0f172a;
+}
+
+/* "Dada de baja": gris, no rojo. No es un error ni un peligro: es un estado
+   válido y reversible. Pintarla de rojo haría pensar que hay algo mal. */
+.badge-baja {
+    background: #475569;
+    color: #e2e8f0;
+}
+
+/* -------- Acciones de la fila -------- */
+
+/*
+  `.boxes-actions` está en un <div> dentro del <td>, NO en el <td> mismo.
+
+  Es el punto que arregla el botón que se salía: un <td> con display:flex deja
+  de comportarse como celda de tabla (deja de participar del algoritmo de
+  tabla), y entonces ni table-layout:fixed ni el ancho de columna hacen nada.
+  El <div> sí puede ser flex container y sí puede hacer flex-wrap:wrap.
+*/
+.boxes-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+    /* Sin esto, los 2-3 botones (que tienen min-width por nowrap) no bajan de
+       línea: se salen del <div> y del modal. */
+    flex-wrap: wrap;
+    /* min-width:0 permite que los hijos se encojan en vez de desbordar. */
+    min-width: 0;
+}
+
+/*
+  🔑 PREFIJO `box-` EN LOS BOTONES: no es cosmético, evita una colisión real.
+
+  `cobro.css` define `.btn-inc, .btn-dec, .btn-del` para los botones de icono
+  del CARRITO (30x30, `padding: 0`, con un <img> dentro). Si aquí se llamaran
+  también `.btn-del`, las dos reglasrikearían por la misma clase, en el MISMO
+  componente y con la MISMA especificidad (0,1,0) — gana la última, y cajas.css
+  carga después. El botón "X" del carrito heredaría `padding: 5px 10px` y el
+  icono de 16px se quedaría sin sitio dentro de los 30px.
+
+  Prefijar con `box-` deja los nombres disjuntos y hace imposible la colisión.
+  Es la misma razón por la que existe `.btn-inc`: usar `:nth-child` ataría el
+  color al ORDEN en el DOM, que es frágil.
+*/
+.box-btn-edit,
+.box-btn-del,
+.box-btn-baja,
+.box-btn-alta {
+    /* padding vertical menor + line-height: da botones más compactos, que en
+       una fila de 3 acciones es lo que hace falta para que quepan. */
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: none;
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.3;
+    cursor: pointer;
+    color: white;
+    /* El texto no parte: "Dar de baja" en dos líneas ("Dar de" / "baja") se lee
+       como dos botones y confunde. Si no cabe, baja el botón entero. */
+    white-space: nowrap;
+    /* Conserva SU tamaño y no el del contenedor. Sin esto un <button> como
+       flex child se estira hasta el ancho disponible y con
+       justify-content:flex-end queda "todo hacia la derecha". */
+    flex: 0 0 auto;
+    /* inline-flex para que el padding y el fondo se apliquen al contenido, no a
+       toda la celda. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.box-btn-edit {
+    background: #3b82f6;
+}
+
+.box-btn-edit:hover {
+    background: #2563eb;
+}
+
+/* Borrar: rojo. Solo sale cuando la caja nunca se abrió. */
+.box-btn-del {
+    background: #ef4444;
+}
+
+.box-btn-del:hover {
+    background: #dc2626;
+}
+
+/* Dar de baja: naranja, no rojo.
+   No es una eliminación: es una baja, y el usuario tiene que distinguirla de un
+   borrado de un vistazo. Mismo criterio que el botón "Dar de baja" de
+   productos. */
+.box-btn-baja {
+    background: #f59e0b;
+    color: #0f172a;
+}
+
+.box-btn-baja:hover {
+    background: #d97706;
+}
+
+/* Dar de ALTA: verde.
+   Es el inverso de "Dar de baja" y tiene que leerse como tal. Verde = vuelve a
+   estar disponible, que es exactamente lo que hace. */
+.box-btn-alta {
+    background: #22c55e;
+    color: #0f172a;
+}
+
+.box-btn-alta:hover {
+    background: #16a34a;
+}
+
+/* Fila vacía del modal */
+.empty-boxes {
+    text-align: center;
+    padding: 20px 4px;
+    color: #94a3b8;
+}
+
+/* ---------------------------------------------------------------------------
+   NOTA sobre lo que SE BORRÓ aquí (y por qué)
+
+   Antes había al final de este archivo tres reglas "de corrección":
+       .boxes-table th.acciones-col, .boxes-table td.boxes-actions { width/min/max: 200-220px }
+       .boxes-table td.boxes-actions { overflow: hidden }
+       .boxes-table { table-layout: fixed }      ← 2ª definición de la misma clase
+
+   Las tres son contraproducentes y ahora viven en su sitio correcto, arriba:
+
+   · `width: 200px` + `min-width`/`max-width`: con table-layout:fixed el
+     navegador IGNORA min-width y max-width de las celdas, y el ancho fijo en
+     píxeles competía con los porcentajes de las otras 3 columnas. Ahora la
+     columna se define en % (34%) junto a las demás.
+
+   · `overflow: hidden` en la celda: además de inútil (no hay nada que recortar),
+     es lo que ESCONDÍA el botón en vez de dejar que flex-wrap lo bajara de
+     línea. Recortar el desbordamiento no es "arreglar": es tapar el síntoma.
+
+   · La 2ª `.boxes-table { table-layout: fixed }`: duplicar la misma clase al
+     final del archivo solo funcionaba por el ORDEN de carga de styleUrls. Con
+     `fixed` ya declarado en la regla principal, depender del orden es
+     fragile; ahora el orden de styleUrls es irrelevante para esta tabla.
+   --------------------------------------------------------------------------- */

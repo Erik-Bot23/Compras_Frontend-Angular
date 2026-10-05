@@ -340,17 +340,7 @@ td .img:hover {
    sustituyen al antiguo comportamiento de "corregir el valor en silencio": antes,
    escribir 1.875 en el stock se convertira en 1 sin explicación, y el usuario no
    sabra si el sistema lo habra arreglado o si se estaba equivocando. */
-.error-msg {
-  display: block;
-  margin-top: 4px;
-  font-size: 0.76rem;
-  line-height: 1.4;
-  color: #f87171;
-}
-
-/* El input con error se marca en rojo para que se note sin leer el mensaje.
-   Se aplica con [class.input-error] desde el template cuando hay error. */
-.input-error {
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
-}
+/* `.error-msg` y `.input-error` ya NO se declaran aquí: viven en styles.css
+   porque son el mismo patrón en los cinco formularios (productos, categorías,
+   roles, usuarios y proveedores). Tener una copia por componente hacía que un
+   cambio en el patrón hubiera que repetirlo cinco veces. */

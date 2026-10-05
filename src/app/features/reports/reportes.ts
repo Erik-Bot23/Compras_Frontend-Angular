@@ -21,6 +21,7 @@ import { SidebarService } from '../../core/service/sidebar-service/sidebar-servi
 import { ReportService, ReportGroup } from '../../core/service/report-service/report-service';
 import { CashService } from '../../core/service/cash-service/cash-service';
 import {
+  CajaCorte,
   CashBoxReportDTO,
   CashReportDTO,
   CategoryPerformanceDTO,
@@ -32,7 +33,7 @@ import {
   ReportsSummaryDTO,
   TopProductDTO,
 } from '../../core/interfaces/reports/reports';
-import { CashBox, CashSummary } from '../../core/interfaces/cash-interface/cash-interface';
+import { CashBox } from '../../core/interfaces/cash-interface/cash-interface';
 
 Chart.register(...registerables);
 
@@ -62,7 +63,10 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   categories: CategoryPerformanceDTO[] = [];
   lowStock: LowStockDTO[] = [];
   summary!: ReportsSummaryDTO;
-  cashSummary!: CashSummary;
+  // 🔑 `cashSummary` se eliminó. Era el endpoint `/cash/summary`, que devuelve
+  // el turno ABIERTO en ese momento (findByActiveTrue) y por eso ignoraba la caja
+  // seleccionada. Ahora el corte es `corteCaja`, que se suma de los turnos de la
+  // caja elegida. Ver `calcularCorteDeCaja`.
   profit!: ProfitDTO;
 
   // =========================================================================
@@ -84,6 +88,22 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
 
   /** La caja elegida con TODAS sus sesiones. Llega al elegirla. */
   cashBoxReport: CashBoxReportDTO | null = null;
+
+  /**
+   * Hay una petición del reporte de caja en vuelo.
+   *
+   * <p><b>Es aparte de `loading` a propósito.</b> `loading` es el de la barra de
+   * filtros general (summary, gráficas, stock bajo): si se reutilizara, el botón
+   * "Aplicar" y los <select> de arriba se bloquearían mientras se cambia el
+   * usuario de una caja, que es una operación local y rápida.
+   *
+   * <p>🔑 <b>Por qué la tabla NO se limpia al filtrar por usuario.</b> Con
+   * `cashBoxReport = null` el `*ngIf` de la tabla la borraba de la pantalla
+   * durante cada petición: el usuario veía la sección desaparecer y reaparecer
+   * un segundo después, y el <select> de usuario iba con ella, así que durante
+   * la carga no había ni siquiera forma de volver a "Todos".
+   */
+  boxLoading = false;
 
   /**
    * Filtro por usuario DENTRO de la sección de caja (null = todos).
@@ -121,10 +141,141 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
    * petición HTTP, que devuelve datos nuevos, que vuelven a crear el array... y
    * la página se queda colgada.
    *
-   * <p>Guardarlo en una propiedad y recalcularlo solo cuando llega el reporte
-   * corta el ciclo por la raíz, en vez de intentarfrenarlo en la plantilla.
+   /**
+   * <p>🔑 <b>Guardarlo en una propiedad y recalcularlo solo cuando llega el
+   * reporte</b> corta el ciclo por la raíz, en vez de intentar frenarlo en la
+   * plantilla.
+   *
+   * <p><b>Y recalcularlo SOLO cuando la respuesta no viene filtrada.</b> Con un
+   * filtro de usuario activo el backend devuelve solo los turnos de ese
+   * usuario, así que sus `sellers` también viene recortados: si se reconstruyera
+   * la lista con ellos, el desplegable se quedaría con una sola opción (la del
+   * usuario filtrado) y el usuario tendría que volver a elegir "Todos" para
+   * recuperar a los demás. Es un menú que se come a sí mismo.
    */
   boxReportUsers: { userId: number | null; userName: string }[] = [];
+
+  /**
+   * ¿La respuesta que llega trae ALGÚN filtro aplicado?
+   *
+   * <p>Se deduce de lo que se MANDÓ, no de lo que llegó. Mirar las sesiones
+   * recibidas no serviría: si el filtro no encuentra nada, `sessions` viene vacío y
+   * no hay forma de distinguir "esta caja no tiene turnos" de "el filtro no
+   * coincidió con ninguno".
+   *
+   * <p>🔑 Esta pregunta es SOLO para la diferencia del corte, que no es
+   * calculable si el total que se está mirando no es el total de la caja. Para el
+   * desplegable de usuarios hay otra pregunta distinta: ver `filtradoPorUsuario`.
+   */
+  private get reporteFiltrado(): boolean {
+    return this.usuarioAplicado !== null || !!this.from || !!this.to;
+  }
+
+  /**
+   * ¿El recorte de la respuesta se debe al filtro de USUARIO?
+   *
+   * <p>Es la pregunta que decide si se reconstruye `boxReportUsers`, y no puede
+   * ser la misma que `reporteFiltrado`:
+   *
+   * <table>
+   *   <tr><th>Filtro</th><th>Qué llega</th><th>Roster</th></tr>
+   *   <tr><td>Solo fechas</td>
+   *       <td>Los turnos del rango, con TODOS los que vendieron en él</td>
+   *       <td>✅ sí se reconstruye</td></tr>
+   *   <tr><td>Usuario</td>
+   *       <td>Solo los turnos de ese usuario, y sus `sellers` son solo él</td>
+   *       <td>❌ no se reconstruye</td></tr>
+   * </table>
+   *
+   * <p>Usar `reporteFiltrado` para las dos cosas dejaba el desplegable en "Todos"
+   * y nada más siempre que hubiera fechas: se trampa al usuario con el caso común
+   * (filtrar por mes y luego buscar a un vendedor) para arreglar un caso que solo
+   * ocurre sin fechas.
+   */
+  private get filtradoPorUsuario(): boolean {
+    return this.usuarioAplicado !== null;
+  }
+
+  /**
+   * El corte de caja: la suma de los turnos que la tabla de arriba muestra.
+   *
+   * <p><b>Es una propiedad, no un getter, y se calcula UNA vez por respuesta.</b>
+   * Es la misma razón por la que `boxReportUsers` es una propiedad y no un
+   * getter: un getter devuelve un objeto NUEVO en cada ciclo de detección de
+   * cambios. Acá no dispara peticiones (no hay `ngModel` que lo escuche), pero
+   * sí rehace los bindings del DOM sin parar y, sobre todo, rompe la
+   * identidad para `*ngIf` y para el `?.` del template.
+   *
+   * <p>`null` cuando la caja no tiene turnos visibles: no se muestra una tarjeta
+   * de ceros, porque "no hay datos" y "todo fue cero" son cosas distintas.
+   */
+  corteCaja: CajaCorte | null = null;
+
+  /**
+   * Suma los turnos del reporte en un corte de caja.
+   *
+   * <p>🔑 <b>La diferencia se suma SOLO sobre turnos cerrados.</b> Es un dato
+   * congelado al cerrar: un turno abierto todavía no tiene diferencia (el
+   * backend manda `sesion.getDifference()`, que es null hasta que se cierra).
+   * Si se sumara incluyendo los abiertos, un turno abierto entra como 0 y el
+   * total queda más chico de lo que es, sin que nada lo advierta.
+   */
+  private calcularCorteDeCaja(data: CashBoxReportDTO) {
+    const s = data.sessions;
+    if (s.length === 0) {
+      this.corteCaja = null;
+      return;
+    }
+
+    let fondo = 0, efectivo = 0, debito = 0, credito = 0;
+    let esperado = 0, tickets = 0, utilidad = 0, diferencia = 0;
+    let cerrados = 0, abiertos = 0;
+    const motivos: string[] = [];
+
+    for (const x of s) {
+      fondo += x.openingAmount ?? 0;
+      efectivo += x.cashSales ?? 0;
+      debito += x.debitSales ?? 0;
+      credito += x.creditSales ?? 0;
+      esperado += x.expectedAmount ?? 0;
+      tickets += x.totalTickets ?? 0;
+      utilidad += x.grossProfit ?? 0;
+
+      if (x.active) {
+        abiertos++;
+      } else {
+        cerrados++;
+      }
+
+      // Con filtros la diferencia llega null en TODOS los turnos y no se puede
+      // reconstruir: no es que sea cero, es que no corresponde.
+      if (x.difference !== null && x.difference !== undefined) {
+        diferencia += x.difference;
+        if (x.differenceReason) motivos.push(x.differenceReason);
+      }
+    }
+
+    const sinDiferenciaUtil = this.reporteFiltrado || cerrados === 0;
+
+    this.corteCaja = {
+      turnos: s.length,
+      turnosCerrados: cerrados,
+      turnoAbierto: abiertos > 0,
+      openingAmount: fondo,
+      cashSales: efectivo,
+      debitSales: debito,
+      creditSales: credito,
+      // Se recalcula en vez de sumarse por coherencia: `expectedAmount` del
+      // backend es `fondo + efectivo` (ReportsImpl:509), así que el total
+      // tiene que salir de la misma cuenta y no de otra suma.
+      totalSales: efectivo + debito + credito,
+      expectedAmount: esperado,
+      totalTickets: tickets,
+      grossProfit: utilidad,
+      difference: sinDiferenciaUtil ? null : diferencia,
+      differenceReason: motivos.length ? motivos.join(' · ') : null,
+    };
+  }
 
   /**
    * Recalcula `boxReportUsers` a partir del reporte recibido.
@@ -193,7 +344,8 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit() {
     this.applyFilters();
-    this.loadCashSummary();
+    // Ya no se pide `/cash/summary`: el corte sale de `corteCaja`, que se arma
+    // con los turnos que devuelve el reporte de la caja elegida.
     this.loadCashBoxes();
   }
 
@@ -240,6 +392,16 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
       this.lowStock = data;
       this.loading = false;
     });
+
+    // El rango de fechas es COMPARTIDO con la sección de caja, a propósito: el
+    // usuario no debería tener dos juegos de fechas que se pisen. Pero si eso es
+    // así, aplicar los filtros tiene que recargar TAMBIÉN la tabla de turnos.
+    // Sin esta línea, cambiar las fechas solo movía las gráficas y la caja
+    // seguía mostrando el rango anterior: el filtro de arriba parecía no
+    // filtrar, que es justo lo que se reportó.
+    if (this.selectedBoxId !== null) {
+      this.loadCashBoxReport(this.selectedBoxId);
+    }
   }
 
   // ------- Reset de filtros -------
@@ -251,13 +413,6 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
     this.topN = 5;
     this.threshold = 10;
     this.applyFilters();
-  }
-
-  loadCashSummary() {
-    this.cashService.getSummary().subscribe({
-      next: (data) => (this.cashSummary = data),
-      error: () => undefined, //Sin caja activa o sin autorización: el corte queda vacío
-    });
   }
 
   // ------- Gráficas -------
@@ -407,6 +562,33 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // ------- Corte de caja -------
+  //
+  // 🔑 Estas tres exportaciones leen `corteCaja`, que se arma sumando los
+  // turnos de la caja ELEGIDA. Antes leían `cashSummary` (endpoint
+  // `/cash/summary`), que devuelve el turno abierto en ese momento: con el
+  // corte en pantalla y el PDF de otra caja, el papel no cuadraba con la
+  // pantalla. Exportar lo que se ve es la única forma de que el corte impreso
+  // sirva para conferir.
+  //
+  // El nombre del archivo lleva el número de caja y el filtro de usuario, para
+  // que al imprimir varias cajas seguidas no se confundan los papeles.
+
+  /** Etiqueta de la caja en curso, para encabezados y nombres de archivo. */
+  get corteRotulo(): string {
+    const caja = this.cashBoxReport;
+    if (!caja) return 'caja';
+    return this.cashBoxUserFilter === null
+      ? caja.number
+      : `${caja.number} - ${this.nombreUsuarioFiltrado()}`;
+  }
+
+  /** El usuario filtrado, para el encabezado. 'Todos' si no hay filtro. */
+  private nombreUsuarioFiltrado(): string {
+    if (this.cashBoxUserFilter === null) return 'Todos';
+    const u = this.boxReportUsers.find((x) => x.userId === this.cashBoxUserFilter);
+    return u ? u.userName : `usuario ${this.cashBoxUserFilter}`;
+  }
+
   printCorte() {
     if (isPlatformBrowser(this.platformId)) {
       window.print();
@@ -414,40 +596,80 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   }
 
   exportCortePDF() {
+    const c = this.corteCaja;
+    if (!c) return;
+
     const doc = new jsPDF();
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('Corte de caja', 14, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Caja #${this.cashSummary?.cashId ?? '—'} | Generado: ${new Date().toLocaleString('es-MX')}`, 14, 22);
+    doc.text(
+      `${this.corteRotulo}  |  ${c.turnos} turno(s)  |  Generado: ${new Date().toLocaleString('es-MX')}`,
+      14,
+      22
+    );
 
-    const rows = [
-      ['Fondo inicial', this.fmt(this.cashSummary?.openingAmount)],
-      ['Ventas en efectivo', this.fmt(this.cashSummary?.cashSales)],
-      ['Ventas débito', this.fmt(this.cashSummary?.debitSales)],
-      ['Ventas crédito', this.fmt(this.cashSummary?.creditSales)],
-      ['Total ventas', this.fmt(this.cashSummary?.totalSales)],
-      ['Tickets', `${this.cashSummary?.totalTickets ?? 0}`],
-      ['Monto esperado', this.fmt(this.cashSummary?.expectedAmount)],
-      ['Diferencia', this.fmt(this.cashSummary?.difference)],
+    const rows: string[][] = [
+      ['Turnos sumados', `${c.turnos} (${c.turnosCerrados} cerrados)`],
+      ['Fondo inicial', this.fmt(c.openingAmount)],
+      ['Ventas en efectivo', this.fmt(c.cashSales)],
+      ['Ventas débito', this.fmt(c.debitSales)],
+      ['Ventas crédito', this.fmt(c.creditSales)],
+      ['Total ventas', this.fmt(c.totalSales)],
+      ['Tickets', `${c.totalTickets}`],
+      ['Monto esperado', this.fmt(c.expectedAmount)],
+      ['Utilidad', this.fmt(c.grossProfit)],
+      // 🔑 "—" y no $0.00 cuando la diferencia no es calculable. Ver `CajaCorte`.
+      ['Diferencia', c.difference === null ? '—' : this.fmt(c.difference)],
     ];
     autoTable(doc, { startY: 30, head: [['Concepto', 'Monto']], body: rows });
+
+    if (c.differenceReason) {
+      doc.setFontSize(8);
+      doc.setTextColor(120);
+      doc.text(`Motivo del descuadre: ${c.differenceReason}`, 14, this.finalYDeAutoTable(doc) + 12);
+    }
+
     doc.save(`corte-caja-${this.filenameDate()}.pdf`);
   }
 
+  /**
+   * El `Y` donde terminó la última tabla de autoTable.
+   *
+   * <p>`doc.lastAutoTable` existe en tiempo de ejecución (jspdf-autotable lo
+   * agrega al objeto), pero no está en la definición de `jsPDF`, así que
+   * TypeScript lo marca como propiedad inexistente. En vez de un `any` suelto se
+   * declara el tipo de lo que se usa: si la biblioteca cambiara la forma del
+   * objeto, el error aparecería acá y no como `undefined` en un PDF ya guardado.
+   */
+  private finalYDeAutoTable(doc: jsPDF): number {
+    const conTabla = doc as jsPDF & { lastAutoTable?: { finalY: number } };
+    return conTabla.lastAutoTable?.finalY ?? 40;
+  }
+
   exportCorteExcel() {
+    const c = this.corteCaja;
+    if (!c) return;
+
     const wb = XLSX.utils.book_new();
     const sheet = XLSX.utils.aoa_to_sheet([
       ['Concepto', 'Monto'],
-      ['Fondo inicial', this.cashSummary?.openingAmount ?? 0],
-      ['Ventas en efectivo', this.cashSummary?.cashSales ?? 0],
-      ['Ventas débito', this.cashSummary?.debitSales ?? 0],
-      ['Ventas crédito', this.cashSummary?.creditSales ?? 0],
-      ['Total ventas', this.cashSummary?.totalSales ?? 0],
-      ['Tickets', this.cashSummary?.totalTickets ?? 0],
-      ['Monto esperado', this.cashSummary?.expectedAmount ?? 0],
-      ['Diferencia', this.cashSummary?.difference ?? 0],
+      ['Caja', this.corteRotulo],
+      ['Turnos sumados', c.turnos],
+      ['Turnos cerrados', c.turnosCerrados],
+      ['Fondo inicial', c.openingAmount],
+      ['Ventas en efectivo', c.cashSales],
+      ['Ventas débito', c.debitSales],
+      ['Ventas crédito', c.creditSales],
+      ['Total ventas', c.totalSales],
+      ['Tickets', c.totalTickets],
+      ['Monto esperado', c.expectedAmount],
+      ['Utilidad', c.grossProfit],
+      // 🔑 Celda VACÍA, no 0: 0 significaría "cuadró perfecto" y es falso.
+      ['Diferencia', c.difference === null ? '' : c.difference],
+      ['Motivo del descuadre', c.differenceReason ?? ''],
     ]);
     XLSX.utils.book_append_sheet(wb, sheet, 'Corte de caja');
     XLSX.writeFile(wb, `corte-caja-${this.filenameDate()}.xlsx`);
@@ -540,7 +762,15 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
 
     this.usuarioAplicado = this.cashBoxUserFilter;
     this.sessionAbiertaId = null;
-    this.cashBoxReport = null;
+
+    // 🔑 NO se pone `cashBoxReport = null` aquí. La caja NO cambia, solo el
+    // filtro: el título sigue siendo el mismo y los turnos que ya están en
+    // pantalla son los mismos, nada más que recortados. Borrarlos dejaba la
+    // sección en blanco durante cada petición (y se llevaba por delante el
+    // desplegable de usuario, que está dentro del mismo `*ngIf`).
+    //
+    // El contraste con `onBoxSelected()` es a propósito: ahí SÍ se limpia,
+    // porque ver los turnos de CAJA 1 bajo el título de CAJA 2 sería peyor.
     this.loadCashBoxReport(this.selectedBoxId);
   }
 
@@ -556,6 +786,8 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
    * se pisen.
    */
   private loadCashBoxReport(boxId: number) {
+    this.boxLoading = true;
+
     this.reportService.getCashBoxReport(boxId, {
       from: this.from,
       to: this.to,
@@ -563,17 +795,28 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
     }).subscribe({
       next: (data) => {
         this.cashBoxReport = data;
-        // La lista de vendedores se recalcula AQUÍ y no en un getter: ver la nota
-        // de `boxReportUsers` sobre por qué eso congela la página si se hace al
-        // revés.
-        this.recalcularUsuariosDeLaCaja();
+
+        // El corte se calcula AQUÍ, en el mismo turno que llega la tabla: por
+        // construcción no puede quedar desfasado de lo que se ve arriba.
+        this.calcularCorteDeCaja(data);
+
+        // 🔑 La lista de vendedores NO se reconstruye cuando el recorte vino del
+        // filtro de USUARIO: en ese caso los `sellers` que llegan son un
+        // subconjunto y armar el menú con ellos lo dejaría con una sola opción.
+        // Con filtro de FECHAS sí se reconstruye, porque la respuesta trae a
+        // todos los que vendieron en el rango: ver `filtradoPorUsuario`.
+        if (!this.filtradoPorUsuario) {
+          this.recalcularUsuariosDeLaCaja();
+        }
       },
       // 404 tolerado: la caja se pudo dar de baja o borrar entre la carga de la
       // lista y el clic. No debe romper la pantalla.
       error: () => {
         this.cashBoxReport = null;
+        this.corteCaja = null;
         this.boxReportUsers = [];
       },
+      complete: () => (this.boxLoading = false),
     });
   }
 
@@ -591,6 +834,10 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   clearBoxSelection() {
     this.selectedBoxId = null;
     this.cashBoxReport = null;
+    // El corte se limpia con la caja: es un derivado de ella. Si sobrevive,
+    // al elegir otra caja quedaría un total de la anterior junto a la tabla
+    // nueva, que es exactamente el descuadre que este arreglo vino a quitar.
+    this.corteCaja = null;
     this.cashBoxUserFilter = null;
     this.usuarioAplicado = null;
     this.sessionAbiertaId = null;

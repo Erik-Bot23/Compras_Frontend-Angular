@@ -17,7 +17,17 @@
                 <div class="form-card">
                     <div class="field">
                         <label>Nombre del rol</label>
-                        <input name="roleName" [(ngModel)]="roleName" (input)="aMayusculas($event)" (blur)="validarNombre()" maxlength="30" placeholder="CAJERO">
+                        <!-- Mismo patrón que productos: el input se pone rojo y el
+                             mensaje va debajo. Faltaba el [class.input-error]. -->
+                        <input
+                            name="roleName"
+                            [(ngModel)]="roleName"
+                            (input)="aMayusculas($event)"
+                            (blur)="validarNombre()"
+                            [class.input-error]="errores['name']"
+                            maxlength="30"
+                            placeholder="CAJERO"
+                        />
                         <span class="error-msg" *ngIf="errores['name']">{{ errores['name'] }}</span>
                     </div>
 

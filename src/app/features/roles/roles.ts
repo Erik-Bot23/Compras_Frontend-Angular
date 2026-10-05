@@ -109,12 +109,14 @@ export class Roles implements OnInit {
   }
 
   saveRole(): void{
+    // Igual que en categorías: validar y pintar ANTES de decidir si se guarda.
+    this.validarNombre();
+    if(this.errores['name']) return;
+
     if(this.editingRoleId !== null){
       this.updateRole();
       return;
     }
-
-    if(!this.roleName.trim()) return;
 
     const request: CreateRoleRequest = {
       name: this.roleName.trim(),
@@ -134,9 +136,12 @@ export class Roles implements OnInit {
   }
 
   updateRole(): void{
-    if(this.editingRoleId === null || !this.roleName.trim()){
-      return;
-    }
+    if(this.editingRoleId === null) return;
+
+    // `saveRole` ya validó antes de llegar aquí, pero `updateRole` también se
+    // puede llamar por su cuenta: no se confía y se revalida, con el mismo aviso.
+    this.validarNombre();
+    if(this.errores['name']) return;
 
     const request: UpdateRoleRequest = {
       name: this.roleName.trim(),
@@ -171,9 +176,18 @@ export class Roles implements OnInit {
     this.editingRoleId = null;
   }
 
-  //Validar nombre
+  /**
+   * Valida el nombre del rol.
+   *
+   * El campo decía "categoría": era un copy-paste de categorias.ts, y el mensaje
+   * le decía al usuario que su nombre de ROL no podía tener más de 50 caracteres,
+   * luego de "categoría".
+   *
+   * El `true` final es "obligatorio", y el máximo es 30 para calzar con el
+   * `maxlength` del input.
+   */
   validarNombre(){
-    const r = validarTexto(this.roleName, 'nombre de la categoría', 50);
+    const r = validarTexto(this.roleName, 'nombre', 30, true);
     if(r.ok) delete this.errores['name'];
     else this.errores['name'] = r.error;
   }

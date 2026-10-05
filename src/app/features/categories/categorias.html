@@ -24,7 +24,20 @@
         <form (ngSubmit)="saveCategory()" class="form-card" *ngIf="auth.hasPermission('CREAR_CATEGORIAS') || auth.hasPermission('EDITAR_CATEGORIAS')">
             <div class="field">
                 <label>{{ editingCategoryId ? 'Nombre de la categoría' : 'Nombre de la categoría' }}</label>
-                <input name="categoryName" [(ngModel)]="categoryName" (input)="aMayusculas($event)" (blur)="validarNombre()" maxlength="30" placeholder="BEBIDAS">
+                <!-- El aviso vive en el input (puesto rojo) y en el texto de abajo,
+                     igual que el SKU de productos. El <span> ya existía pero el
+                     input nunca se ponía rojo: faltaba el [class.input-error].
+                     Se valida al salir del campo y también al apretar Guardar (ver
+                     categorias.ts), que es cuando el usuario se enteraba de nada. -->
+                <input
+                    name="categoryName"
+                    [(ngModel)]="categoryName"
+                    (input)="aMayusculas($event)"
+                    (blur)="validarNombre()"
+                    [class.input-error]="errores['name']"
+                    maxlength="30"
+                    placeholder="BEBIDAS"
+                />
                 <span class="error-msg" *ngIf="errores['name']">{{ errores['name'] }}</span>
             </div>
 
@@ -67,6 +80,10 @@
                                         </button>
                                     </div>
                                 </td>
+                            </tr>
+
+                            <tr *ngIf="categories.length === 0">
+                                <td colspan="2">No hay categorías registradas</td>
                             </tr>
                         </tbody>
                     </table>

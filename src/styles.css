@@ -373,6 +373,102 @@ body {
   flex-wrap: wrap;
 }
 
+/* =========================================================================
+   VALIDACIÓN DE FORMULARIOS (compartida por los 5 formularios)
+   =========================================================================
+   Estas dos clases son UN patrón, no cinco: el input se pone rojo y el mensaje
+   sale debajo del campo.
+
+   Van aquí y no en cada componente porque hasta ahora solo existían en
+   productos.css y compras.css. Los formularios de categorías, roles y usuarios
+   YA usaban la clase `error-msg` sin tenerla definida en su CSS: el mensaje se
+   veía como texto plano, sin color rojo ni separación del campo.
+
+   El template las activa con `[class.input-error]` y `*ngIf="errores['campo']"`.
+   ========================================================================= */
+
+/* Mensaje de error debajo del campo. El `display: block` es lo que lo pone en su
+   propia línea: un <span> es inline y se pegaría al texto de al lado. */
+.error-msg {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: #f87171;
+}
+
+/* El input con error se marca en rojo para que se note SIN leer el mensaje.
+   Los !important van a propósito: los formularios declaran su propio
+   `border-color` con la misma especificidad que este selector, y sin ellos
+   ganaría el del componente y el borde seguiría verse normal. */
+.input-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* =========================================================================
+   RESUMEN DEL CORTE DE CAJA (.cash-summary / .cash-row)
+
+   Estas reglas vivían en features/charge/css/cobro.css y se movieron al
+   global porque AHORA LAS USAN DOS COMPONENTES:
+
+     1. El modal de cierre de cobro (cobro.html): el turno que se está cerrando.
+     2. La sección de caja de Reportes (reportes.html): la suma de los turnos de
+        la caja elegida.
+
+   Es el mismo formato y, sobre todo, el mismo código: si el cobro показа el
+   corte en 9 renglones angostos y Reportes en 4 filas de 2 columnas, el cajero
+   ve dos cosas distintas para el mismo documento. Duplicar el CSS en dos
+   archivos es pedir que se desincronicen.
+
+   El punto clave del diseño: es un GRID DE 2 COLUMNAS. Con 9 montos apilados en
+   una columna, el corte quedaba el doble de alto y había que hacer scroll para
+   ver el total, que es justamente el dato que se va a leer.
+   ========================================================================= */
+
+.cash-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 14px;
+}
+
+.cash-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #1e293b;
+  font-size: 0.88rem;
+}
+
+.cash-row span {
+  opacity: 0.75;
+}
+
+.cash-row strong {
+  color: #f8fafc;
+  /* Cifras con ancho fijo: sin esto los signos $ y los decimales bailan y dos
+     montos apilados dejan de alinearse a la derecha. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Estas filas ocupan las 2 columnas: son los datos que se leen primero. */
+.cash-row.total {
+  grid-column: 1 / -1;
+  font-weight: 700;
+}
+
+/* El monto esperado va destacado: es contra ese número contra el que se
+   cuenta el dinero del cajón. */
+.cash-row.expected {
+  grid-column: 1 / -1;
+  background: rgb(34, 197, 94, 0.12);
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+}
+
 /* Scrollbars del area de tabla (estilo oscuro consistente con la UI) */
 .table-scroll::-webkit-scrollbar {
   height: 8px;

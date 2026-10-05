@@ -25,6 +25,7 @@ import {
   aMayusculas,
   validarTelefono,
   validarEmail,
+  validarTexto,
   soloDigitosTelefono,
 } from '../../core/utils/validadores';
 
@@ -404,7 +405,11 @@ export class Compras implements OnInit {
   //----- Pestaña Proveedores: CRUD -----
 
   guardarProveedor() {
-    if (!this.formProvider.name.trim() || !this.formProvider.rfc.trim()) return;
+    // 🔑 Se valida y se pinta el error en vez de un `return` mudo. Con el return
+    // anterior, apretar Guardar con el formulario vacío no guardaba, pero tampoco
+    // mostraba ninguna pista: el formulario se quedaba igual y el usuario no
+    // sabía si le habían guardado o no.
+    if (!this.validarFormularioProveedor()) return;
 
     if (this.editingProviderId !== null) {
       this.providerService.updateProvider(this.editingProviderId, this.formProvider).subscribe({
@@ -420,7 +425,7 @@ export class Compras implements OnInit {
     this.providerService.addProvider(this.formProvider).subscribe({
       next: (nuevo) => {
         this.providers = [nuevo, ...this.providers];
-        this.formProvider = { name: '', rfc: '', phone: '', email: '' };
+        this.cancelarEdicionProveedor();
       },
       error: (err) => alert(err.error?.message || 'No se pudo guardar el proveedor'),
     });
@@ -434,6 +439,10 @@ export class Compras implements OnInit {
   cancelarEdicionProveedor() {
     this.editingProviderId = null;
     this.formProvider = { name: '', rfc: '', phone: '', email: '' };
+    // 🔑 Se limpian los errores con los valores. Si no, el mensaje "El RFC es
+    // obligatorio" de un intento fallido seguiría debajo del campo con el
+    // formulario ya vacío.
+    this.errores = {};
   }
 
   eliminarProveedor(id: number) {
@@ -491,26 +500,52 @@ export class Compras implements OnInit {
   // Los errores se muestran debajo del input con `*ngIf="errores['rfc']"`.
   errores: Record<string, string> = {};
 
-  /** Valida el RFC del proveedor: letras y números, máximo 13. */
-  validarCampoRfc(campo: 'rfc') {
-    const resultado = validarRfc(this.formProvider.rfc || '');
-
-    if (resultado.ok) {
-      delete this.errores[campo];
-    } else {
-      this.errores[campo] = resultado.error;
-    }
-  }
-
   //Validar los campos
-  validarCampo(campo: 'rfc' | 'phone' | 'email'){
+  // 🔑 `rfc` y `name` son OBLIGATORIOS (V7), por eso pasan `true`; `phone` y
+  // `email` son opcionales y su validador solo revisa el formato si hay algo.
+  // El nombre se limita a 100 para calzar con el maxlength del input.
+  validarCampo(campo: 'name' | 'rfc' | 'phone' | 'email'){
     let r;
-    if(campo === 'rfc') r = validarRfc(this.formProvider.rfc || '');
+    if(campo === 'name') r = validarTexto(this.formProvider.name || '', 'nombre del proveedor', 100, true);
+    else if(campo === 'rfc') r = validarRfc(this.formProvider.rfc || '', true);
     else if (campo === 'phone') r = validarTelefono(this.formProvider.phone || '');
     else r = validarEmail(this.formProvider.email || '');
 
     if (r.ok) delete this.errores[campo];
     else this.errores[campo] = r.error;
+  }
+
+  /**
+   * RFC: mayúsculas y validación en el mismo evento.
+   *
+   * 🔑 Van juntos y no como dos `(input)` en la etiqueta porque el orden importa:
+   * hay que pasar a mayúsculas ANTES de validar, o el error se calcula sobre el
+   * texto que todavía no se ha guardado. Con dos bindings sueltos el resultado
+   * depende de en qué orden dispare `ngModel`.
+   */
+  onInputRfc(event: Event) {
+    aMayusculas(event);
+    this.validarCampo('rfc');
+  }
+
+  /** Nombre del proveedor: mayúsculas y validación en el mismo evento. */
+  onInputProviderName(event: Event) {
+    aMayusculas(event);
+    this.validarCampo('name');
+  }
+
+  /**
+   * Valida todo el formulario de proveedor.
+   *
+   * Se llama al apretar Guardar, no solo al salir de cada campo: si el usuario
+   * nunca toca un input vacío, ningún `(blur)` se dispara y el formulario se
+   * cerraría sin decir nada (que era justo el síntoma reportado).
+   */
+  validarFormularioProveedor(): boolean {
+    this.validarCampo('name');
+    this.validarCampo('rfc');
+
+    return Object.keys(this.errores).length === 0;
   }
 
   /**
@@ -527,7 +562,7 @@ export class Compras implements OnInit {
       .toUpperCase()
       .slice(0, 13);
     event.preventDefault();
-    this.validarCampoRfc('rfc');
+    this.validarCampo('rfc');
   }
 
   /** Pega en "cantidad": solo dígitos, y se descarta la notación científica. */

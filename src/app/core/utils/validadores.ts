@@ -38,6 +38,18 @@ export interface ValidationResult {
 const ok = (): ValidationResult => ({ ok: true, error: '' });
 const fail = (error: string): ValidationResult => ({ ok: false, error });
 
+/**
+ * Mensaje de campo obligatorio, con el género gramatical correcto.
+ *
+ * "El contraseña es obligatorio" se lee mal de inmediato, y el backend ya lo
+ * corrigió el 2026-10-04 separando `requerido()` de `requerida()` por esto.
+ * Aquí se resuelve igual: casi todos los campos son masculinos ("el nombre",
+ * "el correo", "el RFC") y solo la contraseña es femenina.
+ */
+function mensajeObligatorio(campo: string, femenino = false): string {
+  return femenino ? `La ${campo} es obligatoria.` : `El ${campo} es obligatorio.`;
+}
+
 /** Quita espacios (incluso los que pega el portapapeles) y deja el valor limpio. */
 function limpiar(valor: string | number | null | undefined): string {
   if (valor === null || valor === undefined) return '';
@@ -81,11 +93,16 @@ export function validarSku(valor: string): ValidationResult {
   return ok();
 }
 
-/** RFC: solo letras y números, máximo 13. */
-export function validarRfc(valor: string): ValidationResult {
+/**
+ * RFC: solo letras y números, máximo 13.
+ *
+ * `obligatorio` existe porque el RFC es obligatorio en el alta de un proveedor
+ * (V7) pero no en todos los formularios que lo usan.
+ */
+export function validarRfc(valor: string, obligatorio = false): ValidationResult {
   const codigo = (valor || '').trim().toUpperCase();
 
-  if (!codigo) return ok();
+  if (!codigo) return obligatorio ? fail(mensajeObligatorio('RFC')) : ok();
 
   if (codigo.length > MAX_RFC_LENGTH) {
     return fail(`El RFC no puede tener más de ${MAX_RFC_LENGTH} caracteres. Un RFC mexicano tiene 12 o 13.`);
@@ -131,12 +148,17 @@ export function validarBarcode(valor: string): ValidationResult {
 /**
  * Entero no negativo: stock y cantidades.
  *
+ * `min` es el mínimo permitido y se deja en 0 a propósito: el stock de un
+ * producto que ya se vendió puede quedar en cero (agotado, no eliminado). Lo que
+ * no se permite es CREAR un producto en cero, y eso lo pide el formulario de
+ * productos pasando `min = 1`, no esta función por defecto.
+ *
  * <p>Rechaza decimales porque no existe 1.6 de jabón (se mide en piezas o en
  * kilos, no en 1.6 unidades), rechaza negativos porque un stock negativo es una
  * contradicción, y rechaza `1e5` porque el atajo de notación científica
  * convertiría un error de dedo en 100,000 unidades.
  */
-export function validarEntero(valor: string | number | null | undefined, campo = 'stock'): ValidationResult {
+export function validarEntero(valor: string | number | null | undefined, campo = 'stock', min = 0): ValidationResult {
   const texto = limpiar(valor);
 
   if (!texto) return ok(); //vacío se valida en "obligatorio", no aquí
@@ -162,17 +184,28 @@ export function validarEntero(valor: string | number | null | undefined, campo =
     return fail(`El ${campo} no puede empezar con ceros: escribe ${ceros} en vez de ${texto}.`);
   }
 
+  // Va DESPUÉS de los chequeos de formato a propósito: si alguien escribe "-5"
+  // el mensaje que importa es "no puede ser negativo", no "debe ser al menos 1".
+  if (Number(texto) < min) {
+    return fail(`El ${campo} debe ser al menos ${min}.`);
+  }
+
   return ok();
 }
 
 /**
  * Precio: no negativo y con máximo 2 decimales.
  *
+ * `min` va en 0 por defecto porque hay precios que sí pueden ser 0: el monto
+ * inicial con el que se abre una caja (`cash-facade.ts` valida ese campo con esta
+ * misma función y una caja puede abrirse en cero). El formulario de productos
+ * pasa `min = 1` porque un producto no se crea a precio 0.
+ *
  * El límite de 2 decimales no es arbitrario: la columna es `numeric(38,2)`,
  * así que `1.875` se redondearía a `1.88` en silencio. El usuario
  * escribiría 1.875, el sistema cobraría 1.88 y nadie vería el redondeo.
  */
-export function validarPrecio(valor: string | number | null | undefined, campo = 'precio'): ValidationResult {
+export function validarPrecio(valor: string | number | null | undefined, campo = 'precio', min = 0): ValidationResult {
   const texto = limpiar(valor).replace(/,/g, '.');
 
   if (!texto) return ok();
@@ -204,6 +237,12 @@ export function validarPrecio(valor: string | number | null | undefined, campo =
   const ceros = cerosIniciales(entero);
   if (ceros) {
     return fail(`El ${campo} no puede empezar con ceros: escribe ${ceros} en vez de ${entero}.`);
+  }
+
+  // Al final, y por el mismo motivo que en validarEntero: primero se explica el
+  // problema de formato, después el de rango.
+  if (Number(entero) < min) {
+    return fail(`El ${campo} debe ser al menos ${min}.`);
   }
 
   return ok();
@@ -272,7 +311,10 @@ export function aMayusculas(event: Event): void {
 
 /**
  * Detecta ceros a la izquierda y devuelve el número "correcto".
- * Un "0" suelto SÍ es válido: el stock puede estar en cero y no es un error.
+ *
+ * Un "0" suelto NO se marca aquí: puede ser un valor legítimo. Lo que no puede
+ * ser es "007". Si además el campo exige un mínimo de 1, el "0" lo rechaza el
+ * chequeo de rango que va después, no este.
  */
 function cerosIniciales(entero: string): string | null {
   if (entero.length > 1 && entero.charAt(0) === '0') {
@@ -285,11 +327,16 @@ function cerosIniciales(entero: string): string | null {
 //  Textos, correos y contraseñas (punto 5 del encargo)
 // ===========================================================================
 
-/**Email: forma básica. No valida todo el RFC 5322 porque eso es inútil en la práctica. */
-export function validarEmail(valor: string): ValidationResult {
+/**
+ * Email: forma básica. No valida todo el RFC 5322 porque eso es inútil en la práctica.
+ *
+ * `obligatorio` lo activa el formulario de usuarios: el correo es obligatorio
+ * tanto al crear como al editar (V7).
+ */
+export function validarEmail(valor: string, obligatorio = false): ValidationResult {
   const correo = (valor || '').trim().toLowerCase();
 
-  if(!correo) return ok(); //Vacío se valida en "obligatorio", no aquí
+  if(!correo) return obligatorio ? fail(mensajeObligatorio('correo')) : ok();
 
   if(correo.length > 120){
     return fail('El correo no puede tener más de 120 caracteres.');
@@ -303,15 +350,20 @@ export function validarEmail(valor: string): ValidationResult {
 }
 
 /**
- * Texto libre con límite de caracteres: nombres de categoría, rol y proveedor.
- * 
+ * Texto libre con límite de caracteres: nombres de categoría, rol, proveedor y producto.
+ *
+ * `obligatorio` convierte el "vacío" en error. Antes el vacío pasaba siempre:
+ * esa era la razón por la que categorías y roles bloqueaban el guardado con un
+ * `return` mudo y sin avisar nada. Ahora el vacío es un error más, y se dice por
+ * qué en el mensaje, no con un return invisible.
+ *
  * No se permiten saltos de línea ni caracteres de control, porque en una tabla
- * un "Bebidas\nRicas" descoloca la fila y un tabulador invesible rompe el layout
+ * un "Bebidas\nRicas" descoloca la fila y un tabulador invisible rompe el layout.
  */
-export function validarTexto(valor: string, campo: string, max: number): ValidationResult{
+export function validarTexto(valor: string, campo: string, max: number, obligatorio = false): ValidationResult{
   const texto = (valor || '').trim();
 
-  if(!texto) return ok();
+  if(!texto) return obligatorio ? fail(mensajeObligatorio(campo)) : ok();
 
   if(texto.length > max){
     return fail(`El ${campo} no puede tener más de ${max} caracteres (lleva ${texto.length}).`);
@@ -345,12 +397,18 @@ export function validarTelefono(valor: string): ValidationResult{
 }
 
 /**
- * Contraseña: entre 8 y 10 caracteres)
+ * Contraseña: entre 8 y 16 caracteres.
+ *
+ * `obligatorio` solo se activa al CREAR un usuario: al editar, `updateUser` no
+ * manda el campo password, así que exigirlo dejaría imposible guardar cualquier
+ * edición. Ese matiz lo aplica el formulario, no esta función.
  */
-export function validarPassword(valor: string, min = 8, max =16): ValidationResult{
+export function validarPassword(valor: string, min = 8, max =16, obligatorio = false): ValidationResult{
   const pw = valor ?? '';
 
-  if(!pw) return ok(); //vacío = no se cambia (solo al crear es obligatorio)
+  // "vacío = no se cambia" solo vale si el campo es opcional. Al crear el
+  // usuario sí es obligatorio, y ahí es donde este mensaje aparece.
+  if(!pw) return obligatorio ? fail(mensajeObligatorio('contraseña', true)) : ok();
 
   const largo = pw.trim().length;
   if(largo < min){

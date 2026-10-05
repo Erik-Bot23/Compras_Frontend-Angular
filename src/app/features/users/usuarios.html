@@ -16,15 +16,15 @@
     <form (ngSubmit)="save()" class="form-card" *ngIf="auth.hasPermission('CREAR_USUARIOS') || auth.hasPermission('EDITAR_USUARIOS')">
         <div class="field">
           <label>Nombre del usuario</label>
-          <input name="form.name" [(ngModel)]="form.name" (input)="aMayusculas($event)" (blur)="validarCampo('name')" maxlength="30"/>
+          <input name="form.name" [(ngModel)]="form.name" (input)="aMayusculas($event)" (blur)="validarCampo('name')" [class.input-error]="errores['name']" maxlength="30"/>
           <span class="error-msg" *ngIf="errores['name']">{{ errores['name'] }}</span>
         </div>
 
         <!--El correo se pasa a minusculas-->
         <div class="field">
           <label>Correo del usuario</label>
-          <input name="form.email" [(ngModel)]="form.email" (input)="aMinusculas($event)" (blur)="validarCampo('email')" maxlength="60" autocomplete="email"/>
-          
+          <input name="form.email" [(ngModel)]="form.email" (input)="aMinusculas($event)" (blur)="validarCampo('email')" [class.input-error]="errores['email']" maxlength="60" autocomplete="email"/>
+          <span class="error-msg" *ngIf="errores['email']">{{ errores['email'] }}</span>
         </div>
 
         <div class="field">
@@ -32,7 +32,7 @@
           <!-- minlength documenta la regla en el propio campo; el bloqueo real
                lo hace save() en usuarios.ts (MIN_PASSWORD_LENGTH), que ademas
                avisa cuantos caracteres lleva. -->
-          <input name="form.password" [(ngModel)]="form.password" type="password" minlength="8" maxlength="10" autocomplete="new-password" (input)="validarPassword()"/>
+          <input name="form.password" [(ngModel)]="form.password" type="password" minlength="8" maxlength="10" autocomplete="new-password" (input)="validarPassword()" [class.input-error]="errores['password']"/>
           <span class="error-msg" *ngIf="errores['password']">{{ errores['password'] }}</span>
           <!-- El texto cambia segun el modo: al crear es obligatoria, al editar
                no se toca (updateUser no manda la contraseña). -->
