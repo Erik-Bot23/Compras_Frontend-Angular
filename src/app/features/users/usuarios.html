@@ -32,12 +32,16 @@
           <!-- minlength documenta la regla en el propio campo; el bloqueo real
                lo hace save() en usuarios.ts (MIN_PASSWORD_LENGTH), que ademas
                avisa cuantos caracteres lleva. -->
-          <input name="form.password" [(ngModel)]="form.password" type="password" minlength="8" maxlength="10" autocomplete="new-password" (input)="validarPassword()" [class.input-error]="errores['password']"/>
+
+          <!--[disabled] cuando hay id, osea en modo edición. Se ve el campo que en vez 
+            de esconderlo-->     
+          <input name="form.password" [(ngModel)]="form.password" type="password" minlength="8" maxlength="10" autocomplete="new-password" 
+          [disabled]="!!form.id" (input)="validarPassword()" [class.input-error]="errores['password']"/>
           <span class="error-msg" *ngIf="errores['password']">{{ errores['password'] }}</span>
           <!-- El texto cambia segun el modo: al crear es obligatoria, al editar
                no se toca (updateUser no manda la contraseña). -->
           <small class="hint" *ngIf="!form.id">Mínimo 8 caracteres</small>
-          <small class="hint" *ngIf="form.id">Déjala vacía: al editar no se cambia la contraseña</small>
+          <small class="hint" *ngIf="form.id">La contraseña no se cambia al editar el usuario</small>
         </div>
 
         <div class="field">
@@ -112,7 +116,9 @@
                 <!-- El getter 'filteredUsers' aplica rol+estado y el pipe
                      'paginate' recorta el resultado a una pagina. -->
                 <tr *ngFor="let p of filteredUsers | paginate: page : pageSize">
-                  <td>{{ p.name }}</td>
+                  <td>{{ p.name }}
+                    <span class="yo-tag" *ngIf="esYo(p)">tú</span>
+                  </td>
                   <td>{{ p.email }}</td>
                   <td>{{ p.roleName }}</td>
                   <td>
@@ -122,7 +128,18 @@
                     <div class="table-actions">
                       <button *hasPermission="'EDITAR_USUARIOS'" type="button" (click)="editUser(p)" class="edit">Editar</button>
 
-                      <button *hasPermission="'DESACTIVAR_USUARIOS'" type="button" (click)="deactivateUser(p.id)" class="delete">
+                      <!--El boton NO lleva [disabled]. Si llevara, el click
+                           nunca llegaria a deactivateUser() y el Snackbar con el
+                           motivo nunca se veria. Lo que se hace es marcarlo
+                           visualmente con .blocked y dejar que el clic cuente
+                           la historia: el usuario pulsa, se le explica.
+
+                           Y no puede llevar *ngIf: este elemento ya tiene
+                           *hasPermission, que es estructural, y Angular solo
+                           permite una directiva * por elemento.
+                        -->
+                      <button *hasPermission="'DESACTIVAR_USUARIOS'" type="button" (click)="deactivateUser(p)"
+                        [class.blocked]="esYo(p)" [title]="esYo(p) ? 'Eres tú: no puedes darte de baja' : 'Dar de baja a este usuario'" class="delete">
                         Dar de baja
                       </button>
                     </div>

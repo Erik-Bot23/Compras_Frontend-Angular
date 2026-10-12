@@ -214,3 +214,47 @@
   color: #93c5fd;
 }
 
+/* ===================================================================
+   V8 - Estado bloqueado (tu propio usuario)
+   =================================================================== */
+
+/* Boton "Dar de baja" de tu propia fila: se ve bloqueado pero NO esta
+  disabled, asi que el clic llega y el Snackbar puede explicar el motivo.
+  Sin esto el boton se veria igual de disponible que los demas. */
+.delete.blocked {
+  background: linear-gradient(135deg, #334155, #1a293b);
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.delete.blocked:hover {
+  background: linear-gradient(135deg, #334155, #1a293b);
+  transform: none;
+}
+
+/* Input de contraseña deshabilitado al editar.
+  ESTA REGLA ES OBLIGATORIA: .form-card input (linea 52) ya pone
+  background #020617 y border #334155, y el navegador NO cambia el estilo de
+  un input disabled al que tiene reglas propias: solo aporta el cursor.
+  Sin esto el campo deshabilitado se veria IDENTICO a uno editable. */
+.form-card input:disabled {
+  background: #1e293b;
+  border-color: #334155;
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+/* Etiqueta "tu" en la fila propia */
+.yo-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #1e40af;
+  color: #dbeafe;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  vertical-align: middle;
+}

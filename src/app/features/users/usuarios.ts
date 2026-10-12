@@ -54,6 +54,31 @@ export class Usuarios implements OnInit {
     );
   }
 
+  /**
+   * El usuario que tiene la sesión abierta
+   * 
+   * Viene del localStorage(AuthService.getUser()), no del backend: es
+   * el mismo dato que ya usa "auth.hasPermission(...)" en el template,
+   * así que no agrega una fuente de verdad nueva ni una petición.
+   */
+  get currentUserId(): number | null{
+    return this.auth.getUser()?.id ?? null;
+  }
+
+  /**
+   * ¿La fila de la tabla es el usuario que esta logueado?
+   * 
+   * Se compara por ID y no por correo: el correo se puede editar y el id no cambia nunca
+   * 
+   * El "!=null" no es opcional. Los dos lados son "number | undefined"
+   * (el "id" de la interface "User" es opcional), así que sin el guard una fila
+   * sin el id compararía "undefined === undefined" y daría TRUE: se bloquearía
+   * la fila equivocada.
+   */
+  esYo(user: User): boolean{
+    return this.currentUserId !== null && user.id === this.currentUserId;
+  }
+
   // Al cambiar cualquier filtro se vuelve a la pagina 1 para no quedarse en
   // una pagina vacia con el nuevo criterio.
   onFilterChange(): void {
@@ -126,14 +151,15 @@ export class Usuarios implements OnInit {
    * `if(this.form.id)` de abajo.
    */
   validarPassword(){
+    if(this.form.id){
+      delete this.errores['password'];
+      return;
+    }
+    
     const pw = this.form.password ?? '';
 
     if(!pw){
-      if(this.form.id){
-        delete this.errores['password']; //al editar vacía significa "no la cambio"
-      } else {
-        this.errores['password'] = 'La contraseña es obligatoria.';
-      }
+      this.errores['password'] = 'La contraseña es obligatoria.';
       return;
     }
 
@@ -268,15 +294,30 @@ export class Usuarios implements OnInit {
 
   //Da de baja (borrado logico) un usuario. Como esta tabla solo lista activos,
   //el usuario se quita de la lista: aparecera en /usuarios-desactivados.
-  deactivateUser(id?: number){
-    if(!id) return;
+  //Recibe el User y no el id para poder compararlo con el de la sesión
+  deactivateUser(user: User){
+    if(!user.id) return;
+
+    //No puedes darte de baja a ti mismo. El aviso va antes del confirm() a 
+    //proposito: pedirle confirmación al usuario de algo que no va a pasar es 
+    //hacerle perder un clic
+    if(this.esYo(user)){
+      this.snack.open('No puedes darte de baja a ti mismo. Pide a otro administrador que lo haga', 'Cerrar', {duration: 4000});
+      return;
+    }
 
     if(confirm('¿Seguro que deseas dar de baja este usuario?')){
-      this.userservice.deActiveUser(id).subscribe({
+      this.userservice.deActiveUser(user.id).subscribe({
         next: () => {
-          this.users = this.users.filter(u => u.id !== id);
-          console.log('Usuario dado de baja');
-        }, error: (err) => console.error('Error al dar de baja', err)
+          this.users = this.users.filter(u => u.id !== user.id);
+        }, error: (err) => {
+          /**
+           * El backend respode 409 si el token corresponde al mismo usuario.
+           * Antes de esto solo iba la consola y el usuario no veía nada.
+           */
+          this.snack.open(
+            err.error?.message || 'No se pudo dar de baja el usuario', 'Cerrar', {duration: 4000});
+        }
       });
     }
   }
