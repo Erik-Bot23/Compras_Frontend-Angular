@@ -214,8 +214,8 @@ body {
    - Mismo lenguaje visual que el pie de paginacion (pagination-bar): fondo
      #1e293b + borde separador. Va como PRIMER hijo de .table-card, asi el
      overflow:hidden de la tarjeta redondea sus esquinas superiores.
-   - align-items:flex-end → las etiquetas quedan sobre cada select (baseline
-     abajo). flex-wrap:wrap → en pantallas angostas los filtros se acomodan
+   - align-items:flex-end -> las etiquetas quedan sobre cada select (baseline
+     abajo). flex-wrap:wrap -> en pantallas angostas los filtros se acomodan
      en varias lineas en vez de desbordarse.
    - Uso en el HTML:
        <div class="table-filter-bar">
@@ -285,9 +285,9 @@ body {
 }
 
 /* Area desplazable:
-   - flex:1 + min-height:0 → ocupa el alto restante de la tarjeta y permite
+   - flex:1 + min-height:0 -> ocupa el alto restante de la tarjeta y permite
      scroll interno (en vez de desbordar la pagina).
-   - overflow:auto → si la tabla es mas ancha o alta que el area, aparece
+   - overflow:auto -> si la tabla es mas ancha o alta que el area, aparece
      scroll horizontal/vertical segun corresponda.
    - -webkit-overflow-scrolling:touch → scroll con inercia en moviles. */
 .table-scroll {

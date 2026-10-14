@@ -1,10 +1,10 @@
 // URL BASE del backend. NO la uses directo en un servicio: el backend esta
-// dividido en dos prefijos (ver AGENTS.md / docs/PLAN.md seccion 1-2):
+// dividido en dos prefijos:
 //
 //   apiLocal -> `${api}/local`  POS y gestion. Lo consume el EMPLEADO desde esta
 //              app (Angular). Autenticado con JWT de empleado y autorizado por
 //              permiso.
-//   (futuro)  `${api}/tienda`   Storefront. Lo consume el CLIENTE desde Next.js
+//   (futuro) -> `${api}/tienda`   Storefront. Lo consume el CLIENTE desde Next.js
 //              (Compras-Frontend-Cliente). Nace en la Fase 3 del plan; el
 //              catalogo sera publico y de solo lectura.
 //

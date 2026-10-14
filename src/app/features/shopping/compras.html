@@ -44,7 +44,7 @@
                   <th>Proveedor</th>
                   <th>Artículos</th>
                   <th>Total</th>
-                  <!-- Estado (V3): una compra PENDIENTE todavia no toco el
+                  <!-- Estado: una compra PENDIENTE todavia no toco el
                        inventario; una CONFIRMADA ya sumo stock y su costo es el
                        vigente, y por eso no se puede cancelar. -->
                   <th>Estado</th>
@@ -178,7 +178,7 @@
                  duplicaba el input y el segundo sobrescribía al primero. -->
           </div>
           <div class="field">
-            <!-- RFC (punto 7.2 y 7.4): solo letras y números, máximo 13 (que es lo
+            <!-- RFC: solo letras y números, máximo 13 (que es lo
                  que mide un RFC mexicano) y en MAYÚSCULAS al escribir.
                  Se pone en mayúsculas porque un RFC se escribe con mayúsculas y
                  compararlo en minúsculas crearía duplicados falsos: "gode..." y
@@ -197,7 +197,7 @@
             <span class="error-msg" *ngIf="errores['rfc']">{{ errores['rfc'] }}</span>
           </div>
           <div class="field">
-            <!-- Nombre del proveedor: MAYÚSCULAS (punto 7.4). Es un dato corto,
+            <!-- Nombre del proveedor: MAYÚSCULAS. Es un dato corto,
                  casi siempre razón social, y en mayúsculas se ve uniforme y
                  "Dairy Queen" / "DAIRY QUEEN" no se guardan como dos. -->
             <label>Nombre</label>
@@ -287,7 +287,7 @@
       </div>
 
       <!--
-        EXPLICACIÓN DE LA SECCIÓN DE MÁRGENES (punto 4 del encargo)
+        EXPLICACIÓN DE LA SECCIÓN DE MÁRGENES
 
         Qué es: el margen responde "¿cuánto gano por vender esto?", y sale de restar
         el COSTO al PRECIO. Son dos columnas distintas y confundirlas es el error
@@ -298,7 +298,7 @@
                    y, desde V3, también el precio de venta del renglón de compra.
           margen = precio - costo. Lo que me queda antes de pagar wages, renta y luz.
 
-        De dónde sale cada dato (V3, decisión del dueño):
+        De dónde sale cada dato:
           - Al registrar una compra NO se toca el producto: la compra nace
             pendiente. Solo CONFIRMAR suma el stock y escribe el costo y el
             precio de venta del renglón.
@@ -315,7 +315,7 @@
       <div class="aviso-explicacion" *ngIf="margins.length > 0">
         <p>
           <strong>Cómo se calcula el margen:</strong>
-          margen = precio de venta − costo de compra, y el % es ese margen dividido
+          margen = precio de venta - costo de compra, y el % es ese margen dividido
           entre el precio de venta.
         </p>
         <p>
@@ -335,7 +335,7 @@
           <div class="table-scroll">
             <table>
 <!--
-              ALINEACIÓN (V5): los <th> de las columnas de monto llevan la misma
+              ALINEACIÓN: los <th> de las columnas de monto llevan la misma
               clase .money que sus <td>. Antes los títulos quedaban a la
               izquierda y sus números a la derecha, así que "Costo" caía sobre el
               espacio vacío y la tabla se veía corrida aunque los datos
@@ -406,19 +406,19 @@
       <input type="date" [(ngModel)]="modalFecha">
     </div>
 
-    <!-- Renglones de la compra (V3).
+    <!-- Renglones de la compra.
          Tres columnas numéricas con título explícito, porque son cosas distintas y
          confundirlas cuesta dinero:
-           Cantidad      → cuántas unidades entran al almacén
-           Costo compra  → lo que se le PAGA al proveedor (unit_cost)
-           Precio venta  → a cuánto se va a VENDER (unit_price, escribe product.price
+           Cantidad      -> cuántas unidades entran al almacén
+           Costo compra  -> lo que se le PAGA al proveedor (unit_cost)
+           Precio venta  -> a cuánto se va a VENDER (unit_price, escribe product.price
                            al confirmar; vacío = se conserva el precio actual) -->
 
     <!--
       PAGINACIÓN DEL CARRITO (V5)
 
       Se pagina a propósito y no se deja crecer: una compra con 30 productos
-     变为 un modal de 2000px de alto que empuja el botón "Guardar" fuera de la
+      un modal de 2000px de alto que empuja el botón "Guardar" fuera de la
       pantalla. Con 5 renglones por página el modal mantiene su tamaño y el pie
       de paginación queda siempre visible.
 

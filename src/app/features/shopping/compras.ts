@@ -36,7 +36,7 @@ interface LineaCompra {
   quantity: number;
   //Lo que se le PAGA al proveedor
   unitCost: number;
-  //Precio de VENTA del renglón (V3). null = "esta compra no opinaba sobre el
+  //Precio de VENTA del renglón. null = "esta compra no opinaba sobre el
   //precio de venta" y el producto conserva el que ya tiene.
   unitPrice: number | null;
 }
@@ -88,7 +88,7 @@ export class Compras implements OnInit {
   /**
    * Página visible del carrito.
    *
-   * <p>Es independiente de `page`, que es la de las TABLAS de la pantalla
+   * Es independiente de `page`, que es la de las TABLAS de la pantalla
    * (compras, proveedores, márgenes). Si compartieran el mismo número, paginar
    * el carrito movería también la tabla de compras, que es un efecto
    * colateral que nadie pidió.
@@ -98,7 +98,7 @@ export class Compras implements OnInit {
   /**
    * Renglones por página en el carrito.
    *
-   * <p>Son 5 y no 8 como las tablas porque el renglón de compra tiene 6
+   * Son 5 y no 8 como las tablas porque el renglón de compra tiene 6
    * columnas y cuatro inputs: a 8 el modal crece tanto que hay que hacer scroll
    * en la página entera, y con scroll interno del carrito se mantiene el modal
    * quieto con el pie siempre visible.
@@ -217,7 +217,7 @@ export class Compras implements OnInit {
    * visible: por eso el template pasa `lineasIndiceBase + i`. Confundir los
    * dos borraría el renglón equivocado al paginar.
    *
-   * <p>Si la página queda vacía, se retrocede una: si no, el pie quedaría
+   * Si la página queda vacía, se retrocede una: si no, el pie quedaría
    * mostrando "Mostrando 11–10 de 10" en una tabla sin filas.
    */
   quitarLinea(index: number) {
@@ -247,7 +247,7 @@ export class Compras implements OnInit {
   /**
    * Al elegir un producto se precargan sus dos precios.
    *
-   * V3: además del nombre, se autocompleta el precio de venta con el que
+   * Además del nombre, se autocompleta el precio de venta con el que
    * ya tiene el producto. Es una sugerencia, no un imposed: el usuario puede
    * cambiarlo, y si lo deja vacío se conserva el precio actual. Se autocompleta
    * para que la operación más común (reponer con el mismo precio) sea un clic y
@@ -405,7 +405,7 @@ export class Compras implements OnInit {
   //----- Pestaña Proveedores: CRUD -----
 
   guardarProveedor() {
-    // 🔑 Se valida y se pinta el error en vez de un `return` mudo. Con el return
+    // Se valida y se pinta el error en vez de un `return` mudo. Con el return
     // anterior, apretar Guardar con el formulario vacío no guardaba, pero tampoco
     // mostraba ninguna pista: el formulario se quedaba igual y el usuario no
     // sabía si le habían guardado o no.
@@ -439,7 +439,7 @@ export class Compras implements OnInit {
   cancelarEdicionProveedor() {
     this.editingProviderId = null;
     this.formProvider = { name: '', rfc: '', phone: '', email: '' };
-    // 🔑 Se limpian los errores con los valores. Si no, el mensaje "El RFC es
+    // Se limpian los errores con los valores. Si no, el mensaje "El RFC es
     // obligatorio" de un intento fallido seguiría debajo del campo con el
     // formulario ya vacío.
     this.errores = {};
@@ -496,12 +496,12 @@ export class Compras implements OnInit {
    */
   aMayusculas = aMayusculas;
 
-  // ===== Validación de proveedor (punto 7.2 y 7.4) =====
+  // ===== Validación de proveedor =====
   // Los errores se muestran debajo del input con `*ngIf="errores['rfc']"`.
   errores: Record<string, string> = {};
 
   //Validar los campos
-  // 🔑 `rfc` y `name` son OBLIGATORIOS (V7), por eso pasan `true`; `phone` y
+  // `rfc` y `name` son OBLIGATORIOS (V7), por eso pasan `true`; `phone` y
   // `email` son opcionales y su validador solo revisa el formato si hay algo.
   // El nombre se limita a 100 para calzar con el maxlength del input.
   validarCampo(campo: 'name' | 'rfc' | 'phone' | 'email'){
@@ -518,7 +518,7 @@ export class Compras implements OnInit {
   /**
    * RFC: mayúsculas y validación en el mismo evento.
    *
-   * 🔑 Van juntos y no como dos `(input)` en la etiqueta porque el orden importa:
+   * Van juntos y no como dos `(input)` en la etiqueta porque el orden importa:
    * hay que pasar a mayúsculas ANTES de validar, o el error se calcula sobre el
    * texto que todavía no se ha guardado. Con dos bindings sueltos el resultado
    * depende de en qué orden dispare `ngModel`.

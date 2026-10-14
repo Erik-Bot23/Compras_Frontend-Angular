@@ -109,7 +109,7 @@
 /* FIX del bug de ancho:
    Cuando el usuario SOLO tiene permiso de VER (sin formulario), la tabla es el
    unico hijo del grid "350px 1fr" y sin esto quedaba atrapada en los 350px.
-   :only-child + grid-column: 1 / -1 → ocupa todo el ancho del grid. */
+   :only-child + grid-column: 1 / -1 -> ocupa todo el ancho del grid. */
 .main-grid > .table-container:only-child {
   grid-column: 1 / -1;
 }

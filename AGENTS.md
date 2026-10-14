@@ -51,12 +51,12 @@ src/app/
 ## Backend conectado
 
 - Backend: **`Compras-Backend`** (carpeta hermana), Spring Boot en **`http://localhost:8081/api`**.
-- ⚠️ **Prefijo obligatorio: `/api/local`**. El backend dividió sus rutas en dos dominios (ver `docs/PLAN.md` en el backend):
+- **Prefijo obligatorio: `/api/local`**. El backend dividió sus rutas en dos dominios (ver `docs/PLAN.md` en el backend):
   - `/api/local/**` → POS y gestión del **empleado**. **Es lo que consume ESTA app.**
   - `/api/tienda/**` → storefront del **cliente** (Next.js, `Compras-Frontend-Cliente`). Nace en la Fase 3. No la uses aquí.
 - Por eso `environment.ts` expone **`apiLocal`** (= `${api}/local`) y los 12 servicios HTTP usan `${environment.apiLocal}/...`.
   `environment.api` sigue exportado solo como raíz (de él saldrán `${api}/tienda/...` y `${api}/uploads`).
-  👉 **Regla: en un servicio nuevo usa `${environment.apiLocal}`, NUNCA `${environment.api}` directo.**
+- **Regla: en un servicio nuevo usa `${environment.apiLocal}`, NUNCA `${environment.api}` directo.**
 - `environment.ts` (dev): `api: 'http://localhost:8081/api'` (y `apiLocal` derivado) · `environment-prod.ts`: `https://compras-backend-production-c115.up.railway.app/api` (ya reemplazado el placeholder).
 - Peticiones directas (sin proxy). CORS del backend permite `http://localhost:4200` (esta app) y `http://localhost:3000` (Next.js).
 - JWT: interceptor funcional `AuthInterceptor` agrega `Authorization: Bearer <token>` a cada request. Token y usuario en `localStorage`.
@@ -111,7 +111,7 @@ src/app/
 | El desplegable se queda con 1 opción | Backend: `continue` en turnos sin ventas del usuario → llega un subconjunto | Solo se reconstruye el roster si el recorte **no** fue por usuario |
 | El corte muestra el turno equivocado | `/cash/summary` → `findByActiveTrue()`: el turno abierto, no la caja | Suma de `CashBoxSessionDTO.sessions` |
 
-🔑 **El segundo era una consecuencia del primero y del tercero, no un bug aparte.** Los
+**El segundo era una consecuencia del primero y del tercero, no un bug aparte.** Los
 tres se explican (y se documentan) en `docs/Consulta-de-caja-frontend-backend-BD.pdf`.
 
 #### 2. `filtradoPorUsuario` y `reporteFiltrado` NO son la misma pregunta
@@ -143,7 +143,7 @@ elegida.
 así que **no puede quedar desfasado de lo que se ve arriba**. Sin endpoint nuevo, sin
 petición extra.
 
-🔑 **La diferencia solo se suma sobre turnos CERRADOS.** Con filtro el backend la manda en
+**La diferencia solo se suma sobre turnos CERRADOS.** Con filtro el backend la manda en
 `null`, y un turno abierto todavía no tiene diferencia: sumarlos como cero daría un total
 más chico sin que nada lo advierta. Con filtro o sin turnos cerrados va `null` y se
 muestra `—` con su nota, nunca `$0.00`.
@@ -154,7 +154,7 @@ Estaban en `charge/css/cobro.css` y ahora los usan **dos** componentes. El corte
 `.corte-row`: una columna de 420 px con 9 montos apilados, el doble de alto que el modal de
 cobro, con el total debajo de todo. Se reutilizó la clase del modal en vez de copiarla.
 
-🔑 Imprimir, PDF y Excel usan el **mismo getter `corteRotulo`**: si cada uno escribiera su
+Imprimir, PDF y Excel usan el **mismo getter `corteRotulo`**: si cada uno escribiera su
 propio encabezado, el papel y la pantalla podrían discrepar sin forma de saber cuál es el
 bueno.
 
@@ -174,7 +174,7 @@ Cinco formularios frenaban el guardado con un `return` y **cero aviso**:
 if(!this.formProvider.name.trim() || !this.formProvider.rfc.trim()) return;
 ```
 
-🔑 **Un `return` silencioso es indistinguible de un no-op.** El usuario aprieta
+**Un `return` silencioso es indistinguible de un no-op.** El usuario aprieta
 Guardar, no ocurre nada, y no sabe si falló el guardado, si el botón no sirve o
 si ya se guardó. Los `<span class="error-msg">` **ya existían** en los cinco
 formularios: lo que faltaba era que **nadie escribiera en `errores`**, porque
@@ -204,7 +204,7 @@ validarEntero(valor, campo, min = 0)
 validarPrecio(valor, campo, min = 0)
 ```
 
-🔑 **`min = 0` por default en precio/entero es a propósito, NO un descuido.**
+**`min = 0` por default en precio/entero es a propósito, NO un descuido.**
 `cash-facade.ts:159` valida el monto inicial de caja con `validarPrecio()`, y ese
 dinero **puede ser 0** (caja que abre sin fondo). Si el default fuera 1, abrir
 una caja sin efectivo quedaría bloqueado. Productos es quien pasa `min = 1`
@@ -219,7 +219,7 @@ recibió `novalidate`:
 <form class="form-card" (ngSubmit)="save()" novalidate ...>
 ```
 
-🔑 **Sin `novalidate` el `min="1"` del navegador bloquea el submit antes de que
+**Sin `novalidate` el `min="1"` del navegador bloquea el submit antes de que
 Angular vea nada**, y el usuario ve la burbuja nativa del navegador (un globito
 gris, en inglés, sin decir qué campo es) en vez de nuestro mensaje en rojo
 debajo del campo. Los
@@ -237,7 +237,7 @@ plantilla, pero `ngModel` actualiza su propio valor por su cuenta:
 (input)="aMayusculas($event)" (input)="validarCampo('sku')"
 ```
 
-🔑 Si el orden queda al revés, la validación corre contra el texto **sin
+Si el orden queda al revés, la validación corre contra el texto **sin
 mayúsculas** de `form.sku` mientras la caja ya muestra mayúsculas. Se unificó en
 un método: `onInputSku()`, `onInputRfc()`, `onInputProviderName()` — mayúsculas
 primero, validación después, en ese orden y en el mismo turno del evento.
@@ -251,7 +251,7 @@ y el template lo tenía en `(input)`. Se desacopló:
 - `validateNumber()` se conserva pero **documentado como no usado**, porque
   escribir "0" y que la caja saltara a "1" sin aviso es peor que un error.
 
-🔑 El stock `0` **sí es válido en la base**: un producto vendido hasta agotarse
+El stock `0` **sí es válido en la base**: un producto vendido hasta agotarse
 queda en 0, y ahí no es un error. Lo que no se permite es **crearlo** en 0. Por
 eso el `min = 1` va en el formulario, no en el servicio ni en el backend.
 
@@ -265,7 +265,7 @@ eso el `min = 1` va en el formulario, no en el servicio ni en el backend.
 | categorías / roles | los `<span>` existían pero el input **nunca se ponía rojo** | `[class.input-error]` |
 | compras (proveedores) | dos `<div class="field">` con **distinto nivel de indentación**, uno sin cerrar | nivelados |
 
-🔑 El `.input-error` faltante es **la** razón de que los mensajes "no aparecieran"
+El `.input-error` faltante es **la** razón de que los mensajes "no aparecieran"
 en varios sitios: el texto se pintaba pero sin marcar el campo, y con el input en
 su color normal el aviso pasaba desapercibido.
 
@@ -275,7 +275,7 @@ Estaban **duplicados** en `productos.css` y `compras.css`, con `!important` en
 ambos. Ahora viven **una sola vez** en el global (`styles.css:459-478`), porque
 los cinco formularios los necesitan y ninguno de los dos CSS cubre los otros tres.
 
-🔑 Se conserva el `!important` **a propósito**: los formularios declaran su propio
+Se conserva el `!important` **a propósito**: los formularios declaran su propio
 `border-color` con la misma especificidad (0,1,0) que `.input-error`, así que sin
 él ganaría el del componente y el input seguiría viéndose normal.
 
@@ -294,7 +294,7 @@ RFC es obligatorio" sobreviviría a un formulario recién vaciado.
 
 #### 1. La causa NO era de las tablas: era especificidad CSS
 
-🔑 **`src/styles.css:315` y `:333` ya centran todo** lo que vive dentro de
+**`src/styles.css:315` y `:333` ya centran todo** lo que vive dentro de
 `.table-card` (`.table-card th` y `.table-card td`, ambos `text-align: center`).
 Los componentes que redefinen la alineación de sus montos y **no tienen el mismo
 peso**, así que unas reglas ganaban y otras no:
@@ -307,7 +307,7 @@ peso**, así que unas reglas ganaban y otras no:
 | `.sesiones-table .money` | (0,2,0) | sí | derecha |
 | `.sesiones-table thead th` | (0,1,2) | sí | izquierda |
 
-🔑 El descuadre del historial y de compras era **el mismo nombre de clase dando
+El descuadre del historial y de compras era **el mismo nombre de clase dando
 dos alineaciones distintas**: `<td class="money">` lo resolvía `.table-card td`
 (0,1,1), que le gana a `.money` (0,1,0) → **centrado**; `<th class="money">` lo
 resolvía `th.money` (0,1,1) → empate exacto, gana por orden → **derecha**.
@@ -322,11 +322,11 @@ Título a la derecha, número al centro. Eso era el "título corrido".
 | `salehistory/salehistory.css` | `.money` y `th.money` `right`→`center` (+ padding simétrico) |
 | `shopping/compras.css` | `.money` y `th.money` `right`→`center` (+ padding simétrico) |
 
-🔑 **`center` se declara a propósito en el `th` Y en el `td`.** Apoyarse en el
+**`center` se declara a propósito en el `th` Y en el `td`.** Apoyarse en el
 global sería depender del orden de `styleUrls`, que es frágil: si mañana se mueve
 un archivo, la tabla se descuadra sola.
 
-🔑 **El padding pasó a simétrico** (`padding-left` además del `padding-right`
+**El padding pasó a simétrico** (`padding-left` además del `padding-right`
 existente). Con el texto centrado, un padding solo de un lado lo descentra hacia el
 otro lado. Los `!important` se conservan: ya peleaban con el padding del global y
 quitarlos sería un segundo cambio en la misma línea.
@@ -348,7 +348,7 @@ pedidas. **Un total de modal a la derecha está bien**; centrarlo sería peor.
   y el backend ya lo tiene commiteado en `a672cef "Validación de campos"`
   (`InputValidator.requerido()`/`.requerida()`, `V7__campos_obligatorios.sql`,
   294 tests en verde).
-  👉 **Ojo: no existe carpeta `providers/`**: el CRUD de proveedores vive en
+  **Ojo: no existe carpeta `providers/`**: el CRUD de proveedores vive en
   `features/shopping` (`compras.ts:29`).
 
 ### 2026-10-04 (2) — V7: los campos obligatorios se avisan en el campo, no al enviar
@@ -368,7 +368,7 @@ Estaban en `core/utils/validadores.ts` con `if (!codigo) return ok()`, porque
 el 2026-09-28 se decidió que eran opcionales. Ahora devuelven
 `fail('El SKU es obligatorio.')`.
 
-🔑 **El motivo de tocar el frontend aunque el backend ya devuelve 400**: sin
+**El motivo de tocar el frontend aunque el backend ya devuelve 400**: sin
 esto el usuario llena todo el formulario, aprieta **Guardar** y solo entonces
 se le avisa que falta el SKU. La validación de cliente vale por **señalar
 DÓNDE** está el error, no por evitar el error: el que lo evita es el backend.
@@ -380,7 +380,7 @@ formularios ya exigían nombre, correo y contraseña. Se verificó campo por cam
 antes de cambiar nada: tocar un formulario que ya funciona introduce regresiones
 a cambio de nada.
 
-🔑 El único hueco real del lado del cliente era el del PUT de usuario, y se
+El único hueco real del lado del cliente era el del PUT de usuario, y se
 corrigió **en el backend** (`UserImpl.updateUser` copiaba el texto crudo), no
 acá: el formulario sí mandaba los valores, lo que faltaba era no creérselo.
 
@@ -405,7 +405,7 @@ descuadrado.
 | `isProcessing` | `sale-facade.ts` + `[disabled]` en `cobro.html` | Evita el 2.º **clic** |
 | `claveCobro` | `SaleRequest.idempotencyKey` | El backend reconoce el **reintento** |
 
-🔑 El botón deshabilitado **no arreglaba el bug**: previene el segundo clic,
+El botón deshabilitado **no arreglaba el bug**: previene el segundo clic,
 pero no el caso real, que es que **las dos peticiones ya viajan por la red a la
 vez**. También fallaría si el usuario recarga la pestaña o reintenta porque la
 respuesta tardó. La barrera 1 protege la **UI**; la 2 protege la **operación**.
@@ -421,17 +421,17 @@ private iniciarIntentoDeCobro() {
 
 openPaymentModal(){
   ...
-  this.iniciarIntentoDeCobro();   // 🔑 aquí, NO en confirmPayment
+  this.iniciarIntentoDeCobro();   //aquí, NO en confirmPayment
   this.showPaymentModal = true;
 }
 ```
 
-🔑 Si la clave se generara en `confirmPayment`, **cada Enter tendría su propia
+Si la clave se generara en `confirmPayment`, **cada Enter tendría su propia
 clave** y cada una sería una venta nueva: exactamente el bug. Está escrito en
 `openPaymentModal()` para que nadie lo "simplifique" moviéndolo.
 
 - Se genera con `crypto.randomUUID()`, con respaldo de `Math.random()` para
-  entornos sin esa API. 🔑 El respaldo **no es criptográficamente seguro** y el
+  entornos sin esa API. El respaldo **no es criptográficamente seguro** y el
   código lo dice: aquí sirve para evitar un cobro doble, no para proteger un
   secreto.
 - El flujo de **tarjeta reutiliza la misma clave** (`cardProcessing` es su
@@ -441,12 +441,12 @@ clave** y cada una sería una venta nueva: exactamente el bug. Está escrito en
 
 ```ts
 error: (err) => {
-  this.isProcessing = false;   // 🔑 si no, el modal queda bloqueado
-  alert(...)                   //    y no se puede reintentar ni cerrar
+  this.isProcessing = false;   //si no, el modal queda bloqueado
+  alert(...)                   //y no se puede reintentar ni cerrar
 }
 ```
 
-🔑 Liberarla solo en el éxito deja el modal inservible cuando el pago se rechaza
+Liberarla solo en el éxito deja el modal inservible cuando el pago se rechaza
 (un caso normal, no una excepción).
 
 #### 4. El botón refleja el estado
@@ -470,17 +470,17 @@ paginado desde V5, ver §5 del PDF 06). Aquí sí había que trabajar.
 - `cobro.html`: `(sale.cobroItems$ | async) | paginate: sale.cartPage : sale.cartPageSize`
   más el pie `.cart-paginacion`.
 
-🔑 **Los paréntesis alrededor del `async` no son opcionales.** Sin ellos Angular
+**Los paréntesis alrededor del `async` no son opcionales.** Sin ellos Angular
 lo lee como `a | (async | paginate)`, que no existe, y el build falla con
 `TS2345`. Por eso el `PaginatePipe` ahora acepta `T[] | null | undefined`: el
 pipe `async` devuelve `null` antes del primer valor y la firma `T[]` obligaba a
 escribir `| async ?? []` en cada template. El tipo ahora refleja lo que el
 código **ya hacía** en su primera línea.
 
-🔑 **8 renglones y no 5**: aquí cada renglón es **una sola línea**; los 5 del
+**8 renglones y no 5**: aquí cada renglón es **una sola línea**; los 5 del
 carrito de compras son porque cada renglón ahí tiene 6 columnas y 4 inputs.
 
-🔑 **Cambia una decisión del 2026-09-12.** Estaba escrito que *"el carrito del
+**Cambia una decisión del 2026-09-12.** Estaba escrito que *"el carrito del
 POS no se pagina: es un carrito vivo, no una tabla de registros"*. La razón
 era válida para la **información** del carrito, pero no para su **altura**: con
 30 productos la tabla crecía sin tope y empujaba el botón **Cobrar** fuera de
@@ -495,12 +495,12 @@ acotado.
 | `ajustarPaginaAlQuitar()` al **quitar/bajar** | Borrar el último renglón de la página 2 deja la vista en una página que ya no existe: carrito vacío |
 | `cartPage = 0` tras `cobro.clear()` | Tras cobrar un carrito que estaba en la página 3, la venta siguiente aparece "en la página 3" de un carrito de 1 producto |
 
-🔑 `irAPaginaDelProducto()` calcula la página por **índice real** del producto,
+`irAPaginaDelProducto()` calcula la página por **índice real** del producto,
 no con "saltar a la última página": agregar un producto **que ya estaba** en el
 carrito no crea renglón nuevo (solo sube su cantidad) y ese renglón puede estar
 en cualquier página.
 
-🔑 El pie usa un getter `cartPaginaValida` (la página recortada al rango válido)
+El pie usa un getter `cartPaginaValida` (la página recortada al rango válido)
 para los números, no `cartPage` directo. El `paginate` se recorta solo, pero los
 números del pie se calculan aparte y sin el recorte podrían salir al revés
 ("Mostrando 9–3 de 3") si alguna ruta futura olvidara ajustar la página.
@@ -521,7 +521,7 @@ Cinco de los ocho encargos eran el **mismo bug**: un `<img>` de `assets/icons/`
 sin reglas de tamaño se renderiza a su tamaño natural y revienta el botón por
 dentro. Los archivosaffected miden 512×512 (o 128×128).
 
-🔑 **Regla: todo `<img>` de un icono necesita `width`/`height` +
+**Regla: todo `<img>` de un icono necesita `width`/`height` +
 `object-fit: contain`.** Y hay dos familias de íconos que se tratan distinto:
 
 | Familia | Ejemplos | Cómo se pone blanca |
@@ -572,7 +572,7 @@ get lineasPagina(): LineaCompra[] {
 }
 ```
 
-🔑 **El bug de índices que casi no se ve:**
+**El bug de índices que casi no se ve:**
 
 ```html
 <div class="linea" *ngFor="let l of lineasPagina; let i = index">
@@ -624,7 +624,7 @@ La celda pasó de 1 botón a 4, con textos de largo muy distinto.
 | `btn-baja` | Con turnos y activa | **Naranja** | No es borrar: el color debe distinguirlo |
 | `btn-alta` | Si está dada de baja | **Verde** | Es el inverso de "dar de baja" |
 
-🔑 `.boxes-actions` necesita `flex-wrap: wrap` **y `min-width: 0`**. El
+`.boxes-actions` necesita `flex-wrap: wrap` **y `min-width: 0`**. El
 `min-width: 0` es la parte que se olvida: sin él, el ancho mínimo de los hijos
 empuja la celda, la tabla se ensancha y las columnas se descuadran.
 
@@ -653,7 +653,7 @@ turnos**, con un renglón por turno.
 | **Caja** | En la barra de filtros general de arriba | Es un filtro de la consulta, como las fechas |
 | **Usuario** | Dentro de la sección de caja | Solo tiene sentido respecto a una caja elegida |
 
-🔑 **El filtro de usuario se arma con los `sellers` de las sesiones**, no con el
+**El filtro de usuario se arma con los `sellers` de las sesiones**, no con el
 padrón de usuarios del sistema:
 
 ```ts
@@ -670,7 +670,7 @@ produce 6 opciones que devuelven tabla vacía, y el usuario no puede distinguir
 - **El filtro va al backend**, no al cliente: filtrar en el navegador traería
   todas las ventas de todos los turnos para descartar la mayoría, y los totales
   no coincidirían con los del backend.
-- 🔑 **`buildParams` ahora filtra `null`, no solo `undefined` y `''`.** Un
+- **`buildParams` ahora filtra `null`, no solo `undefined` y `''`.** Un
   `<select>` sin opción elegida vale `null`, y `String(null)` es la cadena
   `"null"`, que el backend no puede convertir a `Long` → 400.
 - **`difference` es `number | null`**: el template usa `(s.difference ?? 0)`
@@ -687,7 +687,7 @@ pelada había que revisarla a ojo.
 
 - Filtros: texto (nombre **y** correo), `fromDate`, `toDate`.
 - Columnas nuevas: **Alta** y **Baja** (`activatedAt` / `deactivatedAt`).
-- 🔑 **Las fechas se comparan como strings `yyyy-MM-dd`, no como `Date`.** El
+- **Las fechas se comparan como strings `yyyy-MM-dd`, no como `Date`.** El
   orden lexicográfico de ese formato *es* el cronológico, y usar `new Date()`
   con zona horaria (México es UTC-6) desplaza un día los bordes del rango.
 - `sinFecha` cuenta sobre la lista **completa**, no la filtrada: si fuera sobre la
@@ -702,7 +702,7 @@ pelada había que revisarla a ojo.
 Los `<td class="money">` iban a la derecha pero sus `<th>` a la izquierda: la
 tabla se veía corrida aunque los datos estuvieran bien.
 
-🔑 **Regla: si una columna tiene los datos alineados a la derecha, su título
+**Regla: si una columna tiene los datos alineados a la derecha, su título
 también.** La clase va en el `th` y en el `td` por igual.
 
 Se añadieron `col-id` (centro) y `col-fecha` (`nowrap`, porque
@@ -728,7 +728,7 @@ los paréntesis del path (problema pre-existente, ver más abajo).
 3. `environment.api` **se conserva** (es la raíz de la que saldrán
    `${api}/tienda/...` para el storefront y `${api}/uploads`).
 4. **No se tocó** ningún componente, template, interface ni spec. `ng build` verde.
-5. ⚠️ `ng test` no encuentra archivos: el path del repo tiene paréntesis
+5. `ng test` no encuentra archivos: el path del repo tiene paréntesis
    (`Sistema de ventas (comida)`) que rompen el glob de vitest. Es un problema del
    entorno, no del código.
 
@@ -781,7 +781,7 @@ los paréntesis del path (problema pre-existente, ver más abajo).
   </form>
 ```
 
-⚠️ **La trampa**: dentro de un `<form>` todo `<button>` sin `type` es `submit`.
+**La trampa**: dentro de un `<form>` todo `<button>` sin `type` es `submit`.
 En `productos.html` ya están bien los tres (`type="button"` en `:54` el `+` de
 categoría, `:97` el `Cancelar`; el de guardar `:85` hay que pasarlo a `type="submit"`).
 **Regla: revisa cada `<button>` que metas dentro del form y ponle `type="button"`
@@ -791,7 +791,7 @@ a todos menos al de enviar.**
 fuera del form), `reset-password.html`, `productos.html`, `usuarios.html`,
 `roles.html`, `categorias.html`, `compras.html`, `cobro.html`.
 
-⚠️ En `productos.html` el `<input type="file">` (`:76`) quedaría dentro del form:
+En `productos.html` el `<input type="file">` (`:76`) quedaría dentro del form:
 probar que `Enter` en un text input no hace submit ignorando el file. Si molesta,
 la alternativa rápida es `(keyup.enter)="save()"` en el último input de cada pantalla
 (funciona, pero hay que acordarse de moverlo al agregar campos).
@@ -829,7 +829,7 @@ que son **solo pistas visuales, no se imponen**: agregar `(input)="validarLinea(
 **2.2 Contraseña mínimo 8 caracteres** — **YA ESTÁ HECHO**, no tocar:
 `reset-password.ts:34-37` y `perfil.ts:53-56` (ambos con `MatSnackBar`).
 
-> ⚠️ Aclaración importante: la intención era "solo en resetear y **olvidar contraseña**",
+> Aclaración importante: la intención era "solo en resetear y **olvidar contraseña**",
 > pero **`forgot-password.html` NO tiene campo de contraseña** (solo el email, línea 6).
 > Así que el estado actual (validar en reset-password + perfil, NO en login ni al crear
 > usuario) ya cumple lo pedido. ✅ Opcional: contador de caracteres en vivo bajo el input.
@@ -911,7 +911,7 @@ Es exactamente `core/service/ticket-service/ticket-service.ts:160-168`:
 
 **Borrar esas 9 líneas** (queda el `y += 4;` de la fila y el `y += 1;` de la 170).
 
-⚠️ **Consecuencia**: la columna se llama `PRECIO` y muestra el **precio unitario**
+**Consecuencia**: la columna se llama `PRECIO` y muestra el **precio unitario**
 (`:157`). Sin la línea de abajo, `3 uds / $10.00` + total `$30.00` obliga al usuario
 a multiplicar de cabeza. **Recomendado**: cambiar la columna a **IMPORTE** y mostrar
 el subtotal acumulado:
@@ -924,7 +924,7 @@ el subtotal acumulado:
 **NO tocar** el bloque de `SUBTOTAL` (`:185-191`): ese es el subtotal de toda la
 compra, es otra cosa.
 
-⚠️ La multiplicación que se calcula en `core/service/cobro-service/cobro-service.ts:34`,
+La multiplicación que se calcula en `core/service/cobro-service/cobro-service.ts:34`,
 `:59` y `:76` **NO se borra** — eso es el total real que ya usa el backend. Solo se
 quita la línea *impresa* del PDF.
 
@@ -1174,17 +1174,17 @@ debe mostrar `(2 x $X = $Y)`).
 
 ## Pendientes / issues conocidos
 
-- 🔜 **Fases 2-8 de `docs/PLAN.md`** (backend). La Fase 2 agrega features nuevas acá: `insumos/` (CRUD + alerta de stock bajo) y `pedidos-online/` (panel con STOMP), y renombra `productos` → `platillos`. Antes de escribir código, leer la entrada 2026-09-30 de `Compras-Backend/AGENTS.md`.
-- ✅ **Plan de 4 mejoras de UX (2026-09-28)**: ya implementado en `bfcdb43`/`1aa72b3` (Enter en forms, inputs numéricos, ticket sin multiplicación, snackbar de SKU duplicado). Queda pendiente solo el punto 4.5 de abajo.
-- ✅ **409 por SKU/barcode duplicado**: el backend ya lo devuelve (`1444d87`); el `MatSnackBar` muestra `err.error?.message`. Ya no se traga el error.
-- ⚠️ **Latente**: `productos.ts:151-152` hace `price.toString()` — si un `type="number"` queda vacío (`null`), **lanza `TypeError`**. Arreglar con `?? 0`.
-- ⚠️ **Latente**: `sale-facade.ts:495-496` (`changePreview`) pinta **`$NaN`** si el campo "Efectivo recibido" (`cobro.html:160`) se vacía, porque `null - total = NaN`. Arreglar con `?? 0` o un early-return.
-- ⚠️ **Latente**: la directiva `appSelectOnFocus` (seleccionar el contenido al hacer clic) solo está aplicada en `productos.html`; falta en `cobro.html` (efectivo recibido, monto inicial, dinero contado) y `compras.html` (cantidad, costo).
-- ⚠️ **`ng test` no encuentra specs** en esta máquina: el path del repo tiene paréntesis (`Sistema de ventas (comida)`) que rompen el glob de vitest → "No test files found". No es un defecto del código.
-- ⚠️ **Autorización server-side**: `auth.hasPermission()` lee el usuario de `localStorage`, que es manipulable. El backend sí valida con `@PreAuthorize`, pero la UI se puede mostrar de más.
-- ⚠️ **`environment-prod.ts`** apunta a `https://compras-backend-production-c115.up.railway.app/api`. Al desplegar en Netlify hay que confirmar ese dominio y que el CORS del backend incluya el de Netlify.
+- **Fases 2-8 de `docs/PLAN.md`** (backend). La Fase 2 agrega features nuevas acá: `insumos/` (CRUD + alerta de stock bajo) y `pedidos-online/` (panel con STOMP), y renombra `productos` → `platillos`. Antes de escribir código, leer la entrada 2026-09-30 de `Compras-Backend/AGENTS.md`.
+- **Plan de 4 mejoras de UX (2026-09-28)**: ya implementado en `bfcdb43`/`1aa72b3` (Enter en forms, inputs numéricos, ticket sin multiplicación, snackbar de SKU duplicado). Queda pendiente solo el punto 4.5 de abajo.
+- **409 por SKU/barcode duplicado**: el backend ya lo devuelve (`1444d87`); el `MatSnackBar` muestra `err.error?.message`. Ya no se traga el error.
+- **Latente**: `productos.ts:151-152` hace `price.toString()` — si un `type="number"` queda vacío (`null`), **lanza `TypeError`**. Arreglar con `?? 0`.
+- **Latente**: `sale-facade.ts:495-496` (`changePreview`) pinta **`$NaN`** si el campo "Efectivo recibido" (`cobro.html:160`) se vacía, porque `null - total = NaN`. Arreglar con `?? 0` o un early-return.
+- **Latente**: la directiva `appSelectOnFocus` (seleccionar el contenido al hacer clic) solo está aplicada en `productos.html`; falta en `cobro.html` (efectivo recibido, monto inicial, dinero contado) y `compras.html` (cantidad, costo).
+- **`ng test` no encuentra specs** en esta máquina: el path del repo tiene paréntesis (`Sistema de ventas (comida)`) que rompen el glob de vitest → "No test files found". No es un defecto del código.
+- **Autorización server-side**: `auth.hasPermission()` lee el usuario de `localStorage`, que es manipulable. El backend sí valida con `@PreAuthorize`, pero la UI se puede mostrar de más.
+-**`environment-prod.ts`** apunta a `https://compras-backend-production-c115.up.railway.app/api`. Al desplegar en Netlify hay que confirmar ese dominio y que el CORS del backend incluya el de Netlify.
 - ✅ **Tests**: 19/19 en verde (2026-09-15). Si al clonar falta `chart.js`/`xlsx` en `node_modules`, basta `npm install` (ocurrió 2026-09-15: el `npm test` fallaba con `TS2307`).
-- ⚠️ **`retryPayment` y `reversePayment`**: `reversePayment` sigue sin uso en componentes (el retry sí se usa en el POS).
+- **`retryPayment` y `reversePayment`**: `reversePayment` sigue sin uso en componentes (el retry sí se usa en el POS).
 - **Placeholders eliminados (2026-09-17)**: Caja, Ventas, Clientes, Facturas (archivos + rutas borradas).
 - Alert/confirm nativos en Compras y en el reintento de pago del POS (consistencia → MatSnackBar/MatDialog).
 - Sin unsubscriptions (`takeUntil`) en componentes con múltiples suscripciones HTTP.

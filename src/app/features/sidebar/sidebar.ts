@@ -129,17 +129,17 @@ perfil(){
   }
 
   /**
-   * ¿La ruta dada es la sección donde el usuario está ahora? (PUNTO 6)
+   * ¿La ruta dada es la sección donde el usuario está ahora?
    *
    * Marca el enlace activo del menú con la clase `.active`, que el CSS
    * sombrea. Sin esto, en un menú de nueve secciones el usuario no tiene idea de
    * dónde está parado: el menú se ve igual en todas las pantallas.
    *
-   * Por qué se compara exacta y no con `includes`. Con `includes`,
+   * Por qué se compara exacto y no con `includes`. Con `includes`,
    * "/sales" matchearía también "/sales-history" y se marcarían las dos
    * secciones a la vez. La comparación exacta evita eso.
    *
-   * <p>También se ignora la barra final.
+   * También se ignora la barra final.
    */
   esActiva(route: string): boolean {
    const actual = this.router.url.split('?')[0].split('#')[0].replace(/\/$/, '');
