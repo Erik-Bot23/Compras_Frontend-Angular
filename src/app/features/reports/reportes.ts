@@ -118,7 +118,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Último filtro de usuario que se aplicó de verdad al backend.
    *
-   * <p>Existe SOLO para comparar: si el `ngModel` re-emite el mismo valor (por
+   * Existe SOLO para comparar: si el `ngModel` re-emite el mismo valor (por
    * ejemplo porque las opciones se re-renderizaron), esta guarda evita repetir
    * la petición. Sin ella, el ciclo render → `ngModelChange` → request →
    * render deja la página colgada.
@@ -813,7 +813,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Despliega u oculta el detalle de ventas de un turno.
    *
-   *  Solo uno a la vez: `sessionAbiertaId` es un id, no una lista. Con dos
+   * Solo uno a la vez: `sessionAbiertaId` es un id, no una lista. Con dos
    * turnos abiertos a la vez la tabla duplicaría su alto y se perdería de vista
    * de qué turno es cada bloque.
    */

@@ -23,7 +23,7 @@ import { PaginationControl } from '../../core/components/pagination-control/pagi
 // Se llega desde el boton "Ver desactivados" de /usuarios. Muestra la tabla de
 // inactivos + el boton "Dar de alta" (PATCH /users/{id}/active).
 //
-// V5: se agregan los filtros de busqueda. El motivo concreto es "encontrar el
+// Se agregan los filtros de busqueda. El motivo concreto es "encontrar el
 // registro de una persona que se fue": con la tabla pelada solo se podía
 // buscar a ojo, y en un local con historia de varios años eso es imposible.
 export class DeactivatedUsers implements OnInit {
@@ -34,7 +34,7 @@ export class DeactivatedUsers implements OnInit {
   page = 0;
   pageSize = 8;
 
-  // ===== Filtros de busqueda (V5) =====
+  // ===== Filtros de busqueda =====
   /** Texto libre: busca en NOMBRE y CORREO. */
   searchText = '';
 
@@ -47,14 +47,13 @@ export class DeactivatedUsers implements OnInit {
   /**
    * Usuarios dados de baja que pasan los filtros.
    *
-   * <p>El filtro es CLIENT-SIDE a propósito: la lista ya viene completa de
+   * El filtro es CLIENT-SIDE a propósito: la lista ya viene completa de
    * `GET /users` (el backend devuelve activos e inactivos juntos y esta vista
    * separa los inactivos), así que filtrar en el navegador no cuesta un request
    * extra. Con muchos usuarios sería un endpoint con query, pero para esta
    * pantalla el costo no lo justifica.
    *
-   * <p>⚠️ `deactivatedAt` puede venir null (usuarios dados de baja antes de V5,
-   * cuando la fecha no se guardaba). Esos usuarios se EXCLUYEN cuando hay filtro
+   * `deactivatedAt` puede venir null. Esos usuarios se EXCLUYEN cuando hay filtro
    * de fechas, porque no hay fecha que comparar: es preferible a incluirlos y
    * que el usuario piense que seetten fuera del rango.
    */
@@ -95,11 +94,11 @@ export class DeactivatedUsers implements OnInit {
   /**
    * Cuántos usuarios dados de baja NO tienen fecha de baja.
    *
-   * <p>Solo se usa para el aviso. Son los dados de baja antes de V5: la columna
+   * Solo se usa para el aviso: la columna
    * `deactivated_at` se agregó después y a esos usuarios no se les puede poner
    * fecha sin inventarla.
    *
-   * <p>Se cuenta sobre la lista COMPLETA, no sobre la filtrada: si contara sobre
+   * Se cuenta sobre la lista COMPLETA, no sobre la filtrada: si contara sobre
    * la filtrada siempre daría 0 (los que no tienen fecha ya fueron excluidos por
    * el filtro de fechas) y el aviso nunca aparecería.
    */

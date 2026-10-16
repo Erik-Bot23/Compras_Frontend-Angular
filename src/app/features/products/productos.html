@@ -98,7 +98,7 @@
         </div>
 
         <div class="field">
-          <!-- SKU (punto 7.2 y 7.4).
+          <!-- SKU
                CORREGIDO: antes tenía pattern="[0-9]" y un saneado que solo dejaba
                dígitos, lo que PROHIBÍA las letras. Pero un SKU sí puede tener
                letras: "CHOC-500" es un SKU válido, y obligar a que sea numérico
@@ -123,7 +123,7 @@
         </div>
 
         <div class="field">
-          <!-- BARCODE (punto 7.2): solo dígitos, máximo 20.
+          <!-- BARCODE: solo dígitos, máximo 20.
                Sigue siendo un campo de TEXTO a propósito: se guarda como
                identificador para no perder los ceros a la izquierda
                (0001234567895), que si fuera número se volvería 1234567895 y el
@@ -241,8 +241,8 @@
                       <button *hasPermission="'EDITAR_PRODUCTOS'" type="button" (click)="editProduct(p)" class="edit">Editar</button>
 
                       <!-- Accion destructiva condicional (hasHistory lo calcula el backend):
-                           - hasHistory = false → el producto nunca se vendio/compro → "Eliminar" (borrado fisico).
-                           - hasHistory = true  → tiene ventas/compras → "Dar de baja" (borrado logico).
+                           - hasHistory = false -> el producto nunca se vendio/compro -> "Eliminar" (borrado fisico).
+                           - hasHistory = true  -> tiene ventas/compras -> "Dar de baja" (borrado logico).
                            Cada rama exige su permiso y se envuelve en ng-container porque no
                            se pueden combinar dos directivas estructurales (*ngIf + *hasPermission) en un mismo elemento. -->
                       <ng-container *hasPermission="'ELIMINAR_PRODUCTOS'">

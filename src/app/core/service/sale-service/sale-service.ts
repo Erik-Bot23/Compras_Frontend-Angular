@@ -47,7 +47,7 @@ export class SaleService {
   }
 
   // =========================================================================
-  //  Ciclo de vida de la venta (2026-09-30)
+  //  Ciclo de vida de la venta
   // =========================================================================
   /*
    * Las tres observaciones de este bloque:

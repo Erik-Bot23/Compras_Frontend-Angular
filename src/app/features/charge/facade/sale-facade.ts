@@ -37,22 +37,22 @@ export class SaleFacade {
   cashReceived = 0;
 
   // ===========================================================================
-  //  IDEMPOTENCIA DEL COBRO (V6)
+  //  IDEMPOTENCIA DEL COBRO 
   // ===========================================================================
 
   /**
    * Clave del intento de cobro en curso.
    *
-   * <p>Es un UUID que se genera UNA vez por cada cobro y se manda en todas las
+   * Es un UUID que se genera UNA vez por cada cobro y se manda en todas las
    * peticiones de ese cobro. Si el usuario aprieta Enter dos veces, las dos
    * peticiones viajan con la misma clave, y el backend reconoce la segunda como
    * "esta venta ya existe" y devuelve la primera en vez de cobrar otra vez.
    *
-   * <p><b>Por qué se genera aquí y no en el servidor.</b> La clave identifica la
+   * Por qué se genera aquí y no en el servidor. La clave identifica la
    * INTENCIÓN de cobrar, no la llamada. Si la generara el backend en cada
    * petición, cada una sería distinta y la protección no serviría de nada.
    *
-   * <p>Se genera en {@link openPaymentModal} y no en {@link confirmPayment}:
+   * Se genera en {@link openPaymentModal} y no en {@link confirmPayment}:
    * si se generara al confirmar, cada Enter tendría su propia clave y cada una
    * sería una venta nueva. Esa es exactamente la razón del bug.
    */
@@ -61,7 +61,7 @@ export class SaleFacade {
   /**
    * true mientras hay una venta en vuelo.
    *
-   * <p>Es la primera de las dos barreras, y la más barata: evita que el segundo
+   * Es la primera de las dos barreras, y la más barata: evita que el segundo
    * Enter ni siquiera salga a la red. Pero <b>no alcanza por sí sola</b>, porque
    * dos peticiones pueden estar viajando al mismo tiempo. Por eso está
    * acompanada por la clave de idempotencia, que esa sí resuelve en el servidor.
@@ -71,10 +71,10 @@ export class SaleFacade {
   /**
    * Empieza un intento de cobro: genera la clave y abre el modal.
    *
-   * <p>Se delega en {@link abrirModalDeCobro}, que es el que valida la caja y
+   * Se delega en {@link abrirModalDeCobro}, que es el que valida la caja y
    * arma el carrito. Aquí solo se genera la clave de idempotencia.
    *
-   * <p>Cada apertura del modal es un cobro nuevo y por tanto una clave nueva. Es
+   * Cada apertura del modal es un cobro nuevo y por tanto una clave nueva. Es
    * lo correcto: si el usuario cierra el modal, arma otra venta y vuelve a
    * cobrar, esa segunda venta SÍ debe registrarse.
    */
@@ -86,9 +86,9 @@ export class SaleFacade {
   /**
    * UUID de un intento de cobro.
    *
-   * <p>Usa `crypto.randomUUID()` cuando está disponible (todos los navegadores
+   * Usa `crypto.randomUUID()` cuando está disponible (todos los navegadores
    * modernos y el SSR con Node 19+). El `fallback` con `Math.random()` existe
-   * para entornos sin la API: <b>no es criptográficamente seguro</b>, y se dice
+   * para entornos sin la API: no es criptográficamente seguro, y se dice
    * explícitamente porque se usa para evitar un cobro doble, no para proteger un
    * secreto. Si algún día se usara para algo sensible, esta nota sería la
    * advertencia de que hay que cambiarlo.
@@ -195,25 +195,25 @@ export class SaleFacade {
   /**
    * Página visible del carrito.
    *
-   * <p>Sin esto, una venta con 30 productos empujaba el botón <b>Cobrar</b>
+   * Sin esto, una venta con 30 productos empujaba el botón Cobrar
    * fuera de la pantalla: la tabla crecía sin límite y el cajero tenía que
    * scrollear para llegar al botón de pago.
    *
-   * <p><b>Cambia una decisión anterior.</b> El 2026-09-12 se dejó escrito que
+   * Cambia una decisión anterior. El 2026-09-12 se dejó escrito que
    * "el carrito del POS no se pagina: es un carrito vivo, no una tabla de
-   * registros". La razón era válida para la <i>información</i> del carrito, pero
-   * no para su <i>altura</i>: el problema no era que el carrito fuera vivo, era
+   * registros". La razón era válida para la información del carrito, pero
+   * no para su altura: el problema no era que el carrito fuera vivo, era
    * que no tenía tope. Paginándolo se mantiene vivo (el renglón sigue siendo el
    * mismo, con sus botones de +/−/✕) y además deja de empujar el botón.
    */
   cartPage = 0;
 
   /**
-   * Renglones por página: <b>5</b>, el mismo número que usan productos,
+   * Renglones por página: 5, el mismo número que usan productos,
    * categorías, usuarios y roles. Así el POS no tiene un paginador distinto
    * al resto del sistema.
    *
-   * <p>Ojo con una tentación: aquí el renglón es UNA sola línea y en el
+   * Ojo con una tentación: aquí el renglón es UNA sola línea y en el
    * carrito de compras hay seis columnas y cuatro inputs, así que "caben más"
    * parecería justificado. Pero un paginador que muestra 5 renglones en unas
    * tablas y 8 en otra obligaría a aprender dos Muscle memories para lo mismo.
@@ -224,13 +224,13 @@ export class SaleFacade {
   /**
    * Lleva la vista a la página donde está un producto.
    *
-   * <p>Se llama al <b>agregar</b>, no solo al paginar. Es lo que evita el bug
+   * Se llama al agregar, no solo al paginar. Es lo que evita el bug
    * más fastidioso de la paginación: escanear el código de barras del producto
    * 12 con la vista en la página 1 lo agrega invisible, y el cajero ve el
    * carrito "sin cambios" aunque el producto se haya agregado. Con esto, el
    * renglón recién agregado siempre aparece.
    *
-   * <p>Se calcula por <b>índice real</b> del producto, y no "saltar a la última
+   * Se calcula por índice real del producto, y no "saltar a la última
    * página", porque agregar un producto que ya estaba en el carrito no crea
    * renglón nuevo: solo sube su cantidad, y ese renglón puede estar en cualquier
    * página.
@@ -252,11 +252,11 @@ export class SaleFacade {
   /**
    * Recorta la página si al quitar un renglón la actual quedó vacía.
    *
-   * <p>Sin esto, borrar el último producto de la página 2 dejaría la vista en
+   * Sin esto, borrar el último producto de la página 2 dejaría la vista en
    * la página 2 aunque ya no exista, y el carrito aparecería vacío: la misma
    * sensación de "no pasó nada" que daba el bug de agregar.
    *
-   * <p>`<app-pagination>` también recorta por su cuenta, pero solo para lo que
+   * `<app-pagination>` también recorta por su cuenta, pero solo para lo que
    * DIBUJA (sus getters usan una página clamp): no corrige `cartPage`. Si solo
    * se dejara en manos del componente, el pie se vería bien pero el estado
    * seguiría apuntando a una página inexistente. Aquí se corrige el estado.
@@ -332,8 +332,8 @@ export class SaleFacade {
       return;
     }
 
-    // 🔑 La clave de idempotencia se genera AQUÍ, al abrir el modal, y no al
-    // confirmar el pago (V6). Es el punto clave del arreglo: si se generara en
+    // La clave de idempotencia se genera AQUÍ, al abrir el modal, y no al
+    // confirmar el pago. Es el punto clave del arreglo: si se generara en
     // `confirmPayment`, cada Enter tendría su propia clave y cada una sería una
     // venta nueva, que es exactamente el bug que se estaba reportando.
     this.iniciarIntentoDeCobro();
@@ -386,7 +386,7 @@ export class SaleFacade {
 
   //Confirmar pago con tarjeta
   confirmCardPayment(){
-    // ===== BARRERA 1 (V6): no hay cobro en vuelo =====
+    // ===== BARRERA 1: no hay cobro en vuelo =====
     // `cardProcessing` es el equivalente para tarjeta del `isProcessing` de
     // efectivo. Sin esta guarda, un doble Enter en este modal tambien cobra dos.
     if(this.cardProcessing){
@@ -425,7 +425,7 @@ export class SaleFacade {
 
     const request: SaleRequest = {
       paymentMethod: this.selectedPaymentMethod,
-      // ===== BARRERA 2 (V6): la misma clave de idempotencia del cobro =====
+      // ===== BARRERA 2: la misma clave de idempotencia del cobro =====
       // Se genera al abrir el modal de PAGO (no al confirmar la tarjeta), y se
       // comparte con el flujo de efectivo: es la MISMA intención de cobro, así
       // que si el usuario cerrara el modal de tarjeta y pagara en efectivo,
@@ -619,7 +619,7 @@ export class SaleFacade {
 
   //Confirmar pago
   confirmPayment(){
-    // ===== BARRERA 1: no hay venta en vuelo (V6) =====
+    // ===== BARRERA 1: no hay venta en vuelo =====
     // El segundo Enter llega aquí mientras la primera petición sigue viajando.
     // Sin esta guarda se cobraría dos veces.
     if(this.isProcessing){
@@ -738,7 +738,7 @@ export class SaleFacade {
     this.saleService.findByBarcode(this.barcode).subscribe({
       next: product => {
         this.cobro.add(product);
-        // 🔑 El escáner es el caso MÁS IMPORTANTE de esta llamada. El cajero
+        // El escáner es el caso MÁS IMPORTANTE de esta llamada. El cajero
         // va escaneando y el carrito crece solo: si el producto cae en una
         // página que no se está viendo, el renglón se agrega invisible y el
         // carrito "no cambia" a ojos del cajero. Con la página saltando al

@@ -39,7 +39,7 @@ export class Cobro implements OnInit {
    * Se exponen como propiedades de la clase porque la plantilla los necesita
    * como handlers de eventos: `(keydown)="soloDigitosYPunto($event)"`.
    *
-   * Su trabajo real es <b>bloquear la 'e' y la 'E'. El
+   * Su trabajo real es bloquear la 'e' y la 'E'. El
    * `<input type="number">` del navegador las acepta y produce `1e5`, que es un
    * millón de golpe: el usuario escribe "1e5" pensando en otra cosa y el sistema
    * guarda cien mil. Con estos filtros la tecla ni entra al campo.
@@ -55,7 +55,7 @@ export class Cobro implements OnInit {
       this.sale.showCardModal ||
       this.sale.showWaitingModal ||
       //El modal "Ver cajas" también cuenta: si no, la página de fondo se
-      //desplaza hacia los lados mientras está abierto (V4).
+      //desplaza hacia los lados mientras está abierto.
       this.cash.showBoxesModal ||
       this.cash.showOpenCashModal ||
       this.cash.showCloseCashModal

@@ -15,22 +15,21 @@ import {
 /**
  * Cliente HTTP del módulo de caja.
  *
- * <p><b>El módulo tiene DOS recursos y no uno (V4).</b> Es la misma distinción
+ * El módulo tiene DOS recursos y no uno. Es la misma distinción
  * que en el backend, y es importante no mezclarlos:
- * <ul>
- *   <li><b>Cajas</b> (`/cash/boxes`): el inventario de cajas físicas del local.
+ * 
+ * Cajas(`/cash/boxes`): el inventario de cajas físicas del local.
  *       Son pocas y cambian poco. Es un CRUD: listar, crear, editar, dar de
- *       baja y borrar (solo si nunca se abrió).</li>
- *   <li><b>Turnos</b> (`/cash/open`, `/cash/close`, `/cash/active`,
+ *       baja y borrar (solo si nunca se abrió).
+ * Turnos (`/cash/open`, `/cash/close`, `/cash/active`,
  *       `/cash/summary`, `/cash/history`): la apertura y el cierre. Nacen al
- *       abrir y se congelan al cerrar.</li>
- * </ul>
+ *       abrir y se congelan al cerrar.
  *
- * <p>Antes (V3) ambos vivían en la misma ruta y `createCash` creaba un
+ * Antes ambos vivían en la misma ruta y `createCash` creaba un
  * "corte". Ahora una caja se puede abrir todos los días: cada apertura crea un
  * turno nuevo.
  *
- * <p>Todos los métodos usan `environment.apiLocal` y NUNCA `environment.api`
+ * Todos los métodos usan `environment.apiLocal` y NUNCA `environment.api`
  * directo: el prefijo correcto es el del dominio local del POS.
  */
 @Injectable({
@@ -42,13 +41,13 @@ export class CashService {
   constructor(private http: HttpClient) {}
 
   // =========================================================================
-  //  CAJAS FÍSICAS (V4)
+  //  CAJAS FÍSICAS
   // =========================================================================
 
   /**
    * Registra una caja física nueva.
    *
-   * <p>No abre un turno ni mueve dinero: solo la da de alta en el inventario.
+   * No abre un turno ni mueve dinero: solo la da de alta en el inventario.
    * Abrir un turno es {@link openCash}.
    */
   createBox(request: CreateCashBoxRequest): Observable<CashBox> {
@@ -58,7 +57,7 @@ export class CashService {
   /**
    * Todas las cajas del local, incluidas las dadas de baja.
    *
-   * <p>Alimenta la tabla "Ver cajas". Las dadas de baja vienen a propósito: se
+   * Alimenta la tabla "Ver cajas". Las dadas de baja vienen a propósito: se
    * ven atenuadas y con su número de turnos.
    */
   getBoxes(): Observable<CashBox[]> {
@@ -68,7 +67,7 @@ export class CashService {
   /**
    * Cajas que se pueden abrir ahora: activas y sin turno abierto.
    *
-   * <p>Alimenta el selector de "Abrir caja". Ojo con el criterio: NO son "las
+   * Alimenta el selector de "Abrir caja". Ojo con el criterio: NO son "las
    * que nunca se abrieron" (eso las excluiría para siempre después del primer
    * turno), sino las que están libres en este momento.
    */
@@ -92,7 +91,7 @@ export class CashService {
   /**
    * Da de ALTA una caja que estaba dada de baja.
    *
-   * <p>Reactivar la MISMA caja: conserva su número y todo su historial, no crea
+   * Reactivar la MISMA caja: conserva su número y todo su historial, no crea
    * una nueva. Por eso el número no queda libre para reutilizar.
    */
   activateBox(id: number): Observable<void> {
@@ -102,7 +101,7 @@ export class CashService {
   /**
    * Borra una caja. Solo funciona si NUNCA se abrió.
    *
-   * <p>Si ya tuvo cortes, el backend responde 409 con un mensaje que dice "dala
+   * Si ya tuvo cortes, el backend responde 409 con un mensaje que dice "dala
    * de baja". Por eso el template solo muestra este botón cuando
    * `sessionsCount === 0`.
    */
@@ -127,10 +126,10 @@ export class CashService {
   /**
    * Abre un turno con una caja física ya registrada.
    *
-   * <p>El fondo tiene un mínimo de 100 en el backend; el facade lo avisa antes
+   * El fondo tiene un mínimo de 100 en el backend; el facade lo avisa antes
    * para no mandar una petición que ya se sabe que va a ser rechazada.
    *
-   * <p>La misma caja puede volver a abrirse en otro día: cada llamada crea un
+   * La misma caja puede volver a abrirse en otro día: cada llamada crea un
    * turno nuevo.
    */
   openCash(openingAmount: number, number: string): Observable<CashRegister> {

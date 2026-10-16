@@ -1,8 +1,8 @@
 <!-- 
   CATEGORIAS - CRUD simple
   sidebar.menuOpen del SidebarService (singleton).
-  [class.collapsed]="!sidebar.menuOpen" → transicion 800ms ease-in-out.
-  .main-grid → formulario a la izquierda (350px) y tabla a la derecha (1fr),
+  [class.collapsed]="!sidebar.menuOpen" -> transicion 800ms ease-in-out.
+  .main-grid -> formulario a la izquierda (350px) y tabla a la derecha (1fr),
   homologado con productos/usuarios.
   <div class="table-container fade-in"> anima entrada de tabla 250ms.
 -->
@@ -15,8 +15,8 @@
 
     <!--
       Grid de 2 columnas (homologado con productos/usuarios):
-      · izquierda (350px) → formulario crear/editar
-      · derecha (1fr)     → tabla paginada
+      · izquierda (350px) -> formulario crear/editar
+      · derecha (1fr)     -> tabla paginada
       Por debajo de 900px colapsa a una columna (media query en categorias.css).
     -->
     <div class="main-grid">
@@ -46,8 +46,8 @@
         </form>
 
         <!-- Estructura de tabla responsive (clases compartidas en styles.css):
-           .table-card  → tarjeta visual oscura con bordes redondeados.
-           .table-scroll → scroll horizontal si la ventana es muy pequena.
+           .table-card  -> tarjeta visual oscura con bordes redondeados.
+           .table-scroll -> scroll horizontal si la ventana es muy pequena.
            thead/tbody separados permiten el header sticky de styles.css. -->
         <div class="table-container fade-in">
             <div class="table-card">
@@ -62,14 +62,14 @@
 
                         <tbody>
                             <!-- pipe 'paginate: page : pageSize' recorta la lista
-                                 a una pagina → nada de scroll infinito -->
+                                 a una pagina -> nada de scroll infinito -->
                             <tr *ngFor="let c of categories | paginate: page : pageSize">
                                 <td>{{ c.name }}</td>
                                 <td>
                                     <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
                                     <div class="table-actions">
                                         <!--
-                                          editRole → edit: en categorias.css solo existen .edit (amarillo) y .delete (rojo),
+                                          editRole -> edit: en categorias.css solo existen .edit (amarillo) y .delete (rojo),
                                           la clase anterior no tenia estilo asignado. Mismo patron visual que productos/usuarios.
                                         -->
                                         <button *hasPermission="'EDITAR_CATEGORIAS'" class="edit" (click)="editCategory(c)">

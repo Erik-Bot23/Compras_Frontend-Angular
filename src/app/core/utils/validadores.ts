@@ -1,5 +1,5 @@
 /**
- * Validadores de entrada para los formularios (V3, 2026-09-30).
+ * Validadores de entrada para los formularios.
  *
  * Es el espejo de `InputValidator.java` del backend. Está duplicado a
  * propósito, y no por descuido: son dos capas con trabajos distintos.
@@ -41,8 +41,8 @@ const fail = (error: string): ValidationResult => ({ ok: false, error });
 /**
  * Mensaje de campo obligatorio, con el género gramatical correcto.
  *
- * "El contraseña es obligatorio" se lee mal de inmediato, y el backend ya lo
- * corrigió el 2026-10-04 separando `requerido()` de `requerida()` por esto.
+ * "El contraseña es obligatorio" se lee mal de inmediato, y el backend ya se
+ * corrigió separando `requerido()` de `requerida()` por esto.
  * Aquí se resuelve igual: casi todos los campos son masculinos ("el nombre",
  * "el correo", "el RFC") y solo la contraseña es femenina.
  */
@@ -75,7 +75,7 @@ function tieneExponente(valor: string): boolean {
 export function validarSku(valor: string): ValidationResult {
   const codigo = (valor || '').trim().toUpperCase();
 
-  // V7: el SKU pasó a OBLIGATORIO (antes era opcional). El backend ya devuelve
+  // El SKU pasó a OBLIGATORIO (antes era opcional). El backend ya devuelve
   // 400 con "El SKU es obligatorio", pero si el frontend lo acepta como válido
   // el usuario llena todo el formulario, aprieta Guardar y solo entonces se le
   // avisa. Aquí se marca el campo en rojo al instante, que es lo que hace útil
@@ -97,7 +97,7 @@ export function validarSku(valor: string): ValidationResult {
  * RFC: solo letras y números, máximo 13.
  *
  * `obligatorio` existe porque el RFC es obligatorio en el alta de un proveedor
- * (V7) pero no en todos los formularios que lo usan.
+ * pero no en todos los formularios que lo usan.
  */
 export function validarRfc(valor: string, obligatorio = false): ValidationResult {
   const codigo = (valor || '').trim().toUpperCase();
@@ -125,7 +125,7 @@ export function validarRfc(valor: string, obligatorio = false): ValidationResult
 export function validarBarcode(valor: string): ValidationResult {
   const codigo = (valor || '').trim();
 
-  // V7: el código de barras pasó a OBLIGATORIO. Mismo motivo que en el SKU: el
+  // El código de barras pasó a OBLIGATORIO. Mismo motivo que en el SKU: el
   // backend ya lo rechaza, pero aquí el error se ve en el campo y no después
   // de enviar todo el formulario.
   if (!codigo) return fail('El código de barras es obligatorio.');
@@ -153,7 +153,7 @@ export function validarBarcode(valor: string): ValidationResult {
  * no se permite es CREAR un producto en cero, y eso lo pide el formulario de
  * productos pasando `min = 1`, no esta función por defecto.
  *
- * <p>Rechaza decimales porque no existe 1.6 de jabón (se mide en piezas o en
+ * Rechaza decimales porque no existe 1.6 de jabón (se mide en piezas o en
  * kilos, no en 1.6 unidades), rechaza negativos porque un stock negativo es una
  * contradicción, y rechaza `1e5` porque el atajo de notación científica
  * convertiría un error de dedo en 100,000 unidades.
@@ -331,7 +331,7 @@ function cerosIniciales(entero: string): string | null {
  * Email: forma básica. No valida todo el RFC 5322 porque eso es inútil en la práctica.
  *
  * `obligatorio` lo activa el formulario de usuarios: el correo es obligatorio
- * tanto al crear como al editar (V7).
+ * tanto al crear como al editar.
  */
 export function validarEmail(valor: string, obligatorio = false): ValidationResult {
   const correo = (valor || '').trim().toLowerCase();

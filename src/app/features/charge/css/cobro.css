@@ -161,7 +161,7 @@ body.modal-open{
 }
 
 /* =========================================================================
-   Botón CREAR CAJA (V3)
+   Botón CREAR CAJA
    =========================================================================
    Es menos urgente que "Abrir" (una caja se crea una vez y se usa una vez), así
    que va en azul y NO compite visualmente con el verde de "Abrir caja", que es la
@@ -186,7 +186,7 @@ body.modal-open{
 }
 
 /* =========================================================================
-   CONTADOR EN VIVO (V3, punto 5.5)
+   CONTADOR EN VIVO
    =========================================================================
    Se destaca del resto de los .cash-data con fondo y borde: es el número que el
    cajero mira constantemente mientras vende, no un dato más del corte. Verde
@@ -204,7 +204,7 @@ body.modal-open{
 }
 
 /* =========================================================================
-  Etiquetas y ayudas de los modales de caja (V3)
+  Etiquetas y ayudas de los modales de caja
    ========================================================================= */
 .modal-label{
   display:block;
@@ -361,8 +361,8 @@ body.modal-open{
 }
 
 /* BUSCADOR - tarjeta de busqueda (mismo estilo visual que .cash-info):
-   - position:relative → ancla el dropdown que vive dentro (posicion absoluta).
-   - flex:1 → la tarjeta ocupa todo el ancho restante del .top-bar (la tarjeta
+   - position:relative -> ancla el dropdown que vive dentro (posicion absoluta).
+   - flex:1 -> la tarjeta ocupa todo el ancho restante del .top-bar (la tarjeta
      de caja .cash-info tiene ancho fijo 320px al lado).
    - Fondo/borde/radio/padding/sombra identicos a .cash-info para que ambas
      tarjetas se vean como un solo conjunto. */
@@ -537,7 +537,7 @@ tbody tr:hover {
 }
 
 /* Imagen dentro del boton:
-   - Los PNG de assets/icons miden 512x512 → dimensiones fijas de 16px.
+   - Los PNG de assets/icons miden 512x512 -> dimensiones fijas de 16px.
    - object-fit: contain respeta la proporcion de la imagen.
    - pointer-events:none hace que el clic llegue siempre al <button>.
    - filter: brightness(0) invert(1) pinta el icono de blanco (mismo truco del
@@ -730,7 +730,7 @@ cuando es más alto que la pantalla.
 }
 
 /*==Resumen del corte de caja==
-   🔑 `.cash-summary`, `.cash-row`, `.cash-row.total` y `.cash-row.expected`
+   `.cash-summary`, `.cash-row`, `.cash-row.total` y `.cash-row.expected`
    se movieron a `styles.css` (buscá "Resumen del corte de caja" en el global).
 
    Ya no viven acá porque Reportes también los usa, para el corte agregado de la

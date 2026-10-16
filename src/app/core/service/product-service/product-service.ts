@@ -10,7 +10,6 @@ import { environment } from '../../../../environments/environment';
 //Se usará en features/productos/productos.ts
 export class ProductService {
   private apiUrl = `${environment.apiLocal}/products`;
-  //private apiUrl = 'http://localhost:8081/api/local/products';
 
   constructor(private http: HttpClient){}
 

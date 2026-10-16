@@ -161,7 +161,7 @@ export class Productos implements OnInit {
 
     if(this.isSaving) return;
 
-    // ===== Validación ANTES de mandar nada (V3) =====
+    // ===== Validación ANTES de mandar nada =====
     // Se valida aquí y no solo en el backend por dos razones: no se hace un
     // request que ya se sabe que va a fallar con 400, y el mensaje aparece
     // DEBAJO del campo que está mal.
@@ -323,7 +323,7 @@ export class Productos implements OnInit {
   }
 
   //Validar campos numericos
-  // ⚠️ Este método ya no lo invoca el template: el `<input>` de precio y stock
+  // Este método ya no lo invoca el template: el `<input>` de precio y stock
   // ahora llama a `validarCampo(...)`, que AVISA en vez de corregir el valor.
   //
   // La diferencia importa: aquí, si se teclea "0" en el stock, el 0 se convierte
@@ -342,7 +342,7 @@ export class Productos implements OnInit {
   }
 
 // =========================================================================
-//  VALIDACIONES DEL FORMULARIO (V3, punto 7 del encargo)
+//  VALIDACIONES DEL FORMULARIO
 // =========================================================================
 //  Ahora cada campo valida con las reglas de `core/utils/validadores` y el error
 //  se MUESTRA debajo del input, en vez de solo acotar el valor en silencio.
@@ -486,7 +486,7 @@ export class Productos implements OnInit {
   /**
    * Escribe en el SKU: pasa a mayúsculas y valida en el mismo golpe.
    *
-   * 🔑 Van juntos en un método y no como dos `(input)` en la etiqueta porque el
+   * Van juntos en un método y no como dos `(input)` en la etiqueta porque el
    * ORDEN importa: hay que poner en mayúsculas ANTES de validar, o el mensaje de
    * error se calcula sobre el texto en minúsculas que todavía no se ha guardado.
    * Con dos bindings sueltos, Angular los ejecuta en el orden del template pero

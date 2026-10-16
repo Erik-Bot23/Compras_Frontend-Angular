@@ -305,7 +305,7 @@
 }
 
 /*
-  🔑 PREFIJO `box-` EN LOS BOTONES: no es cosmético, evita una colisión real.
+  PREFIJO `box-` EN LOS BOTONES: no es cosmético, evita una colisión real.
 
   `cobro.css` define `.btn-inc, .btn-dec, .btn-del` para los botones de icono
   del CARRITO (30x30, `padding: 0`, con un <img> dentro). Si aquí se llamaran

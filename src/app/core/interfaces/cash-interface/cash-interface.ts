@@ -1,19 +1,19 @@
 /**
  * Espejo de `model/dto/Cash/*.java`.
  *
- * <p><b>Dos cosas distintas que no hay que confundir (V4).</b> El nombre "caja"
+ * Dos cosas distintas que no hay que confundir. El nombre "caja"
  * se usaba para las dos, y esa ambigüedad fue la que causó el bug que motivó el
  * cambio de modelo:
- * <ul>
- *   <li>{@link CashBox}: la caja FÍSICA del local ("CAJA 1", "CAJA 2"). Es el
- *       inventario: pocas filas, cambian poco.</li>
- *   <li>{@link CashRegister}: un TURNO (una apertura y su cierre). Nace al abrir
- *       y se congela al cerrar. Crece todos los días.</li>
- * </ul>
+ * 
+ * {@link CashBox}: la caja FÍSICA del local ("CAJA 1", "CAJA 2"). Es el
+ *       inventario: pocas filas, cambian poco.
+ * {@link CashRegister}: un TURNO (una apertura y su cierre). Nace al abrir
+ *       y se congela al cerrar. Crece todos los días.
+ * 
  * Una caja puede tener muchos turnos. Antes cada fila de turno era "una caja" y
  * su número era único, así que una caja solo se podía abrir una vez.
  *
- * <p>Los importes y fechas del turno son `number | null` porque un turno recién
+ * Los importes y fechas del turno son `number | null` porque un turno recién
  * abierto todavía no cerró: `closedAt` y `closingAmount` llegan sin informar.
  */
 export interface CashBox {
@@ -33,11 +33,11 @@ export interface CashBox {
   /**
    * Cuántos turnos ha tenido.
    *
-   * <p>Es el campo que decide si la caja se puede BORRAR: con 0 turnos no tiene
+   * Es el campo que decide si la caja se puede BORRAR: con 0 turnos no tiene
    * historial y borrarla es limpio; con 1 o más, sus ventas quedan colgando de
    * ella y solo se puede dar de baja.
    *
-   * <p>Viene como número y no como `number | null` a propósito: en el backend es
+   * Viene como número y no como `number | null` a propósito: en el backend es
    * un `int` primitivo, así que el JSON siempre trae un número (0 si no hay
    * turnos). Nunca llega `null`.
    */
@@ -59,7 +59,7 @@ export interface CreateCashBoxRequest {
 /**
  * Borrador del formulario de alta/edición de una caja.
  *
- * <p>Es un tipo propio y no un `CreateCashBoxRequest` porque aquí los campos
+ * Es un tipo propio y no un `CreateCashBoxRequest` porque aquí los campos
  * SIEMPRE son cadenas: son valores de un input mientras el usuario escribe, y
  * convertirlos a `null` en cada tecla haría el binding más frágil de lo que
  * aporta. La conversión a `null` se hace una vez, al enviar (ver `saveBox`).
@@ -122,9 +122,9 @@ export interface CashSummary {
 }
 
 /**
- * Petición de ABRIR un turno (V4).
+ * Petición de ABRIR un turno.
  *
- * <p>`number` es el de la caja FÍSICA que se abre, no el de un corte: la caja
+ * `number` es el de la caja FÍSICA que se abre, no el de un corte: la caja
  * puede existir desde hace semanas y abrirse hoy por primera vez, o abrirse
  * milésima vez. El fondo tiene un mínimo de 100 y no puede ser negativo.
  */
@@ -136,7 +136,7 @@ export interface OpenCashRequest {
 /**
  * Petición de CERRAR el turno.
  *
- * <p>`differenceReason` es obligatorio solo si el dinero no cuadra: sin él el
+ * `differenceReason` es obligatorio solo si el dinero no cuadra: sin él el
  * backend responde 409 y el turno sigue abierto.
  */
 export interface CloseCashRequest {
@@ -147,7 +147,7 @@ export interface CloseCashRequest {
 /**
  * Sugerencia del backend para el número siguiente ("CAJA 7").
  *
- * <p>Viene en un objeto y no como texto pelado porque TypeScript espera una
+ * Viene en un objeto y no como texto pelado porque TypeScript espera una
  * propiedad con nombre.
  */
 export interface NextNumberResponse {

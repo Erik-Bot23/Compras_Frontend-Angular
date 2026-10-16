@@ -66,13 +66,13 @@ export class ReportService {
   }
 
   /**
-   * V5: historial de una CAJA con todos sus turnos, filtrable.
+   * Historial de una CAJA con todos sus turnos, filtrable.
    *
-   * <p>Reemplaza a `getCashReport` en la pantalla de reportes. La diferencia
+   * Reemplaza a `getCashReport` en la pantalla de reportes. La diferencia
    * clave: aquí se pide una CAJA (y trae sus turnos adentro), no un turno
    * suelto.
    *
-   * <p>`userId` llega en `null` cuando no hay filtro, y `buildParams` lo omite:
+   * `userId` llega en `null` cuando no hay filtro, y `buildParams` lo omite:
    * mandarlo como la cadena "null" haría que el backend no pudiera convertirlo
    * a Long y devolviera 400.
    */

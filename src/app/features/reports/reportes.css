@@ -210,7 +210,7 @@
   background: linear-gradient(90deg, #ffb86b, #f97316);
 }
 
-/* V3: utilidad negativa en ROJO. Es el único acento rojo del reporte y
+/* Utilidad negativa en ROJO. Es el único acento rojo del reporte y
    aparece solo cuando se perdió dinero en el periodo: por eso destaca. */
 .summary-card.accent-red::before {
   background: linear-gradient(90deg, #ff6b6b, #dc2626);
@@ -464,7 +464,7 @@
   }
 }
 /* =========================================================================
-   Bloque de explicación (punto 4 del encargo)
+   Bloque de explicación
    =========================================================================
    Los reportes Financiales se leen mal si no se sabe de donde sale cada número.
    Este bloque se despliega debajo de las tarjetas de utilidad y de la sección de

@@ -12,18 +12,18 @@ export interface User {
   active?: boolean;
 
   /**
-   * Última vez que se dio de alta el usuario (V5).
+   * Última vez que se dio de alta el usuario.
    *
-   * <p>Llega como `string` en formato ISO (`2026-10-01T14:30:00`) y se formatea
+   * Llega como `string` en formato ISO (`2026-10-01T14:30:00`) y se formatea
    * en la plantilla con el pipe `date`. Es `null` en los usuarios creados antes
-   * de V5, porque la columna se agregó después.
+   * porque la columna se agregó después.
    */
   activatedAt?: string | null;
 
   /**
-   * Última vez que se dio de baja el usuario (V5).
+   * Última vez que se dio de baja el usuario.
    *
-   * <p>Solo viene informada si `active === false`. Es el campo que hace posible
+   * Solo viene informada si `active === false`. Es el campo que hace posible
    * filtrar la tabla de dados de baja por rango de fechas.
    */
   deactivatedAt?: string | null;

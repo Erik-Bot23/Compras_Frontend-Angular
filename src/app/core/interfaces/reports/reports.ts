@@ -108,7 +108,7 @@ export interface SaleDetailHistoryResponse {
   cancelledAt: string | null;
 
   /**
-   * Usuario que registró la venta (V5).
+   * Usuario que registró la venta.
    *
    * `null` en las ventas anteriores a V5: el dato nunca se guardó. La tabla
    * muestra "Sin usuario" en vez de "-", para que se lea que es una ausencia
@@ -127,7 +127,7 @@ export interface SaleDetailResponse {
 }
 
 // =========================================================================
-//  HISTORIAL DE CAJA (V5)
+//  HISTORIAL DE CAJA
 // =========================================================================
 //  Espejo de `CashBoxReportDTO.java`. Reemplaza a `CashReportDTO` en la
 //  pantalla: antes se reportaba UN TURNO suelto y ahora se reporta UNA CAJA con
@@ -196,12 +196,12 @@ export interface CashBoxReportDTO {
  * El CORTE DE CAJA de la sección de reportes: la suma de los turnos que la
  * tabla de arriba está mostrando.
  *
- * <p><b>No viene del backend.</b> `GET /reports/cash-box/{boxId}` ya devuelve
+ * No viene del backend. `GET /reports/cash-box/{boxId}` ya devuelve
  * todos los montos por turno, así que el total de la caja es una suma. No hay
  * endpoint nuevo ni una petición extra: por eso el corte se actualiza en el
  * mismo turno que llega la tabla y nunca puede mostrar un número de otra caja.
  *
- * <p>🔑 <b>Reemplaza al endpoint `/cash/summary`</b>, que en Reportes estaba
+ * Reemplaza al endpoint `/cash/summary`, que en Reportes estaba
  * mal: `getSummary()` usa `findByActiveTrue()` y devolvía SIEMPRE el turno
  * abierto en ese momento, ignorando la caja seleccionada, el usuario y las
  * fechas. Es decir, la tabla y el corte respondían preguntas distintas.
@@ -226,14 +226,11 @@ export interface CajaCorte {
   /**
    * Suma de las diferencias de los turnos CERRADOS.
    *
-   * <p>`null` —y la UI muestra "—" en vez de `$0.00`— cuando:
-   * <ul>
-   *   <li>hay filtros (mismo motivo que en la tabla: la diferencia es un dato
-   *       congelado del cierre y al lado de un total filtrado daría un
-   *       descuadre inventado), o</li>
-   *   <li>todos los turnos visibles siguen abiertos, o sea que todavía no se
-   *       cerró ninguno y no hay ninguna diferencia que sumar.</li>
-   * </ul>
+   *`null` —y la UI muestra "—" en vez de `$0.00`— cuando:
+   *  hay filtros (mismo motivo que en la tabla: la diferencia es un dato
+   *  congelado del cierre y al lado de un total filtrado daría un
+   *  descuadre inventado), o todos los turnos visibles siguen abiertos, o sea que todavía no se
+   *  cerró ninguno y no hay ninguna diferencia que sumar.
    */
   difference: number | null;
   /** Motivos de descuadre declarados al cerrar los turnos. */

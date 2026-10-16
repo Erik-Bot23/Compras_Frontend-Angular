@@ -2,7 +2,7 @@
    - Barra horizontal que se integra con la .table-card: mismo fondo, borde
      superior separador. Al ser la .table-card overflow:hidden, las esquinas
      inferiores de esta barra se recortan al radio 12px de la tarjeta.
-   - flex-wrap: wrap → en pantallas angostas el contador y los botones se
+   - flex-wrap: wrap -> en pantallas angostas el contador y los botones se
      acomodan en dos lineas en vez de desbordarse. */
 .pagination-bar {
   display: flex;

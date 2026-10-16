@@ -85,7 +85,7 @@ export class AuthService {
 
   //Decodifica el payload del JWT (parte del medio, base64url) y extrae "exp".
   //Es solo lectura local, sin dependencias; no valida la firma (eso lo hace
-  //el backend). Firma invalida o parse fallido → null (no rompe nada).
+  //el backend). Firma invalida o parse fallido -> null (no rompe nada).
   private getTokenExpiration(token: string): number | null{
     const parts = token.split('.');
 

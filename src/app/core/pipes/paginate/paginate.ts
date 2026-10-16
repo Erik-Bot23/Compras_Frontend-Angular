@@ -11,7 +11,7 @@ import { Pipe, PipeTransform } from '@angular/core';
  * - page y pageSize se pasan DESPUES de ':' en el orden en que se declaran en
  *   el transform: primero la lista, luego page y luego pageSize.
  *
- * - Acepta <b>null</b> y <b>undefined</b> a proposito, no por descuido: el pipe
+ * - Acepta null y undefined a proposito, no por descuido: el pipe
  *   `async` devuelve `null` antes de que llegue el primer valor, asi que una
  *   firma `T[]` obliga a escribir `| async ?? []` en cada template. El tipo
  *   refleja lo que el codigo YA hace en la primera linea del transform.

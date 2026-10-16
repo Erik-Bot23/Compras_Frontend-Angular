@@ -152,7 +152,7 @@
 }
 
 /* =========================================================================
-   PUNTO 1 DEL ENCARGO: estilos de la imagen de producto
+   Estilos de la imagen de producto
    =========================================================================
    Los 40x40 base se veían bien en la tabla, pero la foto quedaba "pegada" al
    texto de la fila: sin borde ni sombra, con un fondo blanco y una foto clara
@@ -186,7 +186,7 @@ td .img:hover {
 }
 
 /* =========================================================================
-   PUNTO 1 DEL ENCARGO: estilos de "Eliminar" y "Dar de baja"
+   Estilos de "Eliminar" y "Dar de baja"
    =========================================================================
    Son dos acciones de riesgo distinto y antes se veían igual:
      - "Eliminar" borra la fila de la base de datos. Irreversible.
@@ -334,7 +334,7 @@ td .img:hover {
 }
 
 /* =========================================================================
-   Mensajes de error de validación (V3, punto 7)
+   Mensajes de error de validación
    =========================================================================
    Se muestran debajo del input que falla. El color rojo y el texto explicito
    sustituyen al antiguo comportamiento de "corregir el valor en silencio": antes,

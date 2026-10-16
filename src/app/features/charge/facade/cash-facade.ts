@@ -12,7 +12,7 @@ import { validarPrecio } from '../../../core/utils/validadores';
 /**
  * Estado y acciones de la caja registradora.
  *
- * V3: la caja se crea antes de abrirse. El flujo del usuario ahora son
+ * La caja se crea antes de abrirse. El flujo del usuario ahora son
  * tres pasos y no dos:
  * 
  *  Crear caja (opcional): registra la caja física con su número.
@@ -41,7 +41,7 @@ export class CashFacade {
     * Caja elegida para abrir. Se llena con `GET /cash/boxes/openable`, que
     * devuelve las cajas activas que NO tienen un turno abierto ahora mismo.
     *
-    * <p>Ya no son "las que nunca se abrieron": como una caja se puede abrir
+    * Ya no son "las que nunca se abrieron": como una caja se puede abrir
     * todos los días, el criterio es "¿está libre ahora?".
     */
    selectedCashNumber = '';
@@ -49,7 +49,7 @@ export class CashFacade {
    /**
     * Cajas que se pueden abrir ahora, para el selector de "Abrir caja".
     *
-    * <p>Es un {@link CashBox} (una caja física) y no un {@link CashRegister}
+    * Es un {@link CashBox} (una caja física) y no un {@link CashRegister}
     * (un corte): lo que se elige al abrir es la caja, y el corte lo crea el
     * backend al abrir.
     */
@@ -60,19 +60,19 @@ export class CashFacade {
    closingAmount = 0;
 
    /**
-    * Motivo del descuadre (V3). Se muestra SOLO cuando el dinero no cuadra, y sin
+    * Motivo del descuadre. Se muestra SOLO cuando el dinero no cuadra, y sin
     * él el backend rechaza el cierre con 409.
     */
    differenceReason = '';
 
    // =========================================================================
-   //  CAJAS FÍSICAS (V4)
+   //  CAJAS FÍSICAS
    // =========================================================================
 
    /**
     * Todas las cajas del local, incluidas las dadas de baja.
     *
-    * <p>Alimenta la tabla "Ver cajas". Las dadas de baja se incluyen a propósito:
+    * Alimenta la tabla "Ver cajas". Las dadas de baja se incluyen a propósito:
     * se muestran atenuadas y con su número de turnos, que es la información que
     * justifica por qué no se pueden borrar.
     */
@@ -140,7 +140,7 @@ export class CashFacade {
   }
 
 // ======================================================================
-   //  ABRIR caja (V4: se elige una caja FÍSICA libre)
+   //  ABRIR caja
    // ======================================================================
 
    openCashModal() {
@@ -195,7 +195,7 @@ if (!this.selectedCashNumber) {
   }
 
   // ======================================================================
-  //  CERRAR caja (V3: exige cuadrar el dinero)
+  //  CERRAR caja
   // ======================================================================
 
   closeCashModal() {
@@ -323,13 +323,13 @@ if (!this.selectedCashNumber) {
   }
 
   // =========================================================================
-   //  CAJAS FÍSICAS (V4)
+   //  CAJAS FÍSICA
    // =========================================================================
 
    /**
     * Abre la tabla "Ver cajas" y la carga.
     *
-    * <p>El alta y la edición NO viven en un modal aparte: el formulario se abre
+    * El alta y la edición NO viven en un modal aparte: el formulario se abre
     * dentro de la tabla, para que se vea la caja que se está editando.
     */
    openBoxesModal() {
@@ -354,7 +354,7 @@ if (!this.selectedCashNumber) {
     * Empieza a CREAR una caja nueva. El número viene sugerido por el backend
     * ("CAJA 7") para que el usuario no tenga que contar cuántas hay.
     *
-    * <p>Se pide la sugerencia al abrir el formulario y no al abrir la tabla: si
+    * Se pide la sugerencia al abrir el formulario y no al abrir la tabla: si
     * el request falla se cae a "CAJA 1" y el usuario escribe lo que quiera. El
     * formulario nunca se queda vacío.
     */
@@ -385,7 +385,7 @@ if (!this.selectedCashNumber) {
    /**
     * Guarda la caja: crea si {@link editingBoxId} es null, actualiza si no.
     *
-    * <p>Si el backend responde 409 (número repetido) el formulario NO se cierra
+    * Si el backend responde 409 (número repetido) el formulario NO se cierra
     * y se muestra el mensaje, para que el usuario corrija sin perder lo escrito.
     */
    saveBox() {
@@ -420,7 +420,7 @@ if (!this.selectedCashNumber) {
     * Da de baja una caja: deja de ofrecerse al abrir, pero sus ventas y sus
     * cortes siguen en el historial.
     *
-    * <p>Es la operación de siempre, y es reversible. Para borrar hace falta que
+    * Es la operación de siempre, y es reversible. Para borrar hace falta que
     * la caja nunca se haya abierto, y eso lo decide el backend (409).
     */
    deactivateBox(caja: CashBox) {
@@ -440,7 +440,7 @@ if (!this.selectedCashNumber) {
    /**
     * Borra una caja, pero SOLO si nunca se abrió.
     *
-    * <p>Si ya tuvo cortes, el backend responde 409 y el mensaje dice "dala de
+    * Si ya tuvo cortes, el backend responde 409 y el mensaje dice "dala de
     * baja". Por eso el template solo muestra el botón de borrar cuando
     * {@code sessionsCount === 0}: en cualquier otro caso el botón no podría
     * funcionar y sería una promesa que el sistema no puede cumplir.
@@ -462,11 +462,11 @@ if (!this.selectedCashNumber) {
    /**
    * Da de ALTA una caja que estaba dada de baja (V5).
    *
-   * <p>No borra nada ni crea una caja nueva: es la MISMA caja, con su mismo
+   * No borra nada ni crea una caja nueva: es la MISMA caja, con su mismo
    * número y su mismo historial, la que vuelve a ofrecerse al abrir. Por eso el
    * número no puede reutilizarse para otra caja (está ocupado por esta fila).
    *
-   * <p>Es lo que hace que "dar de baja" sea reversible: si se dio de baja por
+   * Es lo que hace que "dar de baja" sea reversible: si se dio de baja por
    * error, o porque una caja se estaba reparando y ya terminó, hay salida.
    */
   activateBox(caja: CashBox) {
@@ -486,7 +486,7 @@ if (!this.selectedCashNumber) {
   /**
     * Carga las cajas que se pueden abrir ahora (activas y sin turno abierto).
     *
-    * <p>Si solo hay una, se preselecciona: es el caso de un local con dos cajas
+    * Si solo hay una, se preselecciona: es el caso de un local con dos cajas
     * donde casi siempre se usa la misma, y ahorra un clic.
     */
    loadOpenableBoxes() {
