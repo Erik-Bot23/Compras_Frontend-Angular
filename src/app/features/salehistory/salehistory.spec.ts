@@ -20,7 +20,7 @@ import { Sidebar } from '../sidebar/sidebar';
  * verificable en vez de estar repartida en condiciones del HTML donde un
  * `typo` no lo detecta nadie.
  *
- * <p>Estas reglas son una RÉPLICA de las del backend (`SaleImpl.confirm` y
+ * Estas reglas son una RÉPLICA de las del backend (`SaleImpl.confirm` y
  * `SaleImpl.cancel`), no las sustituyen. Sirven para no ofrecer un botón que
  * va a fallar con 409. Si alguien cambia la regla en Java y no acá, lo
  * detecta la diferencia de comportamiento, no este test.

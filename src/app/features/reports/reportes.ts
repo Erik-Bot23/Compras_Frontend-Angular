@@ -63,20 +63,20 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   categories: CategoryPerformanceDTO[] = [];
   lowStock: LowStockDTO[] = [];
   summary!: ReportsSummaryDTO;
-  // 🔑 `cashSummary` se eliminó. Era el endpoint `/cash/summary`, que devuelve
+  //`cashSummary` se eliminó. Era el endpoint `/cash/summary`, que devuelve
   // el turno ABIERTO en ese momento (findByActiveTrue) y por eso ignoraba la caja
   // seleccionada. Ahora el corte es `corteCaja`, que se suma de los turnos de la
   // caja elegida. Ver `calcularCorteDeCaja`.
   profit!: ProfitDTO;
 
   // =========================================================================
-  //  HISTORIAL DE CAJA (V5)
+  //  HISTORIAL DE CAJA 
   // =========================================================================
 
   /**
    * Cajas FÍSICAS para el selector, no turnos.
    *
-   * <p>Es `CashBox[]` y antes era `CashRegister[]`. La diferencia no es
+   * Es `CashBox[]` y antes era `CashRegister[]`. La diferencia no es
    * estética: una caja abierta cinco veces produce cinco filas en
    * `cashHistory`, así que el dropdown mostraba "CAJA 1" cinco veces y el
    * usuario no podía distinguir los turnos entre sí.
@@ -92,12 +92,12 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Hay una petición del reporte de caja en vuelo.
    *
-   * <p><b>Es aparte de `loading` a propósito.</b> `loading` es el de la barra de
+   * Es aparte de `loading` a propósito. `loading` es el de la barra de
    * filtros general (summary, gráficas, stock bajo): si se reutilizara, el botón
    * "Aplicar" y los <select> de arriba se bloquearían mientras se cambia el
    * usuario de una caja, que es una operación local y rápida.
    *
-   * <p>🔑 <b>Por qué la tabla NO se limpia al filtrar por usuario.</b> Con
+   * Por qué la tabla NO se limpia al filtrar por usuario. Con
    * `cashBoxReport = null` el `*ngIf` de la tabla la borraba de la pantalla
    * durante cada petición: el usuario veía la sección desaparecer y reaparecer
    * un segundo después, y el <select> de usuario iba con ella, así que durante
@@ -108,7 +108,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Filtro por usuario DENTRO de la sección de caja (null = todos).
    *
-   * <p>Es el mismo patrón que `selectedBoxId`: se aplica en el backend y por eso
+   * Es el mismo patrón que `selectedBoxId`: se aplica en el backend y por eso
    * hay que volver a pedir el reporte. Un filtro solo en el frontend obligaría a
    * traer todas las ventas de todos los turnos para descartar la mayoría en el
    * navegador.
@@ -128,12 +128,12 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Vendedores que aparecen en esta caja, para alimentar el filtro de usuario.
    *
-   * <p>Se arma con los `sellers` de las sesiones, NO con el padrón de usuarios
+   * Se arma con los `sellers` de las sesiones, NO con el padrón de usuarios
    * del sistema: son los que de verdad vendieron ahí. Con la lista completa, en
    * un local con 8 empleados, 6 opciones darían una tabla vacía sin poder
    * distinguir "sin resultados" de "este usuario no vendió aquí".
    *
-   * 🔑 <b>POR QUÉ ES UN ARREGLO GUARDADO Y NO UN GETTER.</b> Con un getter que
+   * POR QUÉ ES UN ARREGLO GUARDADO Y NO UN GETTER. Con un getter que
    * devuelve `[...mapa.values()].sort(...)`, cada ciclo de detección de cambios
    * produce un array NUEVO con objetos NUEVOS. El `*ngFor` de los `<option>` no
    * tiene `trackBy`, así que destruye y reconstruye todas las opciones en cada
@@ -142,11 +142,11 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
    * la página se queda colgada.
    *
    /**
-   * <p>🔑 <b>Guardarlo en una propiedad y recalcularlo solo cuando llega el
-   * reporte</b> corta el ciclo por la raíz, en vez de intentar frenarlo en la
+   * Guardarlo en una propiedad y recalcularlo solo cuando llega el
+   * reporte corta el ciclo por la raíz, en vez de intentar frenarlo en la
    * plantilla.
    *
-   * <p><b>Y recalcularlo SOLO cuando la respuesta no viene filtrada.</b> Con un
+   * Y recalcularlo SOLO cuando la respuesta no viene filtrada. Con un
    * filtro de usuario activo el backend devuelve solo los turnos de ese
    * usuario, así que sus `sellers` también viene recortados: si se reconstruyera
    * la lista con ellos, el desplegable se quedaría con una sola opción (la del
@@ -158,12 +158,12 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * ¿La respuesta que llega trae ALGÚN filtro aplicado?
    *
-   * <p>Se deduce de lo que se MANDÓ, no de lo que llegó. Mirar las sesiones
+   * Se deduce de lo que se MANDÓ, no de lo que llegó. Mirar las sesiones
    * recibidas no serviría: si el filtro no encuentra nada, `sessions` viene vacío y
    * no hay forma de distinguir "esta caja no tiene turnos" de "el filtro no
    * coincidió con ninguno".
    *
-   * <p>🔑 Esta pregunta es SOLO para la diferencia del corte, que no es
+   * Esta pregunta es SOLO para la diferencia del corte, que no es
    * calculable si el total que se está mirando no es el total de la caja. Para el
    * desplegable de usuarios hay otra pregunta distinta: ver `filtradoPorUsuario`.
    */
@@ -174,20 +174,10 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * ¿El recorte de la respuesta se debe al filtro de USUARIO?
    *
-   * <p>Es la pregunta que decide si se reconstruye `boxReportUsers`, y no puede
+   * Es la pregunta que decide si se reconstruye `boxReportUsers`, y no puede
    * ser la misma que `reporteFiltrado`:
    *
-   * <table>
-   *   <tr><th>Filtro</th><th>Qué llega</th><th>Roster</th></tr>
-   *   <tr><td>Solo fechas</td>
-   *       <td>Los turnos del rango, con TODOS los que vendieron en él</td>
-   *       <td>✅ sí se reconstruye</td></tr>
-   *   <tr><td>Usuario</td>
-   *       <td>Solo los turnos de ese usuario, y sus `sellers` son solo él</td>
-   *       <td>❌ no se reconstruye</td></tr>
-   * </table>
-   *
-   * <p>Usar `reporteFiltrado` para las dos cosas dejaba el desplegable en "Todos"
+   * Usar `reporteFiltrado` para las dos cosas dejaba el desplegable en "Todos"
    * y nada más siempre que hubiera fechas: se trampa al usuario con el caso común
    * (filtrar por mes y luego buscar a un vendedor) para arreglar un caso que solo
    * ocurre sin fechas.
@@ -199,14 +189,14 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * El corte de caja: la suma de los turnos que la tabla de arriba muestra.
    *
-   * <p><b>Es una propiedad, no un getter, y se calcula UNA vez por respuesta.</b>
+   * Es una propiedad, no un getter, y se calcula UNA vez por respuesta.
    * Es la misma razón por la que `boxReportUsers` es una propiedad y no un
    * getter: un getter devuelve un objeto NUEVO en cada ciclo de detección de
    * cambios. Acá no dispara peticiones (no hay `ngModel` que lo escuche), pero
    * sí rehace los bindings del DOM sin parar y, sobre todo, rompe la
    * identidad para `*ngIf` y para el `?.` del template.
    *
-   * <p>`null` cuando la caja no tiene turnos visibles: no se muestra una tarjeta
+   * `null` cuando la caja no tiene turnos visibles: no se muestra una tarjeta
    * de ceros, porque "no hay datos" y "todo fue cero" son cosas distintas.
    */
   corteCaja: CajaCorte | null = null;
@@ -214,7 +204,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Suma los turnos del reporte en un corte de caja.
    *
-   * <p>🔑 <b>La diferencia se suma SOLO sobre turnos cerrados.</b> Es un dato
+   * La diferencia se suma SOLO sobre turnos cerrados. Es un dato
    * congelado al cerrar: un turno abierto todavía no tiene diferencia (el
    * backend manda `sesion.getDifference()`, que es null hasta que se cierra).
    * Si se sumara incluyendo los abiertos, un turno abierto entra como 0 y el
@@ -280,7 +270,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Recalcula `boxReportUsers` a partir del reporte recibido.
    *
-   * <p>Se llama UNA vez por respuesta HTTP, nunca desde la plantilla.
+   * Se llama UNA vez por respuesta HTTP, nunca desde la plantilla.
    */
   private recalcularUsuariosDeLaCaja() {
     if (!this.cashBoxReport) {
@@ -309,11 +299,11 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * `trackBy` del `*ngFor` de usuarios.
    *
-   * <p>Segunda barrera contra el mismo problema: con `trackBy` Angular REUSSA los
+   * Segunda barrera contra el mismo problema: con `trackBy` Angular REUSSA los
    * nodos del DOM cuando la identidad del objeto no cambia, en vez de recrear
    * cada `<option>`. El id del usuario es la identidad correcta aquí.
    *
-   * <p>Para el caso sin usuario (id null) se usa una etiqueta fija, porque
+   * Para el caso sin usuario (id null) se usa una etiqueta fija, porque
    * `null` no sirve como clave de `trackBy` ( Angular lo trata como valor vacío).
    */
   trackByUsuario(userId: number | null): string {
@@ -563,7 +553,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
 
   // ------- Corte de caja -------
   //
-  // 🔑 Estas tres exportaciones leen `corteCaja`, que se arma sumando los
+  // Estas tres exportaciones leen `corteCaja`, que se arma sumando los
   // turnos de la caja ELEGIDA. Antes leían `cashSummary` (endpoint
   // `/cash/summary`), que devuelve el turno abierto en ese momento: con el
   // corte en pantalla y el PDF de otra caja, el papel no cuadraba con la
@@ -621,7 +611,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
       ['Tickets', `${c.totalTickets}`],
       ['Monto esperado', this.fmt(c.expectedAmount)],
       ['Utilidad', this.fmt(c.grossProfit)],
-      // 🔑 "—" y no $0.00 cuando la diferencia no es calculable. Ver `CajaCorte`.
+      //"—" y no $0.00 cuando la diferencia no es calculable. Ver `CajaCorte`.
       ['Diferencia', c.difference === null ? '—' : this.fmt(c.difference)],
     ];
     autoTable(doc, { startY: 30, head: [['Concepto', 'Monto']], body: rows });
@@ -638,7 +628,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * El `Y` donde terminó la última tabla de autoTable.
    *
-   * <p>`doc.lastAutoTable` existe en tiempo de ejecución (jspdf-autotable lo
+   * `doc.lastAutoTable` existe en tiempo de ejecución (jspdf-autotable lo
    * agrega al objeto), pero no está en la definición de `jsPDF`, así que
    * TypeScript lo marca como propiedad inexistente. En vez de un `any` suelto se
    * declara el tipo de lo que se usa: si la biblioteca cambiara la forma del
@@ -667,7 +657,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
       ['Tickets', c.totalTickets],
       ['Monto esperado', c.expectedAmount],
       ['Utilidad', c.grossProfit],
-      // 🔑 Celda VACÍA, no 0: 0 significaría "cuadró perfecto" y es falso.
+      //Celda VACÍA, no 0: 0 significaría "cuadró perfecto" y es falso.
       ['Diferencia', c.difference === null ? '' : c.difference],
       ['Motivo del descuadre', c.differenceReason ?? ''],
     ]);
@@ -709,13 +699,13 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // ============================================================
-  //  V5: Historial de CAJA con sus sesiones (filtro)
+  //  Historial de CAJA con sus sesiones (filtro)
   // ============================================================
 
   /**
    * Carga las cajas FÍSICAS para el selector de la barra de filtros.
    *
-   * <p>El error se traga a propósito: sin permiso VER_CAJA el backend responde
+   * El error se traga a propósito: sin permiso VER_CAJA el backend responde
    * 403, y el resto de los reportes (utilidad, ventas, gráficas) debe seguir
    * funcionando. Un toast de error por un filtro opcional sería ruido.
    */
@@ -729,7 +719,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Se dispara al elegir una caja en el filtro (o "todas").
    *
-   * <p>Al cambiar de caja se limpian el filtro de usuario y el turno desplegado:
+   * Al cambiar de caja se limpian el filtro de usuario y el turno desplegado:
    * si no, se quedaría un `userId` que pertenece a la caja anterior y la tabla
    * saldría vacía sin motivo aparente.
    */
@@ -755,7 +745,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   applyCashBoxUserFilter() {
     if (this.selectedBoxId === null) return;
 
-    // 🔑 Tercera barrera contra el ciclo infinito: si el valor no CAMBIÓ, no se
+    // Tercera barrera contra el ciclo infinito: si el valor no CAMBIÓ, no se
     // pide nada. Sin esta guarda, cualquier re-emisión del `ngModel` (por
     // ejemplo al re-renderizar las opciones) volvería a disparar el request.
     if (this.cashBoxUserFilter === this.usuarioAplicado) return;
@@ -763,7 +753,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
     this.usuarioAplicado = this.cashBoxUserFilter;
     this.sessionAbiertaId = null;
 
-    // 🔑 NO se pone `cashBoxReport = null` aquí. La caja NO cambia, solo el
+    // NO se pone `cashBoxReport = null` aquí. La caja NO cambia, solo el
     // filtro: el título sigue siendo el mismo y los turnos que ya están en
     // pantalla son los mismos, nada más que recortados. Borrarlos dejaba la
     // sección en blanco durante cada petición (y se llevaba por delante el
@@ -777,11 +767,11 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Pide el reporte de UNA caja con sus sesiones.
    *
-   * <p>Los filtros de usuario y fechas van al backend: si se filtrara en el
+   * Los filtros de usuario y fechas van al backend: si se filtrara en el
    * navegador habría que traer las ventas de todos los turnos para descartar la
    * mayoría, y los totales de la tabla no coincidirían con los del backend.
    *
-   * <p>El rango de fechas es el de la barra de filtros general: son los mismos
+   * El rango de fechas es el de la barra de filtros general: son los mismos
    * "Desde/Hasta" de arriba y así el usuario no tiene dos juegos de fechas que
    * se pisen.
    */
@@ -800,7 +790,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
         // construcción no puede quedar desfasado de lo que se ve arriba.
         this.calcularCorteDeCaja(data);
 
-        // 🔑 La lista de vendedores NO se reconstruye cuando el recorte vino del
+        // La lista de vendedores NO se reconstruye cuando el recorte vino del
         // filtro de USUARIO: en ese caso los `sellers` que llegan son un
         // subconjunto y armar el menú con ellos lo dejaría con una sola opción.
         // Con filtro de FECHAS sí se reconstruye, porque la respuesta trae a
@@ -823,7 +813,7 @@ export class Reportes implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Despliega u oculta el detalle de ventas de un turno.
    *
-   * <p>Solo uno a la vez: `sessionAbiertaId` es un id, no una lista. Con dos
+   *  Solo uno a la vez: `sessionAbiertaId` es un id, no una lista. Con dos
    * turnos abiertos a la vez la tabla duplicaría su alto y se perdería de vista
    * de qué turno es cada bloque.
    */

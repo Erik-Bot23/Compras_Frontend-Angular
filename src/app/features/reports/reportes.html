@@ -51,7 +51,7 @@
         <input type="number" min="0" [(ngModel)]="threshold" />
       </div>
       <!--
-        V5: filtro por CAJA FISICA (no por turno).
+        Filtro por CAJA FISICA (no por turno).
 
         El selector lista `cashBoxes` (las cajas del local, de GET /cash/boxes) y
         NO `cashHistory` (los turnos). Antes listaba los turnos, así que una caja
@@ -105,7 +105,7 @@
       </div>
     </div>
 
-    <!-- V3: UTILIDAD (ingresos − costo de lo vendido).
+    <!-- UTILIDAD (ingresos − costo de lo vendido).
          Es el bloque que responde "¿estoy ganando?". El costo sale del costo
          CONGELADO en cada renglón de venta, no del total de compras del
          periodo: ese dinero no se perdió, quedó en el almacén. -->
@@ -183,7 +183,7 @@
     </div>
 
     <!-- =========================================================================
-         HISTORIAL DE CAJA (V5)
+         HISTORIAL DE CAJA
          =========================================================================
          Antes esto era un "corte de caja": las filas de dinero en vertical
          (Fondo, Ventas efectivo, Total, Utilidad) de UN turno.
@@ -387,7 +387,7 @@
             la MISMA información a otra granularidad: la tabla es un renglón por
             turno y esto es la suma._Readalo junto, no tres pantallas más abajo.
 
-            🔑 NO se pide nada extra. `corteCaja` se calcula en el navegador
+            NO se pide nada extra. `corteCaja` se calcula en el navegador
             sumando las filas que la tabla ya tiene (`calcularCorteDeCaja`). Por
             construcción no puede quedar desfasado de la tabla, y no hay una
             segunda consulta que pueda fallar sola.
@@ -458,7 +458,7 @@
             </div>
 
             <!--
-              🔑 La diferencia se muestra SOLO si es calculable, y si no se
+              La diferencia se muestra SOLO si es calculable, y si no se
               explica por qué falta. Un "$0.00" acá afirmaría "el cajero no
               sobró ni faltó nada", que es una afirmación sobre el dinero real.
               El "—" no dice nada falso.

@@ -128,7 +128,7 @@
 }
 
 /* ==========================================================================
-   Alineación de las columnas con sus datos (V5)
+   Alineación de las columnas con sus datos
    ==========================================================================
    El problema era que los <th> de las columnas de monto NO tenían la clase
    .money: quedaban a la izquierda mientras sus <td class="money"> iban a la

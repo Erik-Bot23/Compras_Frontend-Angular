@@ -908,7 +908,7 @@ tr.confirmada td {
   }
 }
 /* =========================================================================
-   Mensajes de error de validación (V3, punto 7)
+   Mensajes de error de validación
    =========================================================================
    Aparecen debajo del input que falla, en rojo. Antes el formulario corregira el
    valor en silencio (ponga 0 si el stock venga con 1.6, o 1 si el precio venga
@@ -918,7 +918,7 @@ tr.confirmada td {
    cinco formularios, así que no se repiten por componente. */
 
 /* =========================================================================
-   Bloque de explicación de los MARGENES (punto 4 del encargo)
+   Explicación de los MARGENES
    =========================================================================
    Mismo criterio que en Reportes: el usuario necesita saber de donde sale
    "margen = precio - costo" y, sobre todo, que esto NO es la utilidad. La

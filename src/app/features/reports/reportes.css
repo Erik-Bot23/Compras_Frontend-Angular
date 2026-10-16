@@ -359,7 +359,7 @@
    y usa las clases globales `.cash-summary` / `.cash-row` (movidas desde
    cobro.css). Ver la nota larga en `styles.css`.
 
-   🔑 Se BORRARON aquí `.cortes`, `.corte-header`, `.corte-body` y
+   Se BORRARON aquí `.cortes`, `.corte-header`, `.corte-body` y
    `.corte-row`: pertenecían al corte viejo, que era una tarjeta aparte, angosta
    (`max-width: 420px`) y con los 9 montos apilados en vertical. Ese diseño es el
    que hacía que la sección se sintiera "alargada". Reutilizar las clases del
@@ -466,10 +466,10 @@
 /* =========================================================================
    Bloque de explicación (punto 4 del encargo)
    =========================================================================
-Los reportes Financiales se leen mal si no se sabe de donde sale cada número.
+   Los reportes Financiales se leen mal si no se sabe de donde sale cada número.
    Este bloque se despliega debajo de las tarjetas de utilidad y de la sección de
    márgenes, con el texto exacto de por que se calcula así y, sobre todo, por qué
-     NO se restan las compras del periodo.
+   NO se restan las compras del periodo.
    Se deja SIEMPRE visible en vez de plegable: la confusión entre margen,
    utilidad y gasto es la más común y es la que lleva a cambiar de proveedor
    por un número mal entendido. Ocultarlo en un desplegable significaría que
@@ -506,7 +506,7 @@ Los reportes Financiales se leen mal si no se sabe de donde sale cada número.
 }
 
 /* =========================================================================
-   HISTORIAL DE CAJA (V5) — tabla de sesiones
+   HISTORIAL DE CAJA — tabla de sesiones
    =========================================================================
    Reemplaza el "corte de caja", que eran filas de monto en vertical. Ahora cada
    turno es una FILA, y las filas se comparan entre sí de un vistazo: ese es el
@@ -751,7 +751,7 @@ tr.sesion-detalle-row td {
 
 /* La tabla NO desaparece al recargar: se atenúa.
 
-   🔑 Sin `pointer-events: none` el usuario podría.clickear una fila mientras
+   Sin `pointer-events: none` el usuario podría.clickear una fila mientras
    sus datos están siendo reemplazados, y el detalle que se abriera sería el
    de la fila anterior. Se atenúa el contenido pero el bloque se sigue viendo,
    que es justo lo que pidió quien reportó el bug ("que se quede estática"). */

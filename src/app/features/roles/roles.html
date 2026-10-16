@@ -1,7 +1,7 @@
 <!-- 
   ROLES - CRUD roles + permisos agrupados
   sidebar.menuOpen del SidebarService (singleton).
-  [class.collapsed]="!sidebar.menuOpen" → transicion 800ms ease-in-out.
+  [class.collapsed]="!sidebar.menuOpen" -> transicion 800ms ease-in-out.
   <div class="table-container fade-in"> anima entrada de tabla 250ms.
 -->
 <div class="layout" [class.collapsed]="!sidebar.menuOpen">
@@ -60,7 +60,7 @@
             </form>
 
             <!-- Panel de la tabla:
-           .table-panel → area flexible que toma todo el ancho restante del flex
+           .table-panel -> area flexible que toma todo el ancho restante del flex
                 (cuando el formulario de permisos no existe, ocupa el 100%).
            .table-container/.table-card/.table-scroll → estructura de tabla
                 responsive compartida (styles.css). -->
@@ -86,7 +86,7 @@
                                             <!-- Contenedor flex de botones: gap en vez de margenes sueltos -->
                                             <div class="table-actions">
                                                 <!--
-                                                  editRole → edit: se reemplaza el estilo azul solido por el degradado
+                                                  editRole -> edit: se reemplaza el estilo azul solido por el degradado
                                                   amarillo unificado que ya usan productos/categorias/usuarios.
                                                 -->
                                                 <button *hasPermission="'EDITAR_ROLES'" class="edit" (click)="editRole(c)">

@@ -126,7 +126,7 @@
                               <td>{{ item.productName }}</td>
                               <td>{{ item.quantity }}</td>
                               <td class="money">${{ item.unitCost | number:'1.2-2' }}</td>
-                              <!-- Precio de venta aplicado al confirmar (V3). "—" cuando
+                              <!-- Precio de venta aplicado al confirmar. "—" cuando
                                    la compra no cambió el precio del producto. -->
                               <td class="money">
                                 {{ item.unitPrice !== null ? ('$' + (item.unitPrice | number:'1.2-2')) : '—' }}
@@ -334,7 +334,7 @@
         <div class="table-card">
           <div class="table-scroll">
             <table>
-<!--
+            <!--
               ALINEACIÓN: los <th> de las columnas de monto llevan la misma
               clase .money que sus <td>. Antes los títulos quedaban a la
               izquierda y sus números a la derecha, así que "Costo" caía sobre el

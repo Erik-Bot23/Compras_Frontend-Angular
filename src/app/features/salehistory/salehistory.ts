@@ -113,7 +113,7 @@ export class Salehistory implements OnInit {
    * Número de columnas para los <td colspan> de las filas de mensaje
    * ("Cargando...", "No hay ventas...").
    *
-   * Son 6 columnas fijas (V3, punto 2 del encargo). Antes eran 7 más una
+   * Son 6 columnas fijas. Antes eran 7 más una
    * de acciones que solo existía si el usuario tenía CONFIRMAR_VENTAS o
    * CANCELAR_VENTAS, y por eso este getter era dinámico. Al quitar las columnas
    * "Estado" y "Acciones" del historial, el colspan se volvió fijo y este getter
